@@ -3,6 +3,8 @@ extends SceneTree
 const BoxPainter := preload("res://addons/godot_cascade/components/box_painter.gd")
 const CascadeBox := preload("res://addons/godot_cascade/layout/cascade_box.gd")
 const CascadeButton := preload("res://addons/godot_cascade/components/cascade_button.gd")
+const CascadeLabel := preload("res://addons/godot_cascade/components/cascade_label.gd")
+const CascadePanel := preload("res://addons/godot_cascade/components/cascade_panel.gd")
 
 var _failures: Array[String] = []
 
@@ -17,6 +19,8 @@ func _run() -> void:
 	await _test_button_in_flex_layout()
 	await _test_shared_style_invalidation()
 	await _test_overflow_and_align_self()
+	await _test_owned_label_box()
+	await _test_panel_layout()
 
 	if _failures.is_empty():
 		print("GodotCascade component tests passed.")
@@ -132,6 +136,45 @@ func _test_overflow_and_align_self() -> void:
 	await process_frame
 	_expect_rect("CascadeStyle align-self bridge", Rect2(button.position, button.size), Rect2(0.0, 10.0, 30.0, 20.0))
 	box.queue_free()
+
+
+func _test_owned_label_box() -> void:
+	var label := CascadeLabel.new()
+	label.text = "Cascade"
+	label.cascade_style.padding_left = 4.0
+	label.cascade_style.padding_top = 3.0
+	label.cascade_style.padding_right = 6.0
+	label.cascade_style.padding_bottom = 5.0
+	label.cascade_style.border_width = 2.0
+	label.size = Vector2(120.0, 40.0)
+	root.add_child(label)
+	await process_frame
+
+	var initial_width := label.get_combined_minimum_size().x
+	label.cascade_style.padding_left += 9.0
+	await process_frame
+	_expect_float("CascadeLabel shares box measurement", label.get_combined_minimum_size().x - initial_width, 9.0)
+	var internal_label := label.get_node("_Text") as Label
+	_expect_rect("CascadeLabel native text content box", Rect2(internal_label.position, internal_label.size), Rect2(15.0, 5.0, 97.0, 28.0))
+	label.queue_free()
+
+
+func _test_panel_layout() -> void:
+	var panel := CascadePanel.new()
+	panel.size = Vector2(100.0, 50.0)
+	panel.cascade_style.padding_left = 10.0
+	panel.cascade_style.padding_top = 5.0
+	panel.cascade_style.padding_right = 10.0
+	panel.cascade_style.padding_bottom = 5.0
+	root.add_child(panel)
+	var child := Control.new()
+	child.custom_minimum_size = Vector2(20.0, 10.0)
+	panel.add_child(child)
+	await process_frame
+	await process_frame
+	_expect_true("CascadePanel remains a native Container", panel is Container)
+	_expect_rect("CascadePanel shares CascadeBox layout", Rect2(child.position, child.size), Rect2(10.0, 5.0, 80.0, 10.0))
+	panel.queue_free()
 
 
 func _expect_true(label: String, actual: bool) -> void:

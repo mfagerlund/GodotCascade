@@ -40,8 +40,9 @@ The roadmap favors end-to-end slices over isolated subsystems. Each milestone sh
 
 - [x] Shared box-painting and content-box primitive
 - [x] `CascadeButton` based on `BaseButton`
-- [ ] `CascadeLabel` with wrapping and overflow rules
-- [ ] `CascadePanel`, `CascadeProgress`, and `CascadeImage`
+- [x] `CascadeLabel` with wrapping and overflow rules
+- [x] `CascadePanel` semantic styled container
+- [ ] `CascadeProgress` and `CascadeImage`
 - [ ] Exact/adapted/layout-only compatibility diagnostics
 - [ ] State matrix tests for hover, pressed, focused, and disabled controls
 

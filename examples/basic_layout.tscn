@@ -1,8 +1,10 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=11 format=3]
 
 [ext_resource type="Script" path="res://addons/godot_cascade/layout/cascade_box.gd" id="1_box"]
 [ext_resource type="Script" path="res://addons/godot_cascade/components/cascade_button.gd" id="2_button"]
 [ext_resource type="Script" path="res://addons/godot_cascade/style/cascade_style.gd" id="3_style"]
+[ext_resource type="Script" path="res://addons/godot_cascade/components/cascade_label.gd" id="4_label"]
+[ext_resource type="Script" path="res://addons/godot_cascade/components/cascade_panel.gd" id="5_panel"]
 
 [sub_resource type="Resource" id="Style_page"]
 script = ExtResource("3_style")
@@ -73,17 +75,19 @@ script = ExtResource("1_box")
 gap = 24.0
 cascade_style = SubResource("Style_page")
 
-[node name="Heading" type="Label" parent="Page"]
+[node name="Heading" type="Control" parent="Page"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.86, 0.91, 1, 1)
-theme_override_font_sizes/font_size = 30
+script = ExtResource("4_label")
 text = "GodotCascade"
+font_size = 30
+text_color = Color(0.86, 0.91, 1, 1)
 
-[node name="Description" type="Label" parent="Page"]
+[node name="Description" type="Control" parent="Page"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.62, 0.68, 0.78, 1)
-theme_override_font_sizes/font_size = 17
+script = ExtResource("4_label")
 text = "Native controls. A predictable box model. Far fewer wrappers."
+font_size = 17
+text_color = Color(0.62, 0.68, 0.78, 1)
 autowrap_mode = 2
 
 [node name="Cards" type="Container" parent="Page"]
@@ -99,63 +103,69 @@ cascade_style = SubResource("Style_cards")
 [node name="BoxModel" type="Container" parent="Page/Cards"]
 custom_minimum_size = Vector2(230, 210)
 layout_mode = 2
-script = ExtResource("1_box")
+script = ExtResource("5_panel")
 gap = 10.0
 cascade_style = SubResource("Style_blue_card")
 
-[node name="Title" type="Label" parent="Page/Cards/BoxModel"]
+[node name="Title" type="Control" parent="Page/Cards/BoxModel"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.49, 0.75, 1, 1)
-theme_override_font_sizes/font_size = 20
+script = ExtResource("4_label")
 text = "Box model"
+font_size = 20
+text_color = Color(0.49, 0.75, 1, 1)
 
-[node name="Body" type="Label" parent="Page/Cards/BoxModel"]
+[node name="Body" type="Control" parent="Page/Cards/BoxModel"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.72, 0.77, 0.86, 1)
-theme_override_font_sizes/font_size = 15
+script = ExtResource("4_label")
 text = "Padding, margins, gaps, borders, and size constraints live in one layout system."
+font_size = 15
+text_color = Color(0.72, 0.77, 0.86, 1)
 autowrap_mode = 2
 metadata/cascade_flex_grow = 1.0
 
 [node name="FlexFlow" type="Container" parent="Page/Cards"]
 custom_minimum_size = Vector2(230, 210)
 layout_mode = 2
-script = ExtResource("1_box")
+script = ExtResource("5_panel")
 gap = 10.0
 cascade_style = SubResource("Style_green_card")
 
-[node name="Title" type="Label" parent="Page/Cards/FlexFlow"]
+[node name="Title" type="Control" parent="Page/Cards/FlexFlow"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.66, 0.88, 0.55, 1)
-theme_override_font_sizes/font_size = 20
+script = ExtResource("4_label")
 text = "Flex flow"
+font_size = 20
+text_color = Color(0.66, 0.88, 0.55, 1)
 
-[node name="Body" type="Label" parent="Page/Cards/FlexFlow"]
+[node name="Body" type="Control" parent="Page/Cards/FlexFlow"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.72, 0.77, 0.86, 1)
-theme_override_font_sizes/font_size = 15
+script = ExtResource("4_label")
 text = "Rows and columns support growth, alignment, distribution, and wrapping."
+font_size = 15
+text_color = Color(0.72, 0.77, 0.86, 1)
 autowrap_mode = 2
 metadata/cascade_flex_grow = 1.0
 
 [node name="NativeControls" type="Container" parent="Page/Cards"]
 custom_minimum_size = Vector2(230, 210)
 layout_mode = 2
-script = ExtResource("1_box")
+script = ExtResource("5_panel")
 gap = 10.0
 cascade_style = SubResource("Style_orange_card")
 
-[node name="Title" type="Label" parent="Page/Cards/NativeControls"]
+[node name="Title" type="Control" parent="Page/Cards/NativeControls"]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.69, 0.39, 1)
-theme_override_font_sizes/font_size = 20
+script = ExtResource("4_label")
 text = "Godot native"
+font_size = 20
+text_color = Color(1, 0.69, 0.39, 1)
 
-[node name="Body" type="Label" parent="Page/Cards/NativeControls"]
+[node name="Body" type="Control" parent="Page/Cards/NativeControls"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.72, 0.77, 0.86, 1)
-theme_override_font_sizes/font_size = 15
+script = ExtResource("4_label")
 text = "Every element remains a real Control with Godot rendering, input, themes, and signals."
+font_size = 15
+text_color = Color(0.72, 0.77, 0.86, 1)
 autowrap_mode = 2
 metadata/cascade_flex_grow = 1.0
 
@@ -166,10 +176,11 @@ direction = 0
 gap = 12.0
 align_items = 1
 
-[node name="Status" type="Label" parent="Page/Actions"]
+[node name="Status" type="Control" parent="Page/Actions"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.49, 0.75, 1, 1)
+script = ExtResource("4_label")
 text = "Phase 1 · Layout foundation"
+text_color = Color(0.49, 0.75, 1, 1)
 metadata/cascade_flex_grow = 1.0
 
 [node name="Inspect" type="BaseButton" parent="Page/Actions"]

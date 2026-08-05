@@ -83,6 +83,8 @@ The repository currently contains the first Phase 1 vertical slice:
 - optional background, border, and corner radius drawing;
 - a shared `CascadeStyle` resource consumed by layout and owned components;
 - `CascadeButton`, an owned `BaseButton` implementation with exact box-model sizing;
+- `CascadeLabel`, with a GodotCascade box around native text shaping and wrapping;
+- `CascadePanel`, the semantic styled-container component;
 - an example scene that exercises the layout container.
 
 Markup, stylesheet parsing, selectors, data binding, and hot reload remain roadmap work.

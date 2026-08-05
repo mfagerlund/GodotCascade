@@ -20,7 +20,7 @@ Examples:
 | GodotCascade component | Native base | Godot behavior retained | Behavior owned by GodotCascade |
 | --- | --- | --- | --- |
 | `CascadeButton` | `BaseButton` | activation, focus, toggle, disabled state, shortcuts, signals | box model, text/icon layout, state drawing |
-| `CascadeLabel` | `Control` | canvas item and accessibility hooks | text measurement, wrapping, overflow, drawing |
+| `CascadeLabel` | `Control` with internal `Label` | shaping, wrapping, bidi, localization, accessibility hooks | outer box model, clipping, sizing contract |
 | `CascadeProgress` | `Range` | value constraints and change signals | track/fill layout and drawing |
 | `CascadePanel` | `Control` | native scene/input lifecycle | box model and drawing |
 | `CascadeImage` | `Control` | native texture resources | fit, position, clipping, and drawing |
