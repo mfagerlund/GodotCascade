@@ -67,8 +67,8 @@ The roadmap favors end-to-end slices over isolated subsystems. Each milestone sh
 - [x] `.gxml` parser with source-aware diagnostics and nesting recovery
 - [x] Element registry and native control factories
 - [x] `CascadeDocument` GXML/GCSS-to-native vertical slice
-- [ ] Stable identity and keyed reconciliation
-- [ ] Preserve focus, selection, scroll, and signal connections
+- [x] Stable identity and keyed reconciliation
+- [x] Preserve native identity, focus, runtime state, and signal connections for compatible controls
 - [ ] Custom component lifecycle
 - [ ] Property paths and one-way bindings
 - [ ] Repeated elements and keyed collection updates
@@ -77,7 +77,7 @@ The roadmap favors end-to-end slices over isolated subsystems. Each milestone sh
 ## Phase 4 — Tooling
 
 - [ ] Importers for `.gxml` and stylesheet resources
-- [ ] File watching and hot reload
+- [x] Runtime file watching and hot reload with last-valid fallback
 - [ ] Dockable live preview
 - [ ] Inspector support for classes, IDs, and resolved values
 - [ ] Style and layout debugger

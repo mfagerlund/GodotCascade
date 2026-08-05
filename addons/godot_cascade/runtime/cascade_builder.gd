@@ -10,11 +10,11 @@ const CascadeButton := preload("res://addons/godot_cascade/components/cascade_bu
 
 static func build(root_element, rules: Array) -> Dictionary:
 	var diagnostics: Array[Dictionary] = []
-	var root_control := _build_element(root_element, rules, diagnostics)
+	var root_control := _build_element(root_element, rules, diagnostics, "0")
 	return {"root": root_control, "diagnostics": diagnostics}
 
 
-static func _build_element(element, rules: Array, diagnostics: Array[Dictionary]) -> Control:
+static func _build_element(element, rules: Array, diagnostics: Array[Dictionary], key_path: String) -> Control:
 	var control := _create_control(element.tag_name, diagnostics)
 	if control == null:
 		return null
@@ -23,6 +23,7 @@ static func _build_element(element, rules: Array, diagnostics: Array[Dictionary]
 	control.set_meta("cascade_element_type", element.tag_name)
 	control.set_meta("cascade_id", element.element_id())
 	control.set_meta("cascade_classes", element.classes())
+	control.set_meta("cascade_key", "#" + element.element_id() if not element.element_id().is_empty() else key_path)
 
 	if control is CascadeLabel or control is CascadeButton:
 		control.set("text", str(element.attributes.get("text", element.text)))
@@ -32,8 +33,10 @@ static func _build_element(element, rules: Array, diagnostics: Array[Dictionary]
 	var computed := _compute_declarations(element, rules)
 	_apply_declarations(control, computed, diagnostics)
 
-	for child_element in element.children:
-		var child_control := _build_element(child_element, rules, diagnostics)
+	for index in element.children.size():
+		var child_element = element.children[index]
+		var child_key := "%s/%s:%s" % [key_path, index, child_element.tag_name]
+		var child_control := _build_element(child_element, rules, diagnostics, child_key)
 		if child_control != null:
 			control.add_child(child_control)
 	return control

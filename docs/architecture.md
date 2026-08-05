@@ -56,7 +56,9 @@ The layout engine consumes plain value objects and produces rectangles. The Phas
 
 The reconciler compares the previous logical tree with the next one, then applies the smallest practical set of mutations to native nodes. It must preserve runtime state—especially focus, line-edit selection, scroll position, animation state, and user signal connections—whenever element identity is stable.
 
-`CascadeDocument` currently performs a full source-to-native build on load. Its parsed element tree uses weak parent links, allowing descendant selector matching without introducing reference cycles. Incremental keyed reconciliation will replace full rebuilding in a later slice.
+`CascadeDocument` builds each source revision as an off-tree candidate. If parsing and construction succeed, `CascadeReconciler` matches controls by explicit `id` or structural fallback key and copies authored properties into compatible native instances. This preserves focus, runtime state, and user signal connections. Incompatible or removed elements are replaced narrowly; an invalid candidate is discarded so the last valid tree stays interactive. Parsed elements use weak parent links, allowing descendant selector matching without reference cycles.
+
+The runtime watcher compares source-content signatures rather than filesystem timestamps, avoiding timestamp-resolution and editor atomic-save differences. It polls on a configurable interval and uses the same transactional reload path as explicit reloads.
 
 ### Godot adapter
 

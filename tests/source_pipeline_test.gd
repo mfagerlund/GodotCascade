@@ -4,6 +4,7 @@ const GENERATED_SCENE := preload("res://examples/generated_showcase.tscn")
 const GxmlParser := preload("res://addons/godot_cascade/markup/gxml_parser.gd")
 const GcssParser := preload("res://addons/godot_cascade/style/gcss_parser.gd")
 const CascadeBuilder := preload("res://addons/godot_cascade/runtime/cascade_builder.gd")
+const CascadeDocument := preload("res://addons/godot_cascade/runtime/cascade_document.gd")
 
 var _failures: Array[String] = []
 
@@ -16,6 +17,7 @@ func _run() -> void:
 	_test_gxml_parser()
 	_test_gcss_specificity()
 	_test_parser_recovery()
+	_test_identity_preserving_reload()
 	root.size = Vector2i(960, 540)
 	var document := GENERATED_SCENE.instantiate()
 	root.add_child(document)
@@ -101,6 +103,61 @@ func _test_parser_recovery() -> void:
 	_expect_true("malformed GXML reports diagnostics", not malformed_markup["diagnostics"].is_empty())
 	var malformed_style := GcssParser.parse(".card { color: ; broken }")
 	_expect_true("malformed GCSS reports diagnostics", not malformed_style["diagnostics"].is_empty())
+
+
+func _test_identity_preserving_reload() -> void:
+	var markup_path := "user://cascade_reload_test.gxml"
+	var stylesheet_path := "user://cascade_reload_test.gcss"
+	var initial_markup := "<Page><Button id=\"stable\">Before</Button></Page>"
+	var updated_markup := "<Page><Button id=\"stable\">After</Button></Page>"
+	var stylesheet := "Page { display: flex; flex-direction: column; } Button { padding: 8px; }"
+	_expect_true("write initial reload markup", _write_text(markup_path, initial_markup))
+	_expect_true("write initial reload stylesheet", _write_text(stylesheet_path, stylesheet))
+
+	var document: Control = CascadeDocument.new()
+	document.load_on_ready = false
+	document.log_diagnostics_to_console = false
+	document.watch_sources = false
+	document.markup_path = markup_path
+	document.stylesheet_path = stylesheet_path
+	root.add_child(document)
+	_expect_true("initial document reload succeeds", document.reload_document())
+
+	var initial_button: Control = _find_by_id(document.generated_root(), "stable")[0]
+	var initial_instance_id := initial_button.get_instance_id()
+	initial_button.pressed.connect(_on_reload_test_pressed)
+
+	_expect_true("write updated reload markup", _write_text(markup_path, updated_markup))
+	_expect_true("source polling detects edit", document.poll_sources())
+	var updated_button: Control = _find_by_id(document.generated_root(), "stable")[0]
+	_expect_true("reload preserves native node identity", updated_button.get_instance_id() == initial_instance_id)
+	_expect_true("reload updates component properties", updated_button.get("text") == "After")
+	_expect_true("reload preserves signal connections", updated_button.pressed.is_connected(_on_reload_test_pressed))
+	_expect_true("reload reports reused nodes", int(document.last_reconcile_stats["reused"]) >= 2)
+
+	_expect_true("write malformed reload markup", _write_text(markup_path, "<Page><Button>broken</Page>"))
+	_expect_true("source polling detects malformed edit", document.poll_sources())
+	var retained_button: Control = _find_by_id(document.generated_root(), "stable")[0]
+	_expect_true("invalid edit retains native node identity", retained_button.get_instance_id() == initial_instance_id)
+	_expect_true("invalid edit retains last valid properties", retained_button.get("text") == "After")
+	_expect_true("invalid edit publishes diagnostics", _has_error_diagnostics(document.diagnostics))
+
+	root.remove_child(document)
+	document.free()
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(markup_path))
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(stylesheet_path))
+
+
+func _on_reload_test_pressed() -> void:
+	pass
+
+
+func _write_text(path: String, contents: String) -> bool:
+	var file := FileAccess.open(path, FileAccess.WRITE)
+	if file == null:
+		return false
+	file.store_string(contents)
+	return true
 
 
 func _find_by_class(node: Node, class_value: String) -> Array[Control]:

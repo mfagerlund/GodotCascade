@@ -88,9 +88,12 @@ The repository currently contains the first Phase 1 vertical slice:
 - a recoverable `.gxml` parser and native control registry;
 - a focused `.gcss` subset with type/class/ID/descendant selectors, specificity, source order, box values, flex values, and button pseudo states;
 - `CascadeDocument`, which builds the running native UI directly from paired source files;
+- content-based source watching with automatic runtime reloads;
+- stable ID and structural keys that reconcile edits into the existing native tree;
+- last-valid rendering when an in-progress edit has parser or builder errors;
 - an example scene that exercises the layout container.
 
-Bindings, keyed reconciliation, broad property coverage, direct-child selectors, importers, and hot reload remain roadmap work.
+Bindings, broad property coverage, direct-child selectors, importers, and editor preview tooling remain roadmap work.
 
 ## Trying the prototype
 
@@ -100,6 +103,12 @@ Bindings, keyed reconciliation, broad property coverage, direct-child selectors,
 4. Add a **CascadeBox** from the Create New Node dialog to experiment in your own scene.
 
 No external runtime dependencies are required.
+
+### Live source editing
+
+`CascadeDocument` watches its `markup_path` and `stylesheet_path` by default. Save either source file while the project is running and the document rebuilds a candidate tree, then reconciles it into the live native controls. Elements with an `id` keep identity across reordering; unkeyed elements use their structural path. Compatible controls retain their Godot instance, focus, runtime state, and signal connections while authored properties update.
+
+If an edit is invalid, `diagnostics_changed` is emitted and the previous valid UI remains on screen. Fixing and saving the source applies the next valid candidate. Set `watch_sources` to `false` to disable polling, or call `poll_sources()` when integrating with an editor-owned watcher.
 
 Run the current headless smoke test with:
 
