@@ -1,0 +1,156 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://addons/godot_cascade/layout/cascade_box.gd" id="1_box"]
+
+[node name="BasicLayout" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Page" type="Container" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_box")
+padding_left = 80.0
+padding_top = 56.0
+padding_right = 80.0
+padding_bottom = 56.0
+gap = 24.0
+
+[node name="Heading" type="Label" parent="Page"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.86, 0.91, 1, 1)
+theme_override_font_sizes/font_size = 30
+text = "GodotCascade"
+
+[node name="Description" type="Label" parent="Page"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.68, 0.78, 1)
+theme_override_font_sizes/font_size = 17
+text = "Native controls. A predictable box model. Far fewer wrappers."
+autowrap_mode = 2
+
+[node name="Cards" type="Container" parent="Page"]
+custom_minimum_size = Vector2(0, 230)
+layout_mode = 2
+script = ExtResource("1_box")
+direction = 0
+wrap = true
+gap = 18.0
+line_gap = 18.0
+flex_grow = 1.0
+
+[node name="BoxModel" type="Container" parent="Page/Cards"]
+custom_minimum_size = Vector2(230, 210)
+layout_mode = 2
+script = ExtResource("1_box")
+padding_left = 22.0
+padding_top = 20.0
+padding_right = 22.0
+padding_bottom = 20.0
+gap = 10.0
+preferred_width = 250.0
+flex_grow = 1.0
+background_color = Color(0.105, 0.122, 0.153, 1)
+border_color = Color(0.21, 0.27, 0.38, 1)
+border_width = 1.0
+border_radius = 10.0
+
+[node name="Title" type="Label" parent="Page/Cards/BoxModel"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.49, 0.75, 1, 1)
+theme_override_font_sizes/font_size = 20
+text = "Box model"
+
+[node name="Body" type="Label" parent="Page/Cards/BoxModel"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.77, 0.86, 1)
+theme_override_font_sizes/font_size = 15
+text = "Padding, margins, gaps, borders, and size constraints live in one layout system."
+autowrap_mode = 2
+metadata/cascade_flex_grow = 1.0
+
+[node name="FlexFlow" type="Container" parent="Page/Cards"]
+custom_minimum_size = Vector2(230, 210)
+layout_mode = 2
+script = ExtResource("1_box")
+padding_left = 22.0
+padding_top = 20.0
+padding_right = 22.0
+padding_bottom = 20.0
+gap = 10.0
+preferred_width = 250.0
+flex_grow = 1.0
+background_color = Color(0.105, 0.122, 0.153, 1)
+border_color = Color(0.21, 0.27, 0.38, 1)
+border_width = 1.0
+border_radius = 10.0
+
+[node name="Title" type="Label" parent="Page/Cards/FlexFlow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.66, 0.88, 0.55, 1)
+theme_override_font_sizes/font_size = 20
+text = "Flex flow"
+
+[node name="Body" type="Label" parent="Page/Cards/FlexFlow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.77, 0.86, 1)
+theme_override_font_sizes/font_size = 15
+text = "Rows and columns support growth, alignment, distribution, and wrapping."
+autowrap_mode = 2
+metadata/cascade_flex_grow = 1.0
+
+[node name="NativeControls" type="Container" parent="Page/Cards"]
+custom_minimum_size = Vector2(230, 210)
+layout_mode = 2
+script = ExtResource("1_box")
+padding_left = 22.0
+padding_top = 20.0
+padding_right = 22.0
+padding_bottom = 20.0
+gap = 10.0
+preferred_width = 250.0
+flex_grow = 1.0
+background_color = Color(0.105, 0.122, 0.153, 1)
+border_color = Color(0.21, 0.27, 0.38, 1)
+border_width = 1.0
+border_radius = 10.0
+
+[node name="Title" type="Label" parent="Page/Cards/NativeControls"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.69, 0.39, 1)
+theme_override_font_sizes/font_size = 20
+text = "Godot native"
+
+[node name="Body" type="Label" parent="Page/Cards/NativeControls"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.77, 0.86, 1)
+theme_override_font_sizes/font_size = 15
+text = "Every element remains a real Control with Godot rendering, input, themes, and signals."
+autowrap_mode = 2
+metadata/cascade_flex_grow = 1.0
+
+[node name="Actions" type="Container" parent="Page"]
+layout_mode = 2
+script = ExtResource("1_box")
+direction = 0
+gap = 12.0
+align_items = 1
+
+[node name="Status" type="Label" parent="Page/Actions"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.49, 0.75, 1, 1)
+text = "Phase 1 · Layout foundation"
+metadata/cascade_flex_grow = 1.0
+
+[node name="Inspect" type="Button" parent="Page/Actions"]
+custom_minimum_size = Vector2(150, 42)
+layout_mode = 2
+text = "Inspect layout"

@@ -1,0 +1,14 @@
+# Godot 4 generated files
+.godot/
+
+# Exported builds
+build/
+dist/
+
+# IDE and OS files
+.idea/
+.vscode/
+*.tmp
+*.log
+.DS_Store
+Thumbs.db
