@@ -71,7 +71,7 @@ The roadmap favors end-to-end slices over isolated subsystems. Each milestone sh
 - [x] Stable identity and keyed reconciliation
 - [x] Preserve native identity, focus, runtime state, and signal connections for compatible controls
 - [ ] Custom component lifecycle
-- [ ] Property paths and one-way bindings
+- [x] Focused property paths and explicitly refreshed one-way bindings
 - [ ] Repeated elements and keyed collection updates
 - [ ] Event-to-method binding
 

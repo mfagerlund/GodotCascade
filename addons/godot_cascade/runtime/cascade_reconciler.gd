@@ -64,7 +64,7 @@ static func _reconcile_children(existing: Control, desired: Control, stats: Dict
 static func _copy_properties(existing: Control, desired: Control) -> void:
 	existing.name = desired.name
 	existing.visible = desired.visible
-	for metadata_name in ["cascade_element_type", "cascade_id", "cascade_classes", "cascade_key"]:
+	for metadata_name in ["cascade_element_type", "cascade_id", "cascade_classes", "cascade_key", "cascade_bindings"]:
 		existing.set_meta(metadata_name, desired.get_meta(metadata_name))
 
 	if _has_property(existing, "cascade_style") and _has_property(desired, "cascade_style"):

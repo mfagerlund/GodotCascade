@@ -6,6 +6,7 @@ const GxmlParser := preload("res://addons/godot_cascade/markup/gxml_parser.gd")
 const GcssParser := preload("res://addons/godot_cascade/style/gcss_parser.gd")
 const CascadeBuilder := preload("res://addons/godot_cascade/runtime/cascade_builder.gd")
 const CascadeDocument := preload("res://addons/godot_cascade/runtime/cascade_document.gd")
+const BindingResolver := preload("res://addons/godot_cascade/runtime/binding_resolver.gd")
 
 var _failures: Array[String] = []
 
@@ -18,6 +19,7 @@ func _run() -> void:
 	_test_gxml_parser()
 	_test_gcss_specificity()
 	_test_parser_recovery()
+	_test_binding_resolver()
 	_test_identity_preserving_reload()
 	root.size = Vector2i(960, 540)
 	var document := GENERATED_SCENE.instantiate()
@@ -78,10 +80,21 @@ func _run() -> void:
 	_expect_int("one generated reserve progress", reserve_controls.size(), 1)
 	if reserve_controls.size() == 1:
 		var reserve: Control = reserve_controls[0]
+		var reserve_instance_id := reserve.get_instance_id()
 		_expect_float("progress markup value", reserve.get("value"), 72.0)
 		_expect_float("progress markup maximum", reserve.get("max_value"), 100.0)
 		_expect_float("progress normalized ratio", reserve.call("ratio"), 0.72)
 		_expect_true("progress GCSS fill color", reserve.get("fill_color") == Color("5aa7ff"))
+		var telemetry: Dictionary = system_document.binding_context["telemetry"]
+		telemetry["reserve"] = 41.0
+		telemetry["reserve_label"] = "41%"
+		_expect_true("manual binding refresh succeeds", system_document.refresh_bindings())
+		_expect_float("binding refresh updates progress", reserve.get("value"), 41.0)
+		_expect_true("binding refresh preserves progress identity", reserve.get_instance_id() == reserve_instance_id)
+		var reserve_labels := _find_by_id(system_root, "reserve-value")
+		_expect_int("one bound reserve label", reserve_labels.size(), 1)
+		if reserve_labels.size() == 1:
+			_expect_true("binding refresh updates text", reserve_labels[0].get("text") == "41%")
 	var system_progress := _find_by_class(system_root, "system-progress")
 	_expect_int("three generated system progress controls", system_progress.size(), 3)
 	if system_progress.size() == 3:
@@ -126,6 +139,16 @@ func _test_parser_recovery() -> void:
 	_expect_true("malformed GXML reports diagnostics", not malformed_markup["diagnostics"].is_empty())
 	var malformed_style := GcssParser.parse(".card { color: ; broken }")
 	_expect_true("malformed GCSS reports diagnostics", not malformed_style["diagnostics"].is_empty())
+
+
+func _test_binding_resolver() -> void:
+	var context := {"player": {"name": "Rhea", "inventory": ["key", "map"]}}
+	var name_result := BindingResolver.resolve(context, "player.name")
+	_expect_true("binding resolves dictionary path", name_result["found"] and name_result["value"] == "Rhea")
+	var array_result := BindingResolver.resolve(context, "player.inventory.1")
+	_expect_true("binding resolves array index", array_result["found"] and array_result["value"] == "map")
+	var missing_result := BindingResolver.resolve(context, "player.health")
+	_expect_true("missing binding path reports failure", not missing_result["found"])
 
 
 func _test_identity_preserving_reload() -> void:

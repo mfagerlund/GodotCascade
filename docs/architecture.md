@@ -52,6 +52,10 @@ Layout has two conceptual passes:
 
 The layout engine consumes plain value objects and produces rectangles. The Phase 1 `CascadeBox` currently performs these operations inside a `Container`; extracting the calculations into engine-only types is the next architectural step.
 
+### Data binding
+
+Exact `{dot.separated.path}` attribute values are stored as metadata on the generated native control. `BindingResolver` traverses dictionaries, arrays, or Godot object properties only; it does not evaluate expressions or invoke methods. `CascadeDocument` applies bindings after initial construction and after reconciliation, so authored reloads and data refreshes share stable native instances. Assigning a context refreshes immediately, while nested state changes use the explicit `refresh_bindings()` boundary until reactive adapters are introduced.
+
 ### Reconciler
 
 The reconciler compares the previous logical tree with the next one, then applies the smallest practical set of mutations to native nodes. It must preserve runtime state—especially focus, line-edit selection, scroll position, animation state, and user signal connections—whenever element identity is stable.

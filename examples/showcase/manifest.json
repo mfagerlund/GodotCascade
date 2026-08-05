@@ -37,6 +37,7 @@
         ["progress track", "background + border-radius", "CascadeStyle box painting"],
         ["::-webkit-progress-value", "fill-color", "Owned native fill drawing"],
         ["value / max", "value / max", "Clamped normalized range"],
+        ["application data", "{telemetry.reserve}", "One-way property-path binding"],
         ["nested flex panels", "Row / Column / Panel", "CascadeBox native layout"],
         ["<button>", "<Button>", "CascadeButton (BaseButton)"]
       ]

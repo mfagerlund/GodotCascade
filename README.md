@@ -92,9 +92,10 @@ The repository currently contains the first Phase 1 vertical slice:
 - content-based source watching with automatic runtime reloads;
 - stable ID and structural keys that reconcile edits into the existing native tree;
 - last-valid rendering when an in-progress edit has parser or builder errors;
+- focused `{dot.separated.path}` one-way bindings for text and progress values;
 - an example scene that exercises the layout container.
 
-Bindings, broad property coverage, direct-child selectors, importers, and editor preview tooling remain roadmap work.
+Reactive binding adapters, broad property coverage, direct-child selectors, importers, and editor preview tooling remain roadmap work.
 
 ## Trying the prototype
 
@@ -110,6 +111,27 @@ No external runtime dependencies are required.
 `CascadeDocument` watches its `markup_path` and `stylesheet_path` by default. Save either source file while the project is running and the document rebuilds a candidate tree, then reconciles it into the live native controls. Elements with an `id` keep identity across reordering; unkeyed elements use their structural path. Compatible controls retain their Godot instance, focus, runtime state, and signal connections while authored properties update.
 
 If an edit is invalid, `diagnostics_changed` is emitted and the previous valid UI remains on screen. Fixing and saving the source applies the next valid candidate. Set `watch_sources` to `false` to disable polling, or call `poll_sources()` when integrating with an editor-owned watcher.
+
+### One-way data binding
+
+Exact brace expressions resolve against a Dictionary or Godot Object assigned to `CascadeDocument.binding_context`:
+
+```xml
+<Label text="{player.name}" />
+<Progress value="{player.health}" max="100" />
+```
+
+```gdscript
+document.binding_context = {
+    "player": {"name": "Rhea", "health": 72.0}
+}
+
+# After mutating nested state:
+document.binding_context["player"]["health"] = 54.0
+document.refresh_bindings()
+```
+
+Assigning a new context refreshes automatically. The current focused slice supports text on `Label`/`Button` and `min`, `max`, and `value` on `Progress`; unresolved paths produce binding diagnostics instead of executing expressions or methods.
 
 Run the current headless smoke test with:
 

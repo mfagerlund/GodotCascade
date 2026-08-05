@@ -608,7 +608,7 @@
         </div>
         <table>
           <thead><tr><th>HTML/CSS</th><th>GodotCascade source</th><th>Runtime</th></tr></thead>
-          <tbody><tr><td><code>&lt;progress value=&quot;72&quot;&gt;</code></td><td><code>&lt;Progress value=&quot;72&quot;&gt;</code></td><td><code>CascadeProgress (Control)</code></td></tr><tr><td><code>progress track</code></td><td><code>background + border-radius</code></td><td><code>CascadeStyle box painting</code></td></tr><tr><td><code>::-webkit-progress-value</code></td><td><code>fill-color</code></td><td><code>Owned native fill drawing</code></td></tr><tr><td><code>value / max</code></td><td><code>value / max</code></td><td><code>Clamped normalized range</code></td></tr><tr><td><code>nested flex panels</code></td><td><code>Row / Column / Panel</code></td><td><code>CascadeBox native layout</code></td></tr><tr><td><code>&lt;button&gt;</code></td><td><code>&lt;Button&gt;</code></td><td><code>CascadeButton (BaseButton)</code></td></tr></tbody>
+          <tbody><tr><td><code>&lt;progress value=&quot;72&quot;&gt;</code></td><td><code>&lt;Progress value=&quot;72&quot;&gt;</code></td><td><code>CascadeProgress (Control)</code></td></tr><tr><td><code>progress track</code></td><td><code>background + border-radius</code></td><td><code>CascadeStyle box painting</code></td></tr><tr><td><code>::-webkit-progress-value</code></td><td><code>fill-color</code></td><td><code>Owned native fill drawing</code></td></tr><tr><td><code>value / max</code></td><td><code>value / max</code></td><td><code>Clamped normalized range</code></td></tr><tr><td><code>application data</code></td><td><code>{telemetry.reserve}</code></td><td><code>One-way property-path binding</code></td></tr><tr><td><code>nested flex panels</code></td><td><code>Row / Column / Panel</code></td><td><code>CascadeBox native layout</code></td></tr><tr><td><code>&lt;button&gt;</code></td><td><code>&lt;Button&gt;</code></td><td><code>CascadeButton (BaseButton)</code></td></tr></tbody>
         </table>
       </section>
 
@@ -696,7 +696,7 @@
         &lt;Row class=&quot;title-row&quot;&gt;
             &lt;Label class=&quot;title&quot;&gt;Helios systems&lt;/Label&gt;
             &lt;Panel class=&quot;status-pill&quot;&gt;
-                &lt;Label class=&quot;status-text&quot;&gt;● All systems nominal&lt;/Label&gt;
+                &lt;Label class=&quot;status-text&quot; text=&quot;{telemetry.status}&quot; /&gt;
             &lt;/Panel&gt;
         &lt;/Row&gt;
         &lt;Label class=&quot;subtitle&quot;&gt;Resource allocation across the current deep-space route.&lt;/Label&gt;
@@ -706,10 +706,10 @@
         &lt;Panel class=&quot;overview&quot;&gt;
             &lt;Label class=&quot;section-label&quot;&gt;POWER RESERVE&lt;/Label&gt;
             &lt;Row class=&quot;metric-row&quot;&gt;
-                &lt;Label class=&quot;metric&quot;&gt;72%&lt;/Label&gt;
-                &lt;Label class=&quot;delta&quot;&gt;+4.8% this cycle&lt;/Label&gt;
+                &lt;Label id=&quot;reserve-value&quot; class=&quot;metric&quot; text=&quot;{telemetry.reserve_label}&quot; /&gt;
+                &lt;Label class=&quot;delta&quot; text=&quot;{telemetry.reserve_delta}&quot; /&gt;
             &lt;/Row&gt;
-            &lt;Progress id=&quot;reserve&quot; class=&quot;primary-progress&quot; value=&quot;72&quot; max=&quot;100&quot; /&gt;
+            &lt;Progress id=&quot;reserve&quot; class=&quot;primary-progress&quot; value=&quot;{telemetry.reserve}&quot; max=&quot;100&quot; /&gt;
             &lt;Label class=&quot;detail&quot;&gt;18h 42m estimated endurance at current draw&lt;/Label&gt;
         &lt;/Panel&gt;
 
@@ -719,27 +719,27 @@
                     &lt;Label class=&quot;system-name&quot;&gt;Reactor output&lt;/Label&gt;
                     &lt;Label class=&quot;system-value&quot;&gt;84%&lt;/Label&gt;
                 &lt;/Row&gt;
-                &lt;Progress class=&quot;system-progress&quot; value=&quot;84&quot; max=&quot;100&quot; /&gt;
+                &lt;Progress class=&quot;system-progress&quot; value=&quot;{telemetry.reactor}&quot; max=&quot;100&quot; /&gt;
             &lt;/Panel&gt;
             &lt;Panel class=&quot;system-card life-support&quot;&gt;
                 &lt;Row class=&quot;system-heading&quot;&gt;
                     &lt;Label class=&quot;system-name&quot;&gt;Life support&lt;/Label&gt;
                     &lt;Label class=&quot;system-value&quot;&gt;96%&lt;/Label&gt;
                 &lt;/Row&gt;
-                &lt;Progress class=&quot;system-progress&quot; value=&quot;96&quot; max=&quot;100&quot; /&gt;
+                &lt;Progress class=&quot;system-progress&quot; value=&quot;{telemetry.life_support}&quot; max=&quot;100&quot; /&gt;
             &lt;/Panel&gt;
             &lt;Panel class=&quot;system-card navigation&quot;&gt;
                 &lt;Row class=&quot;system-heading&quot;&gt;
                     &lt;Label class=&quot;system-name&quot;&gt;Navigation array&lt;/Label&gt;
                     &lt;Label class=&quot;system-value&quot;&gt;63%&lt;/Label&gt;
                 &lt;/Row&gt;
-                &lt;Progress class=&quot;system-progress&quot; value=&quot;63&quot; max=&quot;100&quot; /&gt;
+                &lt;Progress class=&quot;system-progress&quot; value=&quot;{telemetry.navigation}&quot; max=&quot;100&quot; /&gt;
             &lt;/Panel&gt;
         &lt;/Column&gt;
     &lt;/Row&gt;
 
     &lt;Row class=&quot;footer&quot;&gt;
-        &lt;Label class=&quot;sync&quot;&gt;Last synchronized 14 seconds ago&lt;/Label&gt;
+        &lt;Label class=&quot;sync&quot; text=&quot;{telemetry.last_sync}&quot; /&gt;
         &lt;Button id=&quot;route&quot;&gt;Review route&lt;/Button&gt;
     &lt;/Row&gt;
 &lt;/Page&gt;

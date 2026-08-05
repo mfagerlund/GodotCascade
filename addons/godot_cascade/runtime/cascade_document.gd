@@ -9,6 +9,7 @@ const GxmlParser := preload("res://addons/godot_cascade/markup/gxml_parser.gd")
 const GcssParser := preload("res://addons/godot_cascade/style/gcss_parser.gd")
 const CascadeBuilder := preload("res://addons/godot_cascade/runtime/cascade_builder.gd")
 const CascadeReconciler := preload("res://addons/godot_cascade/runtime/cascade_reconciler.gd")
+const BindingResolver := preload("res://addons/godot_cascade/runtime/binding_resolver.gd")
 
 @export_file("*.gxml") var markup_path := "":
 	set(value):
@@ -29,6 +30,11 @@ const CascadeReconciler := preload("res://addons/godot_cascade/runtime/cascade_r
 
 var diagnostics: Array[Dictionary] = []
 var last_reconcile_stats := {"reused": 0, "created": 0, "replaced": 0, "removed": 0}
+var binding_context: Variant:
+	set(value):
+		binding_context = value
+		if _generated_root != null:
+			refresh_bindings()
 var _generated_root: Control
 var _reload_queued := false
 var _watch_elapsed := 0.0
@@ -90,6 +96,7 @@ func reload_document() -> bool:
 			_generated_root = result["root"]
 			add_child(_generated_root)
 			_generated_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_refresh_bindings(false)
 	_publish_diagnostics()
 	return true
 
@@ -107,6 +114,12 @@ func poll_sources() -> bool:
 
 func generated_root() -> Control:
 	return _generated_root
+
+
+## Reapplies every {dot.separated.path} binding to the existing native tree.
+## Call this after mutating binding_context; compatible controls keep identity.
+func refresh_bindings() -> bool:
+	return _refresh_bindings(true)
 
 
 func _read_source(path: String, source_kind: String) -> String:
@@ -156,6 +169,58 @@ func _request_reload() -> void:
 
 func _diagnostic(severity: String, path: String, message: String) -> Dictionary:
 	return {"severity": severity, "path": path, "message": message}
+
+
+func _refresh_bindings(publish: bool) -> bool:
+	diagnostics = diagnostics.filter(func(diagnostic): return diagnostic.get("path", "") != "binding")
+	if _generated_root == null or binding_context == null:
+		if publish:
+			_publish_diagnostics()
+		return _generated_root != null
+	_apply_bindings(_generated_root)
+	if publish:
+		_publish_diagnostics()
+	return not _has_errors()
+
+
+func _apply_bindings(node: Node) -> void:
+	if node is Control:
+		var control := node as Control
+		var bindings: Dictionary = control.get_meta("cascade_bindings", {})
+		for property_name in bindings:
+			_apply_binding(control, str(property_name), str(bindings[property_name]))
+	for child in node.get_children():
+		_apply_bindings(child)
+
+
+func _apply_binding(control: Control, property_name: String, path: String) -> void:
+	var result := BindingResolver.resolve(binding_context, path)
+	if not result["found"]:
+		diagnostics.append(_diagnostic(
+			"warning",
+			"binding",
+			"%s on %s: %s" % [property_name, control.get_meta("cascade_key", control.name), result["message"]]
+		))
+		return
+	var value: Variant = result["value"]
+	if property_name == "text":
+		control.set(property_name, str(value))
+		return
+	if property_name in ["min_value", "max_value", "value"]:
+		if value is int or value is float:
+			control.set(property_name, float(value))
+			return
+		var rendered := str(value)
+		if rendered.is_valid_float():
+			control.set(property_name, rendered.to_float())
+			return
+		diagnostics.append(_diagnostic(
+			"warning",
+			"binding",
+			"%s on %s requires a number, got '%s'." % [property_name, control.get_meta("cascade_key", control.name), rendered]
+		))
+		return
+	control.set(property_name, value)
 
 
 func _capture_source_signatures() -> void:

@@ -25,6 +25,7 @@ static func _build_element(element, rules: Array, diagnostics: Array[Dictionary]
 	control.set_meta("cascade_id", element.element_id())
 	control.set_meta("cascade_classes", element.classes())
 	control.set_meta("cascade_key", "#" + element.element_id() if not element.element_id().is_empty() else key_path)
+	control.set_meta("cascade_bindings", {})
 
 	_apply_attributes(control, element.attributes, element.text, diagnostics)
 	if element.tag_name.to_lower() == "row":
@@ -238,18 +239,35 @@ static func _apply_state_declaration(
 
 static func _apply_attributes(control: Control, attributes: Dictionary, element_text: String, diagnostics: Array[Dictionary]) -> void:
 	if control is CascadeLabel or control is CascadeButton:
-		control.set("text", str(attributes.get("text", element_text)))
+		var raw_text := str(attributes.get("text", element_text))
+		if not _record_binding(control, "text", raw_text):
+			control.set("text", raw_text)
 	if not control is CascadeProgress:
 		return
 	for attribute_name in ["min", "max", "value"]:
 		if not attributes.has(attribute_name):
 			continue
 		var raw_value := str(attributes[attribute_name])
+		var property_name := "%s_value" % attribute_name if attribute_name != "value" else "value"
+		if _record_binding(control, property_name, raw_value):
+			continue
 		if not raw_value.is_valid_float():
 			diagnostics.append(_diagnostic("error", "Progress attribute '%s' requires a number, got '%s'." % [attribute_name, raw_value]))
 			continue
-		var property_name := "%s_value" % attribute_name if attribute_name != "value" else "value"
 		control.set(property_name, raw_value.to_float())
+
+
+static func _record_binding(control: Control, property_name: String, raw_value: String) -> bool:
+	var normalized := raw_value.strip_edges()
+	if normalized.length() < 3 or not normalized.begins_with("{") or not normalized.ends_with("}"):
+		return false
+	var path := normalized.substr(1, normalized.length() - 2).strip_edges()
+	if path.is_empty():
+		return false
+	var bindings: Dictionary = control.get_meta("cascade_bindings", {})
+	bindings[property_name] = path
+	control.set_meta("cascade_bindings", bindings)
+	return true
 
 
 static func _apply_edges(
