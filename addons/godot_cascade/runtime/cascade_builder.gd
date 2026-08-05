@@ -6,6 +6,7 @@ const CascadeBox := preload("res://addons/godot_cascade/layout/cascade_box.gd")
 const CascadePanel := preload("res://addons/godot_cascade/components/cascade_panel.gd")
 const CascadeLabel := preload("res://addons/godot_cascade/components/cascade_label.gd")
 const CascadeButton := preload("res://addons/godot_cascade/components/cascade_button.gd")
+const CascadeProgress := preload("res://addons/godot_cascade/components/cascade_progress.gd")
 
 
 static func build(root_element, rules: Array) -> Dictionary:
@@ -25,8 +26,7 @@ static func _build_element(element, rules: Array, diagnostics: Array[Dictionary]
 	control.set_meta("cascade_classes", element.classes())
 	control.set_meta("cascade_key", "#" + element.element_id() if not element.element_id().is_empty() else key_path)
 
-	if control is CascadeLabel or control is CascadeButton:
-		control.set("text", str(element.attributes.get("text", element.text)))
+	_apply_attributes(control, element.attributes, element.text, diagnostics)
 	if element.tag_name.to_lower() == "row":
 		control.direction = CascadeBox.FlowDirection.ROW
 
@@ -52,6 +52,8 @@ static func _create_control(tag_name: String, diagnostics: Array[Dictionary]) ->
 			return CascadeLabel.new()
 		"button":
 			return CascadeButton.new()
+		"progress":
+			return CascadeProgress.new()
 		_:
 			diagnostics.append(_diagnostic(
 				"error",
@@ -196,6 +198,11 @@ static func _apply_declaration(
 				_diagnostic_unsupported(diagnostics, line, property_name, value)
 		"font-size":
 			_set_length_property(control, "font_size", value, line, diagnostics)
+		"fill-color":
+			if control is CascadeProgress:
+				control.fill_color = _parse_color(value, line, diagnostics)
+			else:
+				_diagnostic_unsupported(diagnostics, line, property_name, value)
 		_:
 			diagnostics.append(_diagnostic("warning", "Line %s: unsupported property '%s'." % [line, property_name]))
 
@@ -227,6 +234,22 @@ static func _apply_state_declaration(
 			_set_length_property(control, "focus_ring_width", value, line, diagnostics)
 		_:
 			diagnostics.append(_diagnostic("warning", "Line %s: unsupported :%s property '%s'." % [line, state, property_name]))
+
+
+static func _apply_attributes(control: Control, attributes: Dictionary, element_text: String, diagnostics: Array[Dictionary]) -> void:
+	if control is CascadeLabel or control is CascadeButton:
+		control.set("text", str(attributes.get("text", element_text)))
+	if not control is CascadeProgress:
+		return
+	for attribute_name in ["min", "max", "value"]:
+		if not attributes.has(attribute_name):
+			continue
+		var raw_value := str(attributes[attribute_name])
+		if not raw_value.is_valid_float():
+			diagnostics.append(_diagnostic("error", "Progress attribute '%s' requires a number, got '%s'." % [attribute_name, raw_value]))
+			continue
+		var property_name := "%s_value" % attribute_name if attribute_name != "value" else "value"
+		control.set(property_name, raw_value.to_float())
 
 
 static func _apply_edges(

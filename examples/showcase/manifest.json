@@ -21,6 +21,25 @@
         ["<button>", "<Button>", "CascadeButton (BaseButton)"],
         [":hover / :active", ":hover / :pressed", "Native button state drawing"]
       ]
+    },
+    {
+      "id": "system-status",
+      "title": "System status",
+      "summary": "A compact game telemetry dashboard translating semantic browser progress elements into an owned, box-model-exact native Godot control.",
+      "viewport": [960, 540],
+      "html": "examples/showcase/system_status/reference.html",
+      "gxml": "examples/showcase/system_status/interface.gxml",
+      "gcss": "examples/showcase/system_status/styles.gcss",
+      "godot_scene": "examples/system_status_showcase.tscn",
+      "godot_screenshot": "docs/showcase/assets/system-status-godot.png",
+      "mappings": [
+        ["<progress value=\"72\">", "<Progress value=\"72\">", "CascadeProgress (Control)"],
+        ["progress track", "background + border-radius", "CascadeStyle box painting"],
+        ["::-webkit-progress-value", "fill-color", "Owned native fill drawing"],
+        ["value / max", "value / max", "Clamped normalized range"],
+        ["nested flex panels", "Row / Column / Panel", "CascadeBox native layout"],
+        ["<button>", "<Button>", "CascadeButton (BaseButton)"]
+      ]
     }
   ]
 }

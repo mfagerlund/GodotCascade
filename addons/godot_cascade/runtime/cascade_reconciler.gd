@@ -8,6 +8,7 @@ const COPIED_PROPERTIES: PackedStringArray = [
 	"autowrap_mode", "text_overrun_behavior", "max_lines_visible", "text_alignment",
 	"hover_background_color", "pressed_background_color", "disabled_background_color",
 	"disabled_text_color", "focus_ring_color", "focus_ring_width", "disabled", "toggle_mode",
+	"min_value", "max_value", "value", "fill_color", "fill_border_radius",
 ]
 
 

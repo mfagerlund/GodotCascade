@@ -5,6 +5,7 @@ const CascadeBox := preload("res://addons/godot_cascade/layout/cascade_box.gd")
 const CascadeButton := preload("res://addons/godot_cascade/components/cascade_button.gd")
 const CascadeLabel := preload("res://addons/godot_cascade/components/cascade_label.gd")
 const CascadePanel := preload("res://addons/godot_cascade/components/cascade_panel.gd")
+const CascadeProgress := preload("res://addons/godot_cascade/components/cascade_progress.gd")
 
 var _failures: Array[String] = []
 
@@ -21,6 +22,7 @@ func _run() -> void:
 	await _test_overflow_and_align_self()
 	await _test_owned_label_box()
 	await _test_panel_layout()
+	await _test_owned_progress()
 
 	if _failures.is_empty():
 		print("GodotCascade component tests passed.")
@@ -175,6 +177,22 @@ func _test_panel_layout() -> void:
 	_expect_true("CascadePanel remains a native Container", panel is Container)
 	_expect_rect("CascadePanel shares CascadeBox layout", Rect2(child.position, child.size), Rect2(10.0, 5.0, 80.0, 10.0))
 	panel.queue_free()
+
+
+func _test_owned_progress() -> void:
+	var progress := CascadeProgress.new()
+	progress.min_value = 20.0
+	progress.max_value = 120.0
+	progress.value = 70.0
+	progress.cascade_style.padding_left = 2.0
+	progress.cascade_style.padding_right = 2.0
+	root.add_child(progress)
+	await process_frame
+	_expect_float("CascadeProgress normalized ratio", progress.ratio(), 0.5)
+	_expect_float("CascadeProgress honors preferred height", progress.get_combined_minimum_size().y, 14.0)
+	progress.value = 200.0
+	_expect_float("CascadeProgress clamps value", progress.value, 120.0)
+	progress.queue_free()
 
 
 func _expect_true(label: String, actual: bool) -> void:

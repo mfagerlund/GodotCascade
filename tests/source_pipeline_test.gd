@@ -1,6 +1,7 @@
 extends SceneTree
 
 const GENERATED_SCENE := preload("res://examples/generated_showcase.tscn")
+const SYSTEM_STATUS_SCENE := preload("res://examples/system_status_showcase.tscn")
 const GxmlParser := preload("res://addons/godot_cascade/markup/gxml_parser.gd")
 const GcssParser := preload("res://addons/godot_cascade/style/gcss_parser.gd")
 const CascadeBuilder := preload("res://addons/godot_cascade/runtime/cascade_builder.gd")
@@ -65,6 +66,28 @@ func _run() -> void:
 		if diagnostic.get("severity") == "warning":
 			warnings += 1
 	_expect_int("showcase stylesheet warnings", warnings, 0)
+
+	var system_document := SYSTEM_STATUS_SCENE.instantiate()
+	root.add_child(system_document)
+	await process_frame
+	await process_frame
+	await process_frame
+	_expect_true("system status document has no errors", not _has_error_diagnostics(system_document.diagnostics))
+	var system_root: Control = system_document.generated_root()
+	var reserve_controls := _find_by_id(system_root, "reserve")
+	_expect_int("one generated reserve progress", reserve_controls.size(), 1)
+	if reserve_controls.size() == 1:
+		var reserve: Control = reserve_controls[0]
+		_expect_float("progress markup value", reserve.get("value"), 72.0)
+		_expect_float("progress markup maximum", reserve.get("max_value"), 100.0)
+		_expect_float("progress normalized ratio", reserve.call("ratio"), 0.72)
+		_expect_true("progress GCSS fill color", reserve.get("fill_color") == Color("5aa7ff"))
+	var system_progress := _find_by_class(system_root, "system-progress")
+	_expect_int("three generated system progress controls", system_progress.size(), 3)
+	if system_progress.size() == 3:
+		_expect_true("descendant progress fill purple", system_progress[0].get("fill_color") == Color("b18cff"))
+		_expect_true("descendant progress fill green", system_progress[1].get("fill_color") == Color("65d6a7"))
+		_expect_true("descendant progress fill orange", system_progress[2].get("fill_color") == Color("ffb665"))
 
 	if _failures.is_empty():
 		print("GodotCascade source pipeline tests passed.")

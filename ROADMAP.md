@@ -42,7 +42,8 @@ The roadmap favors end-to-end slices over isolated subsystems. Each milestone sh
 - [x] `CascadeButton` based on `BaseButton`
 - [x] `CascadeLabel` with wrapping and overflow rules
 - [x] `CascadePanel` semantic styled container
-- [ ] `CascadeProgress` and `CascadeImage`
+- [x] `CascadeProgress` owned range display
+- [ ] `CascadeImage` with fit and crop behavior
 - [ ] Exact/adapted/layout-only compatibility diagnostics
 - [ ] State matrix tests for hover, pressed, focused, and disabled controls
 

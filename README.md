@@ -85,6 +85,7 @@ The repository currently contains the first Phase 1 vertical slice:
 - `CascadeButton`, an owned `BaseButton` implementation with exact box-model sizing;
 - `CascadeLabel`, with a GodotCascade box around native text shaping and wrapping;
 - `CascadePanel`, the semantic styled-container component;
+- `CascadeProgress`, an owned range display with exact track, fill, padding, border, and radius drawing;
 - a recoverable `.gxml` parser and native control registry;
 - a focused `.gcss` subset with type/class/ID/descendant selectors, specificity, source order, box values, flex values, and button pseudo states;
 - `CascadeDocument`, which builds the running native UI directly from paired source files;
@@ -156,7 +157,7 @@ Add a **CascadeButton** from the Create New Node dialog after enabling the addon
 
 ## HTML parity showcase
 
-The generated [parity showcase](docs/showcase/index.html) presents each demo as a fixed-viewport HTML reference beside an actual capture of its source-generated GodotCascade scene. It also includes the executable `.gxml` and `.gcss` translation and a semantic mapping table.
+The generated [parity showcase](docs/showcase/index.html) presents each demo as a fixed-viewport HTML reference beside an actual capture of its source-generated GodotCascade scene. It includes the executable `.gxml` and `.gcss` translation and a semantic mapping table. The current demos cover the flex/box foundation and a telemetry dashboard that translates browser `<progress>` elements into owned `CascadeProgress` controls.
 
 Showcases are registered in `examples/showcase/manifest.json`. A demo keeps four artifacts together:
 

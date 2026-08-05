@@ -1,0 +1,54 @@
+<!-- Executed by CascadeDocument from the same semantic structure as reference.html. -->
+<Page class="dashboard">
+    <Column class="header">
+        <Label class="eyebrow">EXPEDITION 07 · LIVE TELEMETRY</Label>
+        <Row class="title-row">
+            <Label class="title">Helios systems</Label>
+            <Panel class="status-pill">
+                <Label class="status-text">● All systems nominal</Label>
+            </Panel>
+        </Row>
+        <Label class="subtitle">Resource allocation across the current deep-space route.</Label>
+    </Column>
+
+    <Row class="content">
+        <Panel class="overview">
+            <Label class="section-label">POWER RESERVE</Label>
+            <Row class="metric-row">
+                <Label class="metric">72%</Label>
+                <Label class="delta">+4.8% this cycle</Label>
+            </Row>
+            <Progress id="reserve" class="primary-progress" value="72" max="100" />
+            <Label class="detail">18h 42m estimated endurance at current draw</Label>
+        </Panel>
+
+        <Column class="systems">
+            <Panel class="system-card reactor">
+                <Row class="system-heading">
+                    <Label class="system-name">Reactor output</Label>
+                    <Label class="system-value">84%</Label>
+                </Row>
+                <Progress class="system-progress" value="84" max="100" />
+            </Panel>
+            <Panel class="system-card life-support">
+                <Row class="system-heading">
+                    <Label class="system-name">Life support</Label>
+                    <Label class="system-value">96%</Label>
+                </Row>
+                <Progress class="system-progress" value="96" max="100" />
+            </Panel>
+            <Panel class="system-card navigation">
+                <Row class="system-heading">
+                    <Label class="system-name">Navigation array</Label>
+                    <Label class="system-value">63%</Label>
+                </Row>
+                <Progress class="system-progress" value="63" max="100" />
+            </Panel>
+        </Column>
+    </Row>
+
+    <Row class="footer">
+        <Label class="sync">Last synchronized 14 seconds ago</Label>
+        <Button id="route">Review route</Button>
+    </Row>
+</Page>

@@ -1,0 +1,74 @@
+/* Source-native translation of reference.html. */
+.dashboard {
+    min-height: 540px;
+    padding: 34px 52px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    background: #0a0f19;
+}
+
+.header { display: flex; flex-direction: column; gap: 6px; }
+.eyebrow { color: #6ea8fe; font-size: 12px; }
+.title-row { display: flex; flex-direction: row; align-items: center; gap: 16px; }
+.title { color: #f1f5ff; font-size: 32px; flex-grow: 1; }
+.subtitle { color: #8d9bb5; font-size: 15px; }
+
+.status-pill {
+    min-width: 180px;
+    padding: 8px 12px;
+    background: #122a24;
+    border: 1px solid #245c4b;
+    border-radius: 99px;
+}
+.status-text { color: #74d6ad; font-size: 13px; }
+
+.content {
+    min-height: 285px;
+    display: flex;
+    flex-direction: row;
+    gap: 18px;
+    flex-grow: 1;
+}
+
+.overview {
+    width: 390px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    background: #131b2a;
+    border: 1px solid #2b3b57;
+    border-radius: 14px;
+}
+.section-label { color: #7f91af; font-size: 12px; }
+.metric-row { display: flex; flex-direction: row; align-items: center; gap: 14px; flex-grow: 1; }
+.metric { min-width: 130px; color: #f6f8ff; font-size: 52px; }
+.delta { min-width: 135px; color: #74d6ad; font-size: 14px; }
+.primary-progress { height: 18px; background: #263249; fill-color: #5aa7ff; border-radius: 99px; }
+.detail { color: #8d9bb5; font-size: 13px; }
+
+.systems { display: flex; flex-direction: column; gap: 12px; flex-grow: 1; }
+.system-card {
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex-grow: 1;
+    background: #111827;
+    border: 1px solid #263650;
+    border-radius: 11px;
+}
+.system-heading { display: flex; flex-direction: row; align-items: center; gap: 12px; }
+.system-name { color: #c9d5e9; font-size: 15px; flex-grow: 1; }
+.system-value { min-width: 42px; color: #f1f5ff; font-size: 15px; }
+.system-progress { height: 10px; background: #263249; border-radius: 99px; }
+.reactor .system-progress { fill-color: #b18cff; }
+.life-support .system-progress { fill-color: #65d6a7; }
+.navigation .system-progress { fill-color: #ffb665; }
+
+.footer { display: flex; flex-direction: row; align-items: center; gap: 16px; }
+.sync { color: #6f7f9b; font-size: 13px; flex-grow: 1; }
+#route { min-width: 142px; min-height: 40px; background: #1c64d1; border: 1px solid #5aa7ff; border-radius: 8px; }
+#route:hover { background: #2878e5; }
+#route:pressed { background: #174fa5; }

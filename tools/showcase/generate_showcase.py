@@ -180,6 +180,7 @@ def generate(check: bool = False) -> None:
 </body>
 </html>
 """
+    document = "\n".join(line.rstrip() for line in document.splitlines()) + "\n"
     if check:
         if not OUTPUT_PATH.exists() or OUTPUT_PATH.read_text(encoding="utf-8") != document:
             raise SystemExit(
