@@ -83,11 +83,11 @@ The parser recognizes `:hover`, `:pressed`, `:checked`, `:focused`, `:disabled`,
 
 Unlike a browser, state rules are resolved into typed component state properties during the build. Native Godot state changes then select the appropriate drawing dynamically. State precedence is `disabled` → `pressed` → `checked`/`selected` → `hover` → `focus` → base; focus-ring drawing remains visible alongside other states. `:pressed` is the GodotCascade equivalent of HTML `:active`.
 
-There is no general `Panel:hover`, `:focus-visible`, transition, or animation support yet. Pseudo-state declarations on unsupported controls warn.
+There is no general `Panel:hover`, `:focus-visible`, or pseudo-state animation support. Reconciliation-time style transitions are documented below. Pseudo-state declarations on unsupported controls warn.
 
 ### Input behavior
 
-Owned interactive controls retain native `BaseButton` input behavior. Pointer press/release and the focused `ui_accept` action activate buttons and toggles; this covers keyboard acceptance and mapped controller buttons. Checkbox and switch activation toggles their checked state, radio buttons update their native group selection, and disabled controls ignore activation. Focus traversal and controller directional navigation use Godot's native `Control` focus-neighbor behavior.
+Owned interactive controls retain native `BaseButton` input behavior. Pointer press/release and the focused `ui_accept` action activate buttons and toggles; this covers keyboard acceptance and mapped controller buttons. Checkbox and switch activation toggles their checked state, radio buttons update their native group selection, and disabled controls ignore activation. The document wires linear next/previous focus order after reconciliation; controller directional navigation continues to use Godot's native behavior. Its accessibility audit warns about unnamed interactive controls and undescribed images.
 
 When a select popup is open, `ui_up` and `ui_down` move through enabled options, `ui_accept` commits the highlighted option, and `ui_cancel` closes the popup. Pointer selection uses the same option path. Authors should provide `accessible-label` whenever visible text alone does not describe a control's purpose.
 
@@ -106,8 +106,11 @@ When a select popup is open, `ui_up` and `ui_down` move through enabled options,
 | Text | `color`, `font-size` on controls exposing the corresponding property |
 | Range display/input | `fill-color` on `Progress` and `Slider` |
 | Image | `object-fit: contain\|cover\|fill\|none` |
+| Transition | `transition: <property> <time>`, `transition-property`, `transition-duration` for reconciliation-time style changes |
 
-Lengths accept bare numbers or `px`. The typed value layer also recognizes seconds and milliseconds for transition work. Percentages, viewport units, `em`/`rem`, `calc()`, variables, and automatic values are not implemented. `padding` and `margin` accept the familiar one-to-four-value form; `gap` accepts row and optional column values. `border` must be `<width> solid <color>`. Shorthands expand before cascade winner selection.
+Lengths accept bare numbers, `px`, `vw`, or `vh`. The typed value layer recognizes seconds and milliseconds for transitions. Percentages, `em`/`rem`, `calc()`, variables, and automatic values are not implemented. `padding` and `margin` accept the familiar one-to-four-value form; `gap` accepts row and optional column values. `border` must be `<width> solid <color>`. Shorthands expand before cascade winner selection.
+
+Top-level `@media (min-width: <px>)` and `@media (max-width: <px>)` blocks condition rules on the document viewport. Compound queries, orientation, and nested media blocks are unsupported.
 
 Unsupported properties produce warnings; unsupported values for known properties generally produce errors and prevent a document swap.
 
@@ -120,7 +123,7 @@ Unsupported properties produce warnings; unsupported values for known properties
 - Margins do not collapse.
 - Final rectangles are pixel-snapped by rounding leading and trailing edges independently.
 - `overflow` supports `visible`, `clip`, and `hidden` as an alias for clipping.
-- Percentages and flex shrink/basis shorthands are roadmap work.
+- Percentages and flex shrink/basis shorthands are outside the 0.1 preview surface.
 
 ## Component support
 
@@ -131,6 +134,8 @@ Ordinary Godot `Control` children are layout-only by default. Integrations can d
 ## Hot reload
 
 `CascadeDocument` watches GXML and GCSS contents during development. A valid edit is built off-tree and reconciled by explicit `id` or structural key. Compatible native instances retain focus, signals, and runtime state. Invalid edits publish diagnostics and leave the last valid UI interactive.
+
+Authored transition metadata animates supported CascadeStyle target changes during reconciliation. Interruptions start from the currently sampled value. See [production readiness](production-readiness.md).
 
 Use an `id` when an element must retain identity after sibling reordering. Unkeyed elements use their structural path and are intended for stable local structure.
 

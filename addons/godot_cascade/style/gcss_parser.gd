@@ -17,10 +17,14 @@ class Rule:
 	var specificity := 0
 	var order := 0
 	var line := 1
+	var min_viewport_width := -INF
+	var max_viewport_width := INF
 
 
-	func matches(element) -> bool:
+	func matches(element, viewport_width: float = INF) -> bool:
 		if element == null or compounds.is_empty():
+			return false
+		if viewport_width < min_viewport_width or viewport_width > max_viewport_width:
 			return false
 		var current = element
 		var index := compounds.size() - 1
@@ -85,12 +89,29 @@ static func parse(source: String) -> Dictionary:
 			diagnostics.append(_diagnostic(cleaned, cursor, "Expected '{' after selector."))
 			break
 		var selector := cleaned.substr(cursor, open_brace - cursor).strip_edges()
-		var close_brace := cleaned.find("}", open_brace + 1)
+		var close_brace := _find_matching_brace(cleaned, open_brace)
 		if close_brace < 0:
 			diagnostics.append(_diagnostic(cleaned, open_brace, "Unclosed declaration block."))
 			break
 
-		if selector.is_empty():
+		if selector.to_lower().begins_with("@media"):
+			var condition := _parse_media_condition(selector, cleaned, selector_start, diagnostics)
+			if condition["valid"]:
+				var body_source := cleaned.substr(open_brace + 1, close_brace - open_brace - 1)
+				var nested := parse(body_source)
+				var body_location := _diagnostic(cleaned, open_brace + 1, "")
+				for diagnostic in nested["diagnostics"]:
+					var adjusted: Dictionary = diagnostic.duplicate()
+					adjusted["line"] = int(adjusted.get("line", 1)) + int(body_location["line"]) - 1
+					if int(diagnostic.get("line", 1)) == 1:
+						adjusted["column"] = int(adjusted.get("column", 1)) + int(body_location["column"]) - 1
+					diagnostics.append(adjusted)
+				for nested_rule in nested["rules"]:
+					nested_rule.min_viewport_width = condition["min"]
+					nested_rule.max_viewport_width = condition["max"]
+					nested_rule.order = rules.size()
+					rules.append(nested_rule)
+		elif selector.is_empty():
 			diagnostics.append(_diagnostic(cleaned, selector_start, "Empty selector."))
 		elif selector.contains(","):
 			diagnostics.append(_diagnostic(cleaned, selector_start, "Selector lists are not supported yet."))
@@ -109,6 +130,40 @@ static func parse(source: String) -> Dictionary:
 		cursor = close_brace + 1
 
 	return {"rules": rules, "diagnostics": diagnostics, "tokens": tokenized["tokens"]}
+
+
+static func _find_matching_brace(source: String, open_brace: int) -> int:
+	var depth := 0
+	for cursor in range(open_brace, source.length()):
+		if source[cursor] == "{":
+			depth += 1
+		elif source[cursor] == "}":
+			depth -= 1
+			if depth == 0:
+				return cursor
+	return -1
+
+
+static func _parse_media_condition(header: String, source: String, offset: int, diagnostics: Array[Dictionary]) -> Dictionary:
+	var condition := header.substr(6).strip_edges()
+	if not condition.begins_with("(") or not condition.ends_with(")"):
+		diagnostics.append(_diagnostic(source, offset, "Responsive condition must be @media (min-width: <length>) or @media (max-width: <length>)."))
+		return {"valid": false, "min": -INF, "max": INF}
+	var parts := condition.trim_prefix("(").trim_suffix(")").split(":", false)
+	if parts.size() != 2:
+		diagnostics.append(_diagnostic(source, offset, "Responsive condition requires one width comparison."))
+		return {"valid": false, "min": -INF, "max": INF}
+	var comparison := str(parts[0]).strip_edges().to_lower()
+	var raw_length := str(parts[1]).strip_edges().to_lower().trim_suffix("px").strip_edges()
+	if comparison not in ["min-width", "max-width"] or not raw_length.is_valid_float() or raw_length.to_float() < 0.0:
+		diagnostics.append(_diagnostic(source, offset, "Unsupported responsive condition '%s'." % condition))
+		return {"valid": false, "min": -INF, "max": INF}
+	var length := raw_length.to_float()
+	return {
+		"valid": true,
+		"min": length if comparison == "min-width" else -INF,
+		"max": length if comparison == "max-width" else INF,
+	}
 
 
 static func _parse_rule(

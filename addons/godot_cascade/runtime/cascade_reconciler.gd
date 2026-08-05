@@ -4,6 +4,7 @@ extends RefCounted
 
 const PropertyCache := preload("res://addons/godot_cascade/runtime/property_cache.gd")
 const ComponentRegistry := preload("res://addons/godot_cascade/runtime/component_registry.gd")
+const TransitionManager := preload("res://addons/godot_cascade/runtime/transition_manager.gd")
 
 const COPIED_PROPERTIES: PackedStringArray = [
 	"direction", "wrap", "gap", "line_gap", "justify_content", "align_items", "pixel_snap",
@@ -90,8 +91,11 @@ static func _reconcile_children(existing: Control, desired: Control, stats: Dict
 static func _copy_properties(existing: Control, desired: Control) -> void:
 	existing.name = desired.name
 	existing.visible = desired.visible
-	for metadata_name in ["cascade_element_type", "cascade_id", "cascade_classes", "cascade_key", "cascade_bindings", "cascade_events", "cascade_binding_scope", "cascade_source_path", "cascade_source_line", "cascade_source_column", "cascade_explicit_accessible_label", "cascade_compatibility_tier"]:
-		existing.set_meta(metadata_name, desired.get_meta(metadata_name))
+	for metadata_name in ["cascade_element_type", "cascade_id", "cascade_classes", "cascade_key", "cascade_bindings", "cascade_events", "cascade_binding_scope", "cascade_source_path", "cascade_source_line", "cascade_source_column", "cascade_transition_properties", "cascade_transition_duration", "cascade_explicit_accessible_label", "cascade_compatibility_tier"]:
+		if desired.has_meta(metadata_name):
+			existing.set_meta(metadata_name, desired.get_meta(metadata_name))
+		elif existing.has_meta(metadata_name):
+			existing.remove_meta(metadata_name)
 	for metadata_name in ["cascade_position", "cascade_left", "cascade_top", "cascade_right", "cascade_bottom"]:
 		if desired.has_meta(metadata_name):
 			existing.set_meta(metadata_name, desired.get_meta(metadata_name))
@@ -105,7 +109,7 @@ static func _copy_properties(existing: Control, desired: Control) -> void:
 
 	if _has_property(existing, "cascade_style") and _has_property(desired, "cascade_style"):
 		var desired_style: CascadeStyle = desired.get("cascade_style")
-		existing.set("cascade_style", desired_style.duplicate(true))
+		TransitionManager.apply_style(existing, desired_style)
 	if existing.has_method("set_range_values") and desired.has_method("set_range_values"):
 		existing.call("set_range_values", desired.get("min_value"), desired.get("max_value"), desired.get("value"))
 

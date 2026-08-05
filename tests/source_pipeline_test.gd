@@ -31,6 +31,7 @@ func _run() -> void:
 	_test_gxml_parser()
 	_test_gcss_specificity()
 	_test_style_foundations()
+	_test_responsive_and_transition_styles()
 	_test_form_controls_pipeline()
 	_test_select_pipeline()
 	_test_slider_pipeline()
@@ -182,7 +183,7 @@ func _test_gcss_specificity() -> void:
 
 
 func _test_style_foundations() -> void:
-	var tokenized := GcssTokenizer.tokenize("Button > .label { transition-duration: 150ms; @bad: 1; }")
+	var tokenized := GcssTokenizer.tokenize("Button > .label { transition-duration: 150ms; ?bad: 1; }")
 	_expect_true("GCSS tokenizer emits source tokens", tokenized["tokens"].size() > 8)
 	_expect_int("GCSS tokenizer recovers after an unexpected character", tokenized["diagnostics"].size(), 1)
 	_expect_int("first GCSS token starts on line one", tokenized["tokens"][0]["line"], 1)
@@ -248,6 +249,30 @@ func _test_style_foundations() -> void:
 	_expect_float("theme adapter maps content margins", native_box.content_margin_left, 8.0)
 	_expect_true("theme adapter declares adapted tier", native.get_meta("cascade_compatibility_tier") == "adapted")
 	native.free()
+
+
+func _test_responsive_and_transition_styles() -> void:
+	var markup := GxmlParser.parse("<Page><Panel id=\"responsive\"/></Page>")
+	var stylesheet := GcssParser.parse("""Panel { width: 50vw; transition: background-color 150ms; }
+		@media (max-width: 700px) { Panel { width: 80vw; background: #ff6644; } }
+		@media (min-width: 701px) { Panel { background: #4da3ff; } }""")
+	_expect_int("responsive stylesheet diagnostics", stylesheet["diagnostics"].size(), 0)
+	var narrow_build := CascadeBuilder.build(markup["root"], stylesheet["rules"], null, Vector2(600.0, 400.0))
+	_expect_int("narrow responsive build diagnostics", narrow_build["diagnostics"].size(), 0)
+	if narrow_build["root"] != null:
+		var narrow: Control = _find_by_id(narrow_build["root"], "responsive")[0]
+		_expect_float("narrow media rule resolves viewport width", narrow.get("cascade_style").preferred_width, 480.0)
+		_expect_true("narrow media rule wins background", narrow.get("cascade_style").background_color == Color("ff6644"))
+		_expect_float("transition duration normalizes to seconds", narrow.get_meta("cascade_transition_duration"), 0.15)
+		_expect_true("transition shorthand maps style property", "background_color" in narrow.get_meta("cascade_transition_properties"))
+		narrow_build["root"].free()
+	var wide_build := CascadeBuilder.build(markup["root"], stylesheet["rules"], null, Vector2(1000.0, 600.0))
+	_expect_int("wide responsive build diagnostics", wide_build["diagnostics"].size(), 0)
+	if wide_build["root"] != null:
+		var wide: Control = _find_by_id(wide_build["root"], "responsive")[0]
+		_expect_float("wide viewport unit resolves", wide.get("cascade_style").preferred_width, 500.0)
+		_expect_true("wide media rule wins background", wide.get("cascade_style").background_color == Color("4da3ff"))
+		wide_build["root"].free()
 
 
 func _test_form_controls_pipeline() -> void:

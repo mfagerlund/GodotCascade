@@ -17,6 +17,8 @@ const CascadePanel := preload("res://addons/godot_cascade/components/cascade_pan
 const CascadeProgress := preload("res://addons/godot_cascade/components/cascade_progress.gd")
 const CascadeImage := preload("res://addons/godot_cascade/components/cascade_image.gd")
 const CompatibilityRegistry := preload("res://addons/godot_cascade/runtime/compatibility_registry.gd")
+const TransitionManager := preload("res://addons/godot_cascade/runtime/transition_manager.gd")
+const AccessibilityAudit := preload("res://addons/godot_cascade/runtime/accessibility_audit.gd")
 
 var _failures: Array[String] = []
 
@@ -40,6 +42,8 @@ func _run() -> void:
 	await _test_owned_progress()
 	_test_owned_image_geometry()
 	_test_compatibility_diagnostics()
+	await _test_style_transitions()
+	await _test_accessibility_navigation_audit()
 	_test_interactive_state_precedence()
 	await _test_owned_checkbox()
 	await _test_native_radio_group()
@@ -368,6 +372,55 @@ func _test_compatibility_diagnostics() -> void:
 	_expect_true("adapted property reports inexact mapping", str(CompatibilityRegistry.diagnose_property(adapted, "color").get("message")).contains("adapted native mapping"))
 	_expect_true("unsupported adapted property is explicit", str(CompatibilityRegistry.diagnose_property(adapted, "background").get("message")).contains("not supported"))
 	adapted.free()
+
+
+func _test_style_transitions() -> void:
+	var panel := CascadePanel.new()
+	panel.cascade_style.background_color = Color.BLACK
+	panel.set_meta("cascade_transition_properties", PackedStringArray(["background_color"]))
+	panel.set_meta("cascade_transition_duration", 0.05)
+	root.add_child(panel)
+	var desired := panel.cascade_style.duplicate(true)
+	desired.background_color = Color.WHITE
+	TransitionManager.apply_style(panel, desired)
+	_expect_true("transition starts from current sampled value", panel.cascade_style.background_color == Color.BLACK)
+	await create_timer(0.08).timeout
+	_expect_true("transition reaches authored target", panel.cascade_style.background_color.is_equal_approx(Color.WHITE))
+
+	panel.set_meta("cascade_transition_duration", 0.2)
+	var interrupted_target := panel.cascade_style.duplicate(true)
+	interrupted_target.background_color = Color("4da3ff")
+	TransitionManager.apply_style(panel, interrupted_target)
+	await create_timer(0.05).timeout
+	var sampled := panel.cascade_style.background_color
+	var final_target := panel.cascade_style.duplicate(true)
+	final_target.background_color = Color("ff6644")
+	TransitionManager.apply_style(panel, final_target)
+	_expect_true("interruption replaces target without resetting value", panel.cascade_style.background_color.is_equal_approx(sampled))
+	await create_timer(0.25).timeout
+	_expect_true("interrupted transition reaches replacement target", panel.cascade_style.background_color.is_equal_approx(Color("ff6644")))
+	panel.queue_free()
+
+
+func _test_accessibility_navigation_audit() -> void:
+	var container := CascadeBox.new()
+	var first := CascadeButton.new()
+	var second := CascadeButton.new()
+	first.text = "First"
+	second.text = "Second"
+	first.accessibility_name = "First action"
+	second.accessibility_name = "Second action"
+	container.add_child(first)
+	container.add_child(second)
+	root.add_child(container)
+	await process_frame
+	_expect_float("linear navigation wires two focusable controls", AccessibilityAudit.apply_linear_navigation(container), 2.0)
+	_expect_true("linear navigation assigns next neighbor", not first.focus_next.is_empty())
+	_expect_true("named controls pass accessibility audit", AccessibilityAudit.audit(container).is_empty())
+	second.accessibility_name = ""
+	var diagnostics := AccessibilityAudit.audit(container)
+	_expect_true("missing accessible name is diagnosed", diagnostics.size() == 1 and diagnostics[0]["severity"] == "warning")
+	container.queue_free()
 
 
 func _test_interactive_state_precedence() -> void:

@@ -13,7 +13,7 @@
     font-size: 30px;
 }
 
-.hero { height: 38px; }
+.hero { height: 7vh; }
 
 .layout-badge {
     position: absolute;
@@ -88,3 +88,12 @@
 #inspect:hover { background: #475467; }
 #inspect:pressed { background: #1d2939; }
 #inspect:focused { border-color: #84adff; border-width: 2px; }
+
+@media (max-width: 700px) {
+    .page { padding: 24px; gap: 16px; }
+    .cards {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto auto;
+        row-gap: 12px;
+    }
+}

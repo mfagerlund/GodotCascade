@@ -4,9 +4,8 @@ extends Resource
 
 ## Shared computed-style surface for box-model properties.
 ##
-## Today this resource is editable and reusable. The future stylesheet engine will
-## produce the same shape as immutable computed style, letting controls consume CSS
-## values without separate property implementations.
+## The stylesheet builder produces this same shape as per-control computed style,
+## letting native controls consume GCSS values without parallel property models.
 
 signal invalidated(flags: int)
 

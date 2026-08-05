@@ -17,7 +17,7 @@ The GCSS pipeline keeps syntax, selector matching, typed values, computed declar
 | Color | `#4da3ff`, `rebeccapurple` | Godot `Color` |
 | String | `"menu"`, `'menu'` | unquoted text |
 
-Time values are available to the value layer now; transition properties consume them in the production-readiness phase.
+Transition properties consume time values and normalize seconds/milliseconds to a duration in seconds.
 
 ## Selectors and inheritance
 

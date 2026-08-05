@@ -19,14 +19,18 @@ const PropertyCache := preload("res://addons/godot_cascade/runtime/property_cach
 const ComputedStyleCache := preload("res://addons/godot_cascade/style/computed_style_cache.gd")
 const ComponentRegistry := preload("res://addons/godot_cascade/runtime/component_registry.gd")
 const BindingResolver := preload("res://addons/godot_cascade/runtime/binding_resolver.gd")
+const GcssValue := preload("res://addons/godot_cascade/style/gcss_value.gd")
+const TransitionManager := preload("res://addons/godot_cascade/runtime/transition_manager.gd")
 
 const INHERITED_PROPERTIES: PackedStringArray = ["color", "font-size"]
+static var _active_viewport_size := Vector2.ZERO
 
 
-static func build(root_element, rules: Array, binding_context: Variant = null) -> Dictionary:
+static func build(root_element, rules: Array, binding_context: Variant = null, viewport_size: Vector2 = Vector2.ZERO) -> Dictionary:
 	var diagnostics: Array[Dictionary] = []
 	var button_groups: Dictionary = {}
-	var rule_index := _index_rules(rules)
+	_active_viewport_size = viewport_size
+	var rule_index := _index_rules(rules, viewport_size)
 	var root_control := _build_element(root_element, rule_index, diagnostics, "0", button_groups, binding_context)
 	return {"root": root_control, "diagnostics": diagnostics}
 
@@ -56,6 +60,8 @@ static func _build_element(
 	control.set_meta("cascade_binding_scope", binding_scope)
 	control.set_meta("cascade_source_line", element.source_line)
 	control.set_meta("cascade_source_column", element.source_column)
+	control.set_meta("cascade_transition_properties", PackedStringArray())
+	control.set_meta("cascade_transition_duration", 0.0)
 	control.set_meta("cascade_explicit_accessible_label", false)
 	control.set_meta("cascade_compatibility_tier", "layout-only" if ComponentRegistry.has(element.tag_name) else "exact")
 
@@ -187,7 +193,7 @@ static func _create_control(tag_name: String, diagnostics: Array[Dictionary]) ->
 
 
 static func _compute_declarations(element, rule_index: Dictionary) -> Dictionary:
-	var cache_key := "%s|%s" % [rule_index.get("revision", 0), _element_signature(element)]
+	var cache_key := "%s|%s|%s" % [rule_index.get("revision", 0), rule_index.get("viewport_width", INF), _element_signature(element)]
 	if ComputedStyleCache.has(cache_key):
 		return ComputedStyleCache.retrieve(cache_key)
 	var winners := _compute_declarations_uncached(element, rule_index)
@@ -199,7 +205,7 @@ static func _compute_declarations(element, rule_index: Dictionary) -> Dictionary
 static func _compute_declarations_uncached(element, rule_index: Dictionary) -> Dictionary:
 	var winners := {}
 	for rule in _candidate_rules(element, rule_index):
-		if not rule.matches(element):
+		if not rule.matches(element, float(rule_index.get("viewport_width", INF))):
 			continue
 		var state: String = rule.pseudo_state
 		if not winners.has(state):
@@ -273,8 +279,9 @@ static func _element_dependencies(element) -> PackedStringArray:
 	return result
 
 
-static func _index_rules(rules: Array) -> Dictionary:
-	var index := {"universal": [], "types": {}, "classes": {}, "ids": {}, "revision": _rules_revision(rules)}
+static func _index_rules(rules: Array, viewport_size: Vector2) -> Dictionary:
+	var viewport_width := viewport_size.x if viewport_size.x > 0.0 else INF
+	var index := {"universal": [], "types": {}, "classes": {}, "ids": {}, "revision": _rules_revision(rules), "viewport_width": viewport_width}
 	for rule in rules:
 		var compound := str(rule.compounds[-1])
 		var rule_id := _compound_token(compound, "#")
@@ -298,7 +305,7 @@ static func _index_rules(rules: Array) -> Dictionary:
 static func _rules_revision(rules: Array) -> int:
 	var parts := PackedStringArray()
 	for rule in rules:
-		parts.append("%s|%s|%s|%s|%s" % [rule.selector, rule.pseudo_state, rule.declarations, rule.declaration_locations, rule.order])
+		parts.append("%s|%s|%s|%s|%s|%s|%s" % [rule.selector, rule.pseudo_state, rule.declarations, rule.declaration_locations, rule.order, rule.min_viewport_width, rule.max_viewport_width])
 	return hash("\n".join(parts))
 
 
@@ -386,6 +393,25 @@ static func _expand_shorthands(declarations: Dictionary) -> Dictionary:
 				expanded["column-gap"] = tokens[0] if tokens.size() == 1 else tokens[1]
 				origins["row-gap"] = property_name
 				origins["column-gap"] = property_name
+			else:
+				expanded[property_name] = value
+				origins[property_name] = property_name
+		elif property_name == "transition":
+			var tokens := _split_whitespace(value)
+			if tokens.size() == 2:
+				var first = GcssValue.parse(tokens[0])
+				var second = GcssValue.parse(tokens[1])
+				var duration_index := 0 if first.kind == GcssValue.Kind.TIME else 1
+				var duration = first if duration_index == 0 else second
+				var transition_property := tokens[1 - duration_index]
+				if duration.kind == GcssValue.Kind.TIME:
+					expanded["transition-property"] = transition_property
+					expanded["transition-duration"] = tokens[duration_index]
+					origins["transition-property"] = property_name
+					origins["transition-duration"] = property_name
+				else:
+					expanded[property_name] = value
+					origins[property_name] = property_name
 			else:
 				expanded[property_name] = value
 				origins[property_name] = property_name
@@ -528,6 +554,25 @@ static func _apply_declaration(
 				"fill": CascadeImage.FitMode.FILL,
 				"none": CascadeImage.FitMode.NONE,
 			}, line, diagnostics)
+		"transition-property":
+			var transition_properties := PackedStringArray()
+			for authored_name in value.split(",", false):
+				var normalized_name := str(authored_name).strip_edges().to_lower()
+				if normalized_name == "all":
+					transition_properties.append("all")
+					continue
+				var mapped := TransitionManager.mapped_property(normalized_name)
+				if mapped.is_empty():
+					_diagnostic_bad_value(diagnostics, line, property_name, normalized_name)
+					continue
+				transition_properties.append(mapped)
+			control.set_meta("cascade_transition_properties", transition_properties)
+		"transition-duration":
+			var duration = GcssValue.parse(value)
+			if duration.kind != GcssValue.Kind.TIME or duration.number < 0.0:
+				_diagnostic_bad_value(diagnostics, line, property_name, value)
+			else:
+				control.set_meta("cascade_transition_duration", duration.milliseconds() / 1000.0)
 		"position":
 			if value.to_lower() in ["relative", "absolute"]:
 				control.set_meta("cascade_position", value.to_lower())
@@ -900,6 +945,13 @@ static func _set_number_property(target: Object, property_name: String, value: S
 
 static func _parse_length(value: String) -> float:
 	var normalized := value.strip_edges().to_lower()
+	if normalized.ends_with("vw") or normalized.ends_with("vh"):
+		var axis := "vw" if normalized.ends_with("vw") else "vh"
+		var magnitude := normalized.trim_suffix(axis).strip_edges()
+		if not magnitude.is_valid_float():
+			return NAN
+		var reference := _active_viewport_size.x if axis == "vw" else _active_viewport_size.y
+		return NAN if reference <= 0.0 else magnitude.to_float() * reference / 100.0
 	if normalized.ends_with("px"):
 		normalized = normalized.trim_suffix("px").strip_edges()
 	if not normalized.is_valid_float():

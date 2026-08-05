@@ -29,6 +29,6 @@ Before the adapter enters the public component set, automated and manual checks 
 
 ## Initial source surface
 
-The intended GXML attributes are `text`, `placeholder`, `multiline`, `read-only`, `disabled`, `secret`, `max-length`, `accessible-label`, and `accessible-description`. Event and two-way value binding wait for the event-binding milestone; the first adapter will not invent expression syntax.
+The intended GXML attributes are `text`, `placeholder`, `multiline`, `read-only`, `disabled`, `secret`, `max-length`, `accessible-label`, and `accessible-description`. The adapter can use the existing `on-*` signal-to-method contract; two-way value binding remains outside the preview and will not invent expression syntax.
 
 Exact ownership is intentionally deferred. Replacing native editing would require equivalent tests on every supported platform and input method, not merely matching its appearance.

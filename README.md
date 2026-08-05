@@ -5,7 +5,7 @@ GodotCascade is an experimental retained-mode UI framework for Godot 4. It bring
 The goal is to make game UI faster to build and easier to maintain without embedding a browser or replacing Godot's renderer. A GodotCascade interface remains a tree of native controls, so it can continue to use Godot's signals, themes, input, rendering, and editor tooling.
 
 > [!IMPORTANT]
-> GodotCascade is at the prototype stage. A focused markup/stylesheet subset now executes the showcase end to end, while the broader language and APIs remain unstable and incomplete.
+> GodotCascade 0.1 is a public preview for Godot 4.7. Its focused, documented source surface is executable end to end; it is not a browser engine, and APIs outside the preview references remain unstable.
 
 ## Why GodotCascade?
 
@@ -91,9 +91,9 @@ The repository currently contains several working vertical slices:
 - keyed `Repeat` collections, `on-*` event methods, and registered custom-component lifecycle hooks;
 - three source-generated parity scenes covering layout, media, components, form controls, and bound telemetry data.
 
-Two-way binding adapters and broader property coverage remain roadmap work. Focused one-way properties, keyed repeats, event-to-method bindings, source importers, and editor preview/debug tooling are implemented.
+Two-way binding and browser-wide property coverage are intentionally outside the 0.1 preview. Focused one-way properties, keyed repeats, event-to-method bindings, source importers, and editor preview/debug tooling are implemented.
 
-## Trying the prototype
+## Trying the preview
 
 1. Open this folder with Godot 4.7, the currently tested editor version.
 2. Enable **GodotCascade** under **Project → Project Settings → Plugins**.
@@ -143,7 +143,7 @@ Button:disabled { background: #1f2937; color: #98a2b3; }
 Checkbox:checked { background: #1d2939; color: #ffffff; }
 ```
 
-This is a focused subset, not browser-wide pseudo-class support. Owned interactive controls share native state precedence and styling; `:open`, transitions, and hover on arbitrary controls are roadmap work. See the [current support reference](docs/current-support.md) for the exact element, selector, property, and state matrices.
+This is a focused subset, not browser-wide pseudo-class support. Owned interactive controls share native state precedence and styling; `:open` is supported for selects, while arbitrary-control hover and pseudo-state animation are outside the preview. Reconciliation-time property transitions have a separate interruption contract. See the [current support reference](docs/current-support.md) for the exact element, selector, property, and state matrices.
 
 Run the current headless smoke test with:
 
@@ -213,6 +213,12 @@ python tools/showcase/generate_showcase.py
 python tools/showcase/generate_showcase.py --check
 ```
 
+Run the production performance/allocation gate with:
+
+```powershell
+godot --headless --path . --script benchmarks/pipeline_benchmark.gd
+```
+
 ## Architecture
 
 ```text
@@ -222,7 +228,7 @@ GXML + GCSS ──→ parsers ──→ off-tree native candidate
 binding context ──→ reconciler ──→ live native Controls
                                       │
                                       ▼
-                               flex layout engine
+                           flex/grid layout engines
 ```
 
 The major boundaries are intentionally separate:
@@ -234,7 +240,7 @@ The major boundaries are intentionally separate:
 - **Reconciler:** updates existing Godot nodes while preserving runtime state and signal connections.
 - **Tooling:** imports source diagnostics, hosts the watched native preview, exposes Inspector/debug snapshots and GXML source navigation, and generates the HTML/native parity report.
 
-See the [documentation index](docs/README.md), [architecture](docs/architecture.md), [current support reference](docs/current-support.md), and [roadmap](ROADMAP.md).
+See [getting started](docs/getting-started.md), the [documentation index](docs/README.md), [architecture](docs/architecture.md), [current support reference](docs/current-support.md), and [roadmap](ROADMAP.md).
 
 ## Project principles
 

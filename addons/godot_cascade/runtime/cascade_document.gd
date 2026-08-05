@@ -11,6 +11,7 @@ const CascadeBuilder := preload("res://addons/godot_cascade/runtime/cascade_buil
 const CascadeReconciler := preload("res://addons/godot_cascade/runtime/cascade_reconciler.gd")
 const BindingResolver := preload("res://addons/godot_cascade/runtime/binding_resolver.gd")
 const ComponentRegistry := preload("res://addons/godot_cascade/runtime/component_registry.gd")
+const AccessibilityAudit := preload("res://addons/godot_cascade/runtime/accessibility_audit.gd")
 
 @export_file("*.gxml") var markup_path := "":
 	set(value):
@@ -28,6 +29,8 @@ const ComponentRegistry := preload("res://addons/godot_cascade/runtime/component
 		if is_inside_tree():
 			set_process(watch_sources)
 @export_range(0.05, 5.0, 0.05) var watch_interval := 0.25
+@export var audit_accessibility := true
+@export var wrap_focus_navigation := false
 
 var diagnostics: Array[Dictionary] = []
 var last_reconcile_stats := {"reused": 0, "created": 0, "replaced": 0, "removed": 0}
@@ -46,10 +49,12 @@ var _reload_queued := false
 var _watch_elapsed := 0.0
 var _source_signatures := {}
 var _published_diagnostic_keys := {}
+var _last_build_size := Vector2.ZERO
 
 
 func _ready() -> void:
 	set_process(watch_sources)
+	resized.connect(_on_document_resized)
 	if load_on_ready:
 		reload_document()
 	else:
@@ -67,6 +72,13 @@ func _process(delta: float) -> void:
 		return
 	_watch_elapsed = 0.0
 	poll_sources()
+
+
+func _on_document_resized() -> void:
+	if _generated_root == null or size.x <= 0.0 or size.is_equal_approx(_last_build_size) or _reload_queued:
+		return
+	_reload_queued = true
+	reload_document.call_deferred()
 
 
 func reload_document() -> bool:
@@ -87,7 +99,8 @@ func reload_document() -> bool:
 		_publish_diagnostics()
 		return false
 
-	var build_result := CascadeBuilder.build(markup_result["root"], style_result["rules"], binding_context)
+	_last_build_size = size
+	var build_result := CascadeBuilder.build(markup_result["root"], style_result["rules"], binding_context, size)
 	_append_diagnostics(build_result["diagnostics"], "builder")
 	if _has_errors() or build_result["root"] == null:
 		_publish_diagnostics()
@@ -113,6 +126,12 @@ func reload_document() -> bool:
 			ComponentRegistry.mount_tree(_generated_root)
 	_refresh_bindings(false)
 	_refresh_events(false)
+	AccessibilityAudit.apply_linear_navigation(_generated_root, wrap_focus_navigation)
+	if audit_accessibility:
+		for diagnostic in AccessibilityAudit.audit(_generated_root):
+			var stamped: Dictionary = diagnostic.duplicate()
+			stamped["path"] = markup_path
+			diagnostics.append(stamped)
 	_publish_diagnostics()
 	return true
 

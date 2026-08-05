@@ -81,7 +81,7 @@ static func tokenize(source: String) -> Dictionary:
 			continue
 		cursor += 1
 		tokens.append(_token(Type.DELIMITER, character, source, start, cursor))
-		if character not in ["/", "*", "+", "-"]:
+		if character not in ["/", "*", "+", "-", "@"]:
 			diagnostics.append(_diagnostic(source, start, cursor, "Unexpected character '%s'; tokenizer recovered at the next token." % character))
 	return {"tokens": tokens, "diagnostics": diagnostics}
 

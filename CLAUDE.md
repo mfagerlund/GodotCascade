@@ -4,9 +4,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-GodotCascade is a prototype retained-mode UI framework for Godot 4: a declarative markup language
-(`.gxml`), a CSS-inspired stylesheet subset (`.gcss`), and a flex box model that produce **native Godot
-`Control` nodes**. It is not a browser engine — see the "Non-goals" section of `README.md`.
+GodotCascade 0.1 is a public-preview retained-mode UI framework for Godot 4: a declarative markup
+language (`.gxml`), a CSS-inspired stylesheet subset (`.gcss`), and native flex/grid/stack layout that
+produce **native Godot `Control` nodes**. It is not a browser engine — see the "Non-goals" section of
+`README.md`.
 
 Everything is GDScript; there is no C# in this project despite the mono editor build being used.
 
@@ -68,19 +69,21 @@ The generator itself is stdlib-only Python.
                                         BindingResolver applies {paths}
 ```
 
-`CascadeBox` (and the owned components) then run `FlexLayoutEngine` to turn styles into rectangles.
+The layout containers and owned components then turn computed styles into native Godot geometry and
+drawing.
 
 | Layer | File | Role |
 | --- | --- | --- |
 | Markup | `addons/godot_cascade/markup/gxml_parser.gd` | XML → `Element` tree + diagnostics. No nodes created. |
 | Style | `addons/godot_cascade/style/gcss_parser.gd` | Stylesheet → `Rule` objects with specificity/order. Selector matching lives on `Rule.matches()`. |
 | Style surface | `addons/godot_cascade/style/cascade_style.gd` | `CascadeStyle` resource — the box-model property surface every control consumes, with DRAW/MEASURE/ARRANGE invalidation flags. |
-| Build | `addons/godot_cascade/runtime/cascade_builder.gd` | Element + rules → native controls. Owns the tag→control factory and the entire supported-property registry. |
-| Reconcile | `addons/godot_cascade/runtime/cascade_reconciler.gd` | Merges a candidate tree into the live one by key, preserving node identity. |
-| Host | `addons/godot_cascade/runtime/cascade_document.gd` | The `Control` you place in a scene: source watching, transactional reload, diagnostics, bindings. |
+| Build | `addons/godot_cascade/runtime/cascade_builder.gd` | Element + rules → native controls. Owns built-in tags, computed declarations, and the supported-property registry. |
+| Reconcile | `addons/godot_cascade/runtime/cascade_reconciler.gd` | Merges a candidate tree into the live one by key, preserving node identity and applying transitions. |
+| Host | `addons/godot_cascade/runtime/cascade_document.gd` | The `Control` you place in a scene: responsive rebuilds, source watching, transactional reload, diagnostics, bindings, events, and accessibility checks. |
 | Layout | `addons/godot_cascade/layout/flex_layout_engine.gd` | Pure geometry: `LayoutItem[]` + `LayoutRequest` → `Rect2[]`. Knows nothing about the scene tree. |
 | Adapter | `addons/godot_cascade/layout/cascade_box.gd` | The `Container` that measures children and calls the engine. |
 | Components | `addons/godot_cascade/components/*.gd` | Owned controls (see ADR 0001). |
+| Tooling | `addons/godot_cascade/editor/*.gd` | Source importers, live preview, Inspector summaries, layout snapshots, and source navigation. |
 
 Documentation starts at `docs/README.md`. The exact executable language matrix is in
 `docs/current-support.md`; do not infer support from CSS or HTML familiarity. Design docs are
@@ -109,7 +112,8 @@ These are the things that bite when changing code across files.
 1. Handle it in `CascadeBuilder._apply_declaration()` (or `_apply_state_declaration()` for pseudo states).
 2. **Add the target property name to `CascadeReconciler.COPIED_PROPERTIES`.** Anything missing from that
    list is applied on first build but silently not updated on hot reload — the most common bug here.
-   `cascade_style` is handled separately (deep-duplicated per node, so styles are never shared instances).
+   `cascade_style` is handled separately by `TransitionManager`; immediate updates still use per-node
+   duplicates, while authored transitions mutate the live style from its sampled value.
 
 ### Identity and reconciliation
 
@@ -132,20 +136,18 @@ on every refresh.
 
 Only exact `{dot.separated.path}` attribute values, stored as `cascade_bindings` metadata and applied after
 build and after reconcile. `BindingResolver` walks dictionaries, arrays, and object properties only — no
-expressions, no method calls. Supported today: `text` on Label/Button, `min`/`max`/`value` on Progress.
-Assigning `binding_context` refreshes automatically; mutating nested state requires `refresh_bindings()`.
+expressions or method calls. `Repeat` provides keyed collection expansion, and `on-*` attributes resolve
+methods through `event_context`. Assigning `binding_context` refreshes automatically; mutating nested state
+requires `refresh_bindings()`.
 
 ### Current GCSS subset limits (deliberate, not bugs)
 
-No selector lists (`a, b`), no direct-child combinator (`>`), no shorthand beyond `padding`/`margin`/`border`,
-no inheritance. `border` must be exactly `<width> solid <color>`. Lengths accept `px` or bare numbers only.
-One trailing pseudo state per selector, from `hover|pressed|focused|disabled|selected`, and pseudo states
-currently only apply to `CascadeButton`. Check `ROADMAP.md` before "fixing" a gap — several are scheduled.
-
-The settings-menu/form-control milestone in `ROADMAP.md` is in progress: shared state adapters,
-checkbox, radio-button, switch, select, and slider behavior, the native input-state matrix, and a
-parity showcase are implemented. The adapted text-input boundary is documented; implementation waits
-for the event/two-way-binding milestone.
+The authoritative limits are in `docs/current-support.md`; do not duplicate its matrices here. In brief,
+the preview supports descendant and direct-child selectors, focused inheritance, box/border/gap and
+transition shorthands, width media conditions, and `px`/`vw`/`vh` lengths. Selector lists, arbitrary CSS,
+compound media queries, and browser-wide pseudo-state behavior remain unsupported. The settings-menu
+controls and their input matrix are complete. `TextInput` remains an explicitly adapted future boundary,
+documented in `docs/adapted-text-input-plan.md`.
 
 ### GDScript style in this repo
 

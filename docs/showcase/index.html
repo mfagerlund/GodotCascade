@@ -121,7 +121,7 @@
 
     .hero {
       position: relative;
-      height: 38px;
+      height: 7vh;
     }
 
     h1 {
@@ -252,6 +252,11 @@
     button:hover { background: #475467; }
     button:active { background: #1d2939; }
     button:focus-visible { outline: 2px solid #84adff; outline-offset: -2px; }
+
+    @media (max-width: 700px) {
+      .page { padding: 24px; gap: 16px; }
+      .cards { grid-template-columns: 1fr; grid-template-rows: auto auto auto; row-gap: 12px; }
+    }
   &lt;/style&gt;
 &lt;/head&gt;
 &lt;body&gt;
@@ -302,7 +307,7 @@
         </div>
         <table>
           <thead><tr><th>HTML/CSS</th><th>GodotCascade source</th><th>Runtime</th></tr></thead>
-          <tbody><tr><td><code>&lt;main&gt;</code></td><td><code>&lt;Page&gt;</code></td><td><code>CascadeBox (column)</code></td></tr><tr><td><code>display: grid</code></td><td><code>&lt;Grid&gt;</code></td><td><code>CascadeGrid track layout</code></td></tr><tr><td><code>1fr 1fr 1fr</code></td><td><code>grid-template-columns</code></td><td><code>Fractional track resolution</code></td></tr><tr><td><code>.cards &gt; .card</code></td><td><code>.cards &gt; .card</code></td><td><code>Direct-child selector matching</code></td></tr><tr><td><code>position: absolute</code></td><td><code>&lt;Stack&gt; + right/top</code></td><td><code>Overlay inset placement</code></td></tr><tr><td><code>visual media</code></td><td><code>&lt;Image src=&quot;res://…&quot;&gt;</code></td><td><code>CascadeImage cover crop</code></td></tr><tr><td><code>padding / gap</code></td><td><code>padding / column-gap</code></td><td><code>CascadeStyle + layout request</code></td></tr><tr><td><code>&lt;button&gt;</code></td><td><code>&lt;Button&gt;</code></td><td><code>CascadeButton (BaseButton)</code></td></tr><tr><td><code>:hover / :active</code></td><td><code>:hover / :pressed</code></td><td><code>Native button state drawing</code></td></tr></tbody>
+          <tbody><tr><td><code>&lt;main&gt;</code></td><td><code>&lt;Page&gt;</code></td><td><code>CascadeBox (column)</code></td></tr><tr><td><code>display: grid</code></td><td><code>&lt;Grid&gt;</code></td><td><code>CascadeGrid track layout</code></td></tr><tr><td><code>1fr 1fr 1fr</code></td><td><code>grid-template-columns</code></td><td><code>Fractional track resolution</code></td></tr><tr><td><code>.cards &gt; .card</code></td><td><code>.cards &gt; .card</code></td><td><code>Direct-child selector matching</code></td></tr><tr><td><code>@media (max-width: 700px)</code></td><td><code>@media (max-width: 700px)</code></td><td><code>Viewport-conditional recomputation</code></td></tr><tr><td><code>7vh</code></td><td><code>7vh</code></td><td><code>Viewport-aware length resolution</code></td></tr><tr><td><code>position: absolute</code></td><td><code>&lt;Stack&gt; + right/top</code></td><td><code>Overlay inset placement</code></td></tr><tr><td><code>visual media</code></td><td><code>&lt;Image src=&quot;res://…&quot;&gt;</code></td><td><code>CascadeImage cover crop</code></td></tr><tr><td><code>padding / gap</code></td><td><code>padding / column-gap</code></td><td><code>CascadeStyle + layout request</code></td></tr><tr><td><code>&lt;button&gt;</code></td><td><code>&lt;Button&gt;</code></td><td><code>CascadeButton (BaseButton)</code></td></tr><tr><td><code>:hover / :active</code></td><td><code>:hover / :pressed</code></td><td><code>Native button state drawing</code></td></tr></tbody>
         </table>
       </section>
 
@@ -344,7 +349,7 @@
 
     .hero {
       position: relative;
-      height: 38px;
+      height: 7vh;
     }
 
     h1 {
@@ -475,6 +480,11 @@
     button:hover { background: #475467; }
     button:active { background: #1d2939; }
     button:focus-visible { outline: 2px solid #84adff; outline-offset: -2px; }
+
+    @media (max-width: 700px) {
+      .page { padding: 24px; gap: 16px; }
+      .cards { grid-template-columns: 1fr; grid-template-rows: auto auto auto; row-gap: 12px; }
+    }
   &lt;/style&gt;
 &lt;/head&gt;
 &lt;body&gt;
@@ -570,7 +580,7 @@
     font-size: 30px;
 }
 
-.hero { height: 38px; }
+.hero { height: 7vh; }
 
 .layout-badge {
     position: absolute;
@@ -645,6 +655,15 @@
 #inspect:hover { background: #475467; }
 #inspect:pressed { background: #1d2939; }
 #inspect:focused { border-color: #84adff; border-width: 2px; }
+
+@media (max-width: 700px) {
+    .page { padding: 24px; gap: 16px; }
+    .cards {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto auto;
+        row-gap: 12px;
+    }
+}
 </code></pre>
       </details>
       </section>

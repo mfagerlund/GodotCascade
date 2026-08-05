@@ -25,7 +25,7 @@ The source formats are tentatively named `.gxml` and `.gcss`. The stylesheet ext
 
 ### Source and diagnostics
 
-Parsers return logical values plus recoverable line/column diagnostics; `CascadeDocument` stamps the source path. Parsing does not create Godot nodes. Complete source spans, ranges, and fix suggestions remain improvements for the tokenizer/parser milestone.
+Parsers return logical values plus recoverable line/column diagnostics; GCSS tokens carry start/end spans and `CascadeDocument` stamps the source path onto generated controls. Parsing does not create Godot nodes. Higher-level fix suggestions remain an optional diagnostic enhancement.
 
 ### Logical element tree
 
@@ -43,7 +43,7 @@ Type, class, ID, combined-compound, descendant, and direct-child selectors work 
 
 Pseudo-state selectors are parsed separately from base declarations. The builder resolves interactive state declarations into explicit appearance properties. Owned `BaseButton` components then use a shared adapter to normalize native disabled, pressed, checked/selected, hover, and focus state during drawing; they do not rematch the stylesheet on every pointer event.
 
-The shared precedence is disabled, pressed, checked/selected, hover, focus, then base. Focus-ring drawing is layered independently so keyboard focus remains visible while another state wins. `:open` and select-option state remain part of the upcoming composite-select slice.
+The shared precedence is disabled, pressed, checked/selected, hover, focus, then base. Focus-ring drawing is layered independently so keyboard focus remains visible while another state wins. Selects add `:open` and option-level selected/hover/disabled state.
 
 ### Layout engine
 
@@ -87,7 +87,7 @@ Changes have different costs and should not all rebuild the interface:
 | Element type | yes | yes | yes | yes | yes |
 | Bound text | no | yes | yes | yes | targeted |
 
-The exact dependency table will eventually become property metadata in the style system.
+The explicit dependency table drives targeted draw, measure, and arrange invalidation; new properties must declare the same impact when added.
 
 ## Intentional CSS differences
 
@@ -106,4 +106,4 @@ Godot scene-tree mutation remains on the main thread. Tokenization, parsing, sel
 
 ## Compatibility policy
 
-During the prototype phase, APIs may change without migration support. Before the first public preview, the project should declare a minimum Godot version, source-format versioning, a runtime API deprecation window, and import compatibility expectations.
+The 0.1 preview targets Godot 4.7 and source format version 1. Documented runtime APIs receive a one-preview-minor deprecation window; source imports are derived caches regenerated after addon upgrades. Breaking changes require migration notes and replacement tests.

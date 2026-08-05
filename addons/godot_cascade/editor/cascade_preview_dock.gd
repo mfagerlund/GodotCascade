@@ -60,6 +60,7 @@ func _build_ui() -> void:
 	_document.load_on_ready = false
 	_document.watch_sources = true
 	_document.log_diagnostics_to_console = false
+	_document.size = Vector2(960.0, 540.0)
 	_document.diagnostics_changed.connect(_on_diagnostics_changed)
 	_viewport.add_child(_document)
 

@@ -18,6 +18,8 @@
         ["display: grid", "<Grid>", "CascadeGrid track layout"],
         ["1fr 1fr 1fr", "grid-template-columns", "Fractional track resolution"],
         [".cards > .card", ".cards > .card", "Direct-child selector matching"],
+        ["@media (max-width: 700px)", "@media (max-width: 700px)", "Viewport-conditional recomputation"],
+        ["7vh", "7vh", "Viewport-aware length resolution"],
         ["position: absolute", "<Stack> + right/top", "Overlay inset placement"],
         ["visual media", "<Image src=\"res://…\">", "CascadeImage cover crop"],
         ["padding / gap", "padding / column-gap", "CascadeStyle + layout request"],

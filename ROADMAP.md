@@ -6,7 +6,7 @@ The roadmap favors end-to-end slices over isolated subsystems. Each milestone sh
 
 The roadmap is not empty. The executable foundation now covers flex/box layout, owned button/label/panel/progress controls, GXML and focused GCSS parsing, native-tree construction, keyed hot reload, last-valid diagnostics, one-way property-path bindings, automated captures, and the HTML parity report.
 
-The source-generated settings-menu slice now includes shared interactive-state precedence, a native mouse/keyboard/controller test matrix, and owned checkbox, grouped radio-button, switch, select, and slider components. The layout foundation also includes native grid tracks, automatic and explicit placement, stack overlays, and absolute insets. Every first-public-preview acceptance item is complete.
+All planned 0.1 milestones and every first-public-preview acceptance item are complete. The source-generated settings-menu slice includes shared interactive-state precedence, a native mouse/keyboard/controller test matrix, and owned checkbox, grouped radio-button, switch, select, and slider components. The layout foundation includes native grid tracks, automatic and explicit placement, stack overlays, absolute insets, media, responsive rules, and viewport values. The editor and performance release gates are executable.
 
 The reproduced findings in the [2026-08-05 code review](docs/artifacts/review.md) are part of this roadmap. Blocking correctness fixes take priority when they touch the same runtime layer as an active vertical slice.
 
@@ -73,7 +73,7 @@ The reproduced findings in the [2026-08-05 code review](docs/artifacts/review.md
 - [x] Exact/adapted/layout-only compatibility diagnostics
 - [x] State matrix tests for hover, pressed, focused, and disabled controls
 
-### 1.5 Form controls and settings showcase — in progress
+### 1.5 Form controls and settings showcase — complete
 
 - [x] Generalize native pseudo-state adapters beyond `CascadeButton`
 - [x] Define shared state names and precedence: disabled, pressed, checked/selected, hover, focus
@@ -125,14 +125,14 @@ The reproduced findings in the [2026-08-05 code review](docs/artifacts/review.md
 - [x] Style and layout debugger
 - [x] Source navigation from generated controls
 
-## Phase 5 — Production readiness
+## Phase 5 — Production readiness — complete
 
-- [ ] Property transitions and animation interruption rules
-- [ ] Keyboard navigation and accessibility metadata
-- [ ] Responsive conditions and viewport-aware values
-- [ ] Performance benchmarks and allocation budgets
-- [ ] API stability policy and migration notes
-- [ ] Complete guides, reference, and example projects
+- [x] Property transitions and animation interruption rules
+- [x] Keyboard navigation and accessibility metadata
+- [x] Responsive conditions and viewport-aware values
+- [x] Performance benchmarks and allocation budgets
+- [x] API stability policy and migration notes
+- [x] Complete guides, reference, and example projects
 
 ## First public preview
 
