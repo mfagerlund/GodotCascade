@@ -22,10 +22,11 @@ This page documents the executable subset on `main`. GodotCascade borrows produc
 | `Slider` | `CascadeSlider` | Native range semantics with owned track, fill, thumb, and pointer/keyboard input |
 | `Progress` | `CascadeProgress` | Owned horizontal track, fill, range, and box model |
 | `Image` | `CascadeImage` | Texture resource rendering with contain, cover, fill, or intrinsic crop geometry |
+| `Repeat` | `CascadeBox` plus expanded template | One child template repeated from an array binding with optional item key |
 
 Every element accepts `id`, `class`, `accessible-label`, and `accessible-description`. Text-bearing controls use their visible text as the native accessibility name when no explicit label is authored. `Label`, `Button`, `Checkbox`, `RadioButton`, and `Switch` accept text as element content or through a `text` attribute. Interactive controls accept boolean `disabled`; toggle controls accept boolean `checked`; radio buttons use `group` to share a native `ButtonGroup`. `Select` accepts `selected` as an option value or zero-based index; `Option` accepts `value` and boolean `disabled`. `Progress` and `Slider` accept numeric `min`, `max`, and `value`; `Slider` also accepts a positive `step`. `Image` requires a `src` path that loads a Godot `Texture2D` resource.
 
-Unknown elements are build errors. `Window`, `TextInput`, repeated elements, and custom components are not implemented yet.
+Unknown elements are build errors unless their native factory is registered through `ComponentRegistry`. `Window` and `TextInput` are not implemented yet.
 
 ## Bindings
 
@@ -36,14 +37,18 @@ An entire supported attribute value may be an exact property-path binding:
 <Progress min="0" max="100" value="{player.health}" />
 ```
 
-The current binding surface is:
+The current property-binding surface is:
 
 - `text` on `Label` and `Button`;
 - `min`, `max`, and `value` on `Progress`.
 
 `BindingResolver` traverses Dictionaries, Arrays using numeric path segments, and Godot object properties. It does not execute expressions or call methods. Assigning a new `CascadeDocument.binding_context` refreshes automatically; nested mutations require `refresh_bindings()`.
 
-Interpolation such as `"Health: {player.health}"`, two-way binding, collection repetition, converters, and event-to-method binding are not supported.
+`Repeat` accepts an array path through `items="{path}"`; its template can bind through local `item` and `index` scopes while retaining access to root paths. A `key` path relative to each item enables identity-preserving reorder/add/remove reconciliation.
+
+`on-<signal>="method_name"` connects a native signal to `CascadeDocument.event_context`, an object-valued binding context, or the document itself. Authored connections are refreshed without disturbing user signal connections. See [markup and state](markup-and-state.md).
+
+Interpolation such as `"Health: {player.health}"`, two-way binding, and converters are not supported.
 
 ## Selectors
 

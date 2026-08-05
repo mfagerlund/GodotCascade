@@ -41,6 +41,8 @@
         ["::-webkit-progress-value", "fill-color", "Owned native fill drawing"],
         ["value / max", "value / max", "Clamped normalized range"],
         ["application data", "{telemetry.reserve}", "One-way property-path binding"],
+        ["repeated status tags", "<Repeat items=\"{telemetry.tags}\" key=\"id\">", "Keyed collection reconciliation"],
+        ["click handler", "on-pressed=\"_on_review_route\"", "Event-to-method signal binding"],
         ["nested flex panels", "Row / Column / Panel", "CascadeBox native layout"],
         ["<button>", "<Button>", "CascadeButton (BaseButton)"]
       ]

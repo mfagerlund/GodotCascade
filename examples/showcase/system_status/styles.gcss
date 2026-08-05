@@ -69,6 +69,8 @@
 
 .footer { display: flex; flex-direction: row; align-items: center; gap: 16px; }
 .sync { color: #6f7f9b; font-size: 13px; flex-grow: 1; }
+.tags { display: flex; flex-direction: row; gap: 6px; }
+.tag { padding: 4px 7px; color: #74d6ad; font-size: 10px; background: #122a24; border: 1px solid #245c4b; border-radius: 99px; }
 #route { min-width: 142px; min-height: 40px; background: #1c64d1; border: 1px solid #5aa7ff; border-radius: 8px; }
 #route:hover { background: #2878e5; }
 #route:pressed { background: #174fa5; }

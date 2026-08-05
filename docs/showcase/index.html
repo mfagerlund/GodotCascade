@@ -706,6 +706,8 @@
     .navigation progress { --fill:#ffb665; }
     footer { display:flex; align-items:center; gap:16px; }
     .sync { flex:1; color:#6f7f9b; font-size:13px; }
+    .tags { display:flex; gap:6px; }
+    .tag { padding:4px 7px; color:#74d6ad; font-size:10px; background:#122a24; border:1px solid #245c4b; border-radius:99px; }
     button { min-width:142px; min-height:40px; padding:9px 14px; color:#f2f4f7; font:inherit; background:#1c64d1; border:1px solid #5aa7ff; border-radius:8px; cursor:pointer; }
     button:hover { background:#2878e5; } button:active { background:#174fa5; }
   &lt;/style&gt;
@@ -730,7 +732,7 @@
         &lt;article class=&quot;system-card navigation&quot;&gt;&lt;div class=&quot;system-heading&quot;&gt;&lt;span class=&quot;system-name&quot;&gt;Navigation array&lt;/span&gt;&lt;span class=&quot;system-value&quot;&gt;63%&lt;/span&gt;&lt;/div&gt;&lt;progress value=&quot;63&quot; max=&quot;100&quot;&gt;63%&lt;/progress&gt;&lt;/article&gt;
       &lt;/div&gt;
     &lt;/section&gt;
-    &lt;footer&gt;&lt;span class=&quot;sync&quot;&gt;Last synchronized 14 seconds ago&lt;/span&gt;&lt;button type=&quot;button&quot;&gt;Review route&lt;/button&gt;&lt;/footer&gt;
+    &lt;footer&gt;&lt;span class=&quot;sync&quot;&gt;Last synchronized 14 seconds ago&lt;/span&gt;&lt;span class=&quot;tags&quot;&gt;&lt;span class=&quot;tag&quot;&gt;LIVE&lt;/span&gt;&lt;span class=&quot;tag&quot;&gt;LINKED&lt;/span&gt;&lt;/span&gt;&lt;button type=&quot;button&quot;&gt;Review route&lt;/button&gt;&lt;/footer&gt;
   &lt;/main&gt;
 &lt;/body&gt;
 &lt;/html&gt;
@@ -751,7 +753,7 @@
         </div>
         <table>
           <thead><tr><th>HTML/CSS</th><th>GodotCascade source</th><th>Runtime</th></tr></thead>
-          <tbody><tr><td><code>&lt;progress value=&quot;72&quot;&gt;</code></td><td><code>&lt;Progress value=&quot;72&quot;&gt;</code></td><td><code>CascadeProgress (Control)</code></td></tr><tr><td><code>progress track</code></td><td><code>background + border-radius</code></td><td><code>CascadeStyle box painting</code></td></tr><tr><td><code>::-webkit-progress-value</code></td><td><code>fill-color</code></td><td><code>Owned native fill drawing</code></td></tr><tr><td><code>value / max</code></td><td><code>value / max</code></td><td><code>Clamped normalized range</code></td></tr><tr><td><code>application data</code></td><td><code>{telemetry.reserve}</code></td><td><code>One-way property-path binding</code></td></tr><tr><td><code>nested flex panels</code></td><td><code>Row / Column / Panel</code></td><td><code>CascadeBox native layout</code></td></tr><tr><td><code>&lt;button&gt;</code></td><td><code>&lt;Button&gt;</code></td><td><code>CascadeButton (BaseButton)</code></td></tr></tbody>
+          <tbody><tr><td><code>&lt;progress value=&quot;72&quot;&gt;</code></td><td><code>&lt;Progress value=&quot;72&quot;&gt;</code></td><td><code>CascadeProgress (Control)</code></td></tr><tr><td><code>progress track</code></td><td><code>background + border-radius</code></td><td><code>CascadeStyle box painting</code></td></tr><tr><td><code>::-webkit-progress-value</code></td><td><code>fill-color</code></td><td><code>Owned native fill drawing</code></td></tr><tr><td><code>value / max</code></td><td><code>value / max</code></td><td><code>Clamped normalized range</code></td></tr><tr><td><code>application data</code></td><td><code>{telemetry.reserve}</code></td><td><code>One-way property-path binding</code></td></tr><tr><td><code>repeated status tags</code></td><td><code>&lt;Repeat items=&quot;{telemetry.tags}&quot; key=&quot;id&quot;&gt;</code></td><td><code>Keyed collection reconciliation</code></td></tr><tr><td><code>click handler</code></td><td><code>on-pressed=&quot;_on_review_route&quot;</code></td><td><code>Event-to-method signal binding</code></td></tr><tr><td><code>nested flex panels</code></td><td><code>Row / Column / Panel</code></td><td><code>CascadeBox native layout</code></td></tr><tr><td><code>&lt;button&gt;</code></td><td><code>&lt;Button&gt;</code></td><td><code>CascadeButton (BaseButton)</code></td></tr></tbody>
         </table>
       </section>
 
@@ -799,6 +801,8 @@
     .navigation progress { --fill:#ffb665; }
     footer { display:flex; align-items:center; gap:16px; }
     .sync { flex:1; color:#6f7f9b; font-size:13px; }
+    .tags { display:flex; gap:6px; }
+    .tag { padding:4px 7px; color:#74d6ad; font-size:10px; background:#122a24; border:1px solid #245c4b; border-radius:99px; }
     button { min-width:142px; min-height:40px; padding:9px 14px; color:#f2f4f7; font:inherit; background:#1c64d1; border:1px solid #5aa7ff; border-radius:8px; cursor:pointer; }
     button:hover { background:#2878e5; } button:active { background:#174fa5; }
   &lt;/style&gt;
@@ -823,7 +827,7 @@
         &lt;article class=&quot;system-card navigation&quot;&gt;&lt;div class=&quot;system-heading&quot;&gt;&lt;span class=&quot;system-name&quot;&gt;Navigation array&lt;/span&gt;&lt;span class=&quot;system-value&quot;&gt;63%&lt;/span&gt;&lt;/div&gt;&lt;progress value=&quot;63&quot; max=&quot;100&quot;&gt;63%&lt;/progress&gt;&lt;/article&gt;
       &lt;/div&gt;
     &lt;/section&gt;
-    &lt;footer&gt;&lt;span class=&quot;sync&quot;&gt;Last synchronized 14 seconds ago&lt;/span&gt;&lt;button type=&quot;button&quot;&gt;Review route&lt;/button&gt;&lt;/footer&gt;
+    &lt;footer&gt;&lt;span class=&quot;sync&quot;&gt;Last synchronized 14 seconds ago&lt;/span&gt;&lt;span class=&quot;tags&quot;&gt;&lt;span class=&quot;tag&quot;&gt;LIVE&lt;/span&gt;&lt;span class=&quot;tag&quot;&gt;LINKED&lt;/span&gt;&lt;/span&gt;&lt;button type=&quot;button&quot;&gt;Review route&lt;/button&gt;&lt;/footer&gt;
   &lt;/main&gt;
 &lt;/body&gt;
 &lt;/html&gt;
@@ -883,7 +887,10 @@
 
     &lt;Row class=&quot;footer&quot;&gt;
         &lt;Label class=&quot;sync&quot; text=&quot;{telemetry.last_sync}&quot; /&gt;
-        &lt;Button id=&quot;route&quot;&gt;Review route&lt;/Button&gt;
+        &lt;Repeat class=&quot;tags&quot; items=&quot;{telemetry.tags}&quot; key=&quot;id&quot;&gt;
+            &lt;Label class=&quot;tag&quot; text=&quot;{item.label}&quot; /&gt;
+        &lt;/Repeat&gt;
+        &lt;Button id=&quot;route&quot; on-pressed=&quot;_on_review_route&quot;&gt;Review route&lt;/Button&gt;
     &lt;/Row&gt;
 &lt;/Page&gt;
 </code></pre>
@@ -962,6 +969,8 @@
 
 .footer { display: flex; flex-direction: row; align-items: center; gap: 16px; }
 .sync { color: #6f7f9b; font-size: 13px; flex-grow: 1; }
+.tags { display: flex; flex-direction: row; gap: 6px; }
+.tag { padding: 4px 7px; color: #74d6ad; font-size: 10px; background: #122a24; border: 1px solid #245c4b; border-radius: 99px; }
 #route { min-width: 142px; min-height: 40px; background: #1c64d1; border: 1px solid #5aa7ff; border-radius: 8px; }
 #route:hover { background: #2878e5; }
 #route:pressed { background: #174fa5; }

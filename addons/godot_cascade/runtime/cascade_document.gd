@@ -10,6 +10,7 @@ const GcssParser := preload("res://addons/godot_cascade/style/gcss_parser.gd")
 const CascadeBuilder := preload("res://addons/godot_cascade/runtime/cascade_builder.gd")
 const CascadeReconciler := preload("res://addons/godot_cascade/runtime/cascade_reconciler.gd")
 const BindingResolver := preload("res://addons/godot_cascade/runtime/binding_resolver.gd")
+const ComponentRegistry := preload("res://addons/godot_cascade/runtime/component_registry.gd")
 
 @export_file("*.gxml") var markup_path := "":
 	set(value):
@@ -35,6 +36,11 @@ var binding_context: Variant:
 		binding_context = value
 		if _generated_root != null:
 			refresh_bindings()
+var event_context: Object:
+	set(value):
+		event_context = value
+		if _generated_root != null:
+			refresh_events()
 var _generated_root: Control
 var _reload_queued := false
 var _watch_elapsed := 0.0
@@ -48,6 +54,11 @@ func _ready() -> void:
 		reload_document()
 	else:
 		_capture_source_signatures()
+
+
+func _exit_tree() -> void:
+	if _generated_root != null:
+		ComponentRegistry.unmount_tree(_generated_root)
 
 
 func _process(delta: float) -> void:
@@ -76,7 +87,7 @@ func reload_document() -> bool:
 		_publish_diagnostics()
 		return false
 
-	var build_result := CascadeBuilder.build(markup_result["root"], style_result["rules"])
+	var build_result := CascadeBuilder.build(markup_result["root"], style_result["rules"], binding_context)
 	_append_diagnostics(build_result["diagnostics"], "builder")
 	if _has_errors() or build_result["root"] == null:
 		_publish_diagnostics()
@@ -87,6 +98,7 @@ func reload_document() -> bool:
 		_generated_root = desired_root
 		add_child(_generated_root)
 		_generated_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		ComponentRegistry.mount_tree(_generated_root)
 		last_reconcile_stats = {"reused": 0, "created": 1, "replaced": 0, "removed": 0}
 	else:
 		var result := CascadeReconciler.reconcile(_generated_root, desired_root)
@@ -97,7 +109,9 @@ func reload_document() -> bool:
 			_generated_root = result["root"]
 			add_child(_generated_root)
 			_generated_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+			ComponentRegistry.mount_tree(_generated_root)
 	_refresh_bindings(false)
+	_refresh_events(false)
 	_publish_diagnostics()
 	return true
 
@@ -120,7 +134,14 @@ func generated_root() -> Control:
 ## Reapplies every {dot.separated.path} binding to the existing native tree.
 ## Call this after mutating binding_context; compatible controls keep identity.
 func refresh_bindings() -> bool:
+	if _generated_root != null and _contains_element(_generated_root, "repeat"):
+		return reload_document()
 	return _refresh_bindings(true)
+
+
+## Reconnects authored on-* signal bindings without disturbing user connections.
+func refresh_events() -> bool:
+	return _refresh_events(true)
 
 
 func _read_source(path: String, source_kind: String) -> String:
@@ -216,7 +237,7 @@ func _apply_bindings(node: Node) -> void:
 
 
 func _apply_binding(control: Control, property_name: String, path: String) -> void:
-	var result := BindingResolver.resolve(binding_context, path)
+	var result := BindingResolver.resolve(_binding_context_for(control, path), path)
 	if not result["found"]:
 		diagnostics.append(_diagnostic(
 			"warning",
@@ -237,7 +258,7 @@ func _apply_binding(control: Control, property_name: String, path: String) -> vo
 
 
 func _resolve_numeric_binding(control: Control, property_name: String, path: String) -> Dictionary:
-	var result := BindingResolver.resolve(binding_context, path)
+	var result := BindingResolver.resolve(_binding_context_for(control, path), path)
 	if not result["found"]:
 		diagnostics.append(_diagnostic(
 			"warning",
@@ -257,6 +278,66 @@ func _resolve_numeric_binding(control: Control, property_name: String, path: Str
 		"%s on %s requires a number, got '%s'." % [property_name, control.get_meta("cascade_key", control.name), rendered]
 	))
 	return {"found": false, "value": 0.0}
+
+
+func _binding_context_for(control: Control, path: String) -> Variant:
+	var scope: Dictionary = control.get_meta("cascade_binding_scope", {})
+	var first_segment := path.get_slice(".", 0)
+	return scope if scope.has(first_segment) else binding_context
+
+
+func _refresh_events(publish: bool) -> bool:
+	diagnostics = diagnostics.filter(func(diagnostic): return diagnostic.get("path", "") != "event")
+	if _generated_root == null:
+		if publish:
+			_publish_diagnostics()
+		return false
+	var target: Object = event_context
+	if target == null and binding_context is Object:
+		target = binding_context
+	if target == null:
+		target = self
+	_apply_events(_generated_root, target)
+	if publish:
+		_publish_diagnostics()
+	return not _has_errors()
+
+
+func _apply_events(node: Node, target: Object) -> void:
+	if node is Control:
+		var control := node as Control
+		var previous: Array = control.get_meta("cascade_event_connections", [])
+		for connection in previous:
+			var signal_name := StringName(connection["signal"])
+			var callback: Callable = connection["callable"]
+			if control.has_signal(signal_name) and control.is_connected(signal_name, callback):
+				control.disconnect(signal_name, callback)
+		var connected: Array[Dictionary] = []
+		var events: Dictionary = control.get_meta("cascade_events", {})
+		for signal_value in events:
+			var method_name := str(events[signal_value])
+			if not target.has_method(method_name):
+				diagnostics.append(_diagnostic("warning", "event", "%s on %s: target has no method '%s'." % [signal_value, control.get_meta("cascade_key", control.name), method_name]))
+				continue
+			var signal_name := StringName(signal_value)
+			var callback := Callable(target, method_name)
+			var error := control.connect(signal_name, callback)
+			if error != OK:
+				diagnostics.append(_diagnostic("warning", "event", "%s on %s could not connect method '%s' (error %s)." % [signal_value, control.get_meta("cascade_key", control.name), method_name, error]))
+				continue
+			connected.append({"signal": signal_name, "callable": callback})
+		control.set_meta("cascade_event_connections", connected)
+	for child in node.get_children():
+		_apply_events(child, target)
+
+
+func _contains_element(node: Node, element_type: String) -> bool:
+	if node is Control and str(node.get_meta("cascade_element_type", "")).to_lower() == element_type:
+		return true
+	for child in node.get_children():
+		if _contains_element(child, element_type):
+			return true
+	return false
 
 
 func _capture_source_signatures() -> void:

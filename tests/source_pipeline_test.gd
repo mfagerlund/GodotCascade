@@ -12,8 +12,14 @@ const GcssTokenizer := preload("res://addons/godot_cascade/style/gcss_tokenizer.
 const GcssValue := preload("res://addons/godot_cascade/style/gcss_value.gd")
 const ComputedStyleCache := preload("res://addons/godot_cascade/style/computed_style_cache.gd")
 const ThemeAdapter := preload("res://addons/godot_cascade/style/theme_adapter.gd")
+const ComponentRegistry := preload("res://addons/godot_cascade/runtime/component_registry.gd")
+const CascadePanel := preload("res://addons/godot_cascade/components/cascade_panel.gd")
 
 var _failures: Array[String] = []
+var _custom_mounts := 0
+var _custom_updates := 0
+var _custom_unmounts := 0
+var _phase3_events := 0
 
 
 func _initialize() -> void:
@@ -33,6 +39,7 @@ func _run() -> void:
 	_test_review_regressions()
 	_test_parser_recovery()
 	_test_binding_resolver()
+	await _test_markup_state_features()
 	await _test_identity_preserving_reload()
 	root.size = Vector2i(960, 540)
 	var document := GENERATED_SCENE.instantiate()
@@ -454,6 +461,108 @@ func _test_binding_resolver() -> void:
 	_expect_true("binding resolves array index", array_result["found"] and array_result["value"] == "map")
 	var missing_result := BindingResolver.resolve(context, "player.health")
 	_expect_true("missing binding path reports failure", not missing_result["found"])
+
+
+func _test_markup_state_features() -> void:
+	_custom_mounts = 0
+	_custom_updates = 0
+	_custom_unmounts = 0
+	_phase3_events = 0
+	ComponentRegistry.register(
+		"TestCard",
+		_make_test_card,
+		_on_test_card_mount,
+		_on_test_card_update,
+		_on_test_card_unmount
+	)
+	var markup_path := "user://cascade_phase3_test.gxml"
+	var stylesheet_path := "user://cascade_phase3_test.gcss"
+	var initial_markup := """<Page>
+		<TestCard id="custom"><Label>Custom lifecycle</Label></TestCard>
+		<Repeat id="rows" items="{entries}" key="id">
+			<Row class="entry"><Label text="{item.label}"/><Button text="{item.label}" on-pressed="_on_phase3_event"/></Row>
+		</Repeat>
+	</Page>"""
+	var without_custom := """<Page>
+		<Repeat id="rows" items="{entries}" key="id">
+			<Row class="entry"><Label text="{item.label}"/><Button text="{item.label}" on-pressed="_on_phase3_event"/></Row>
+		</Repeat>
+	</Page>"""
+	_expect_true("write phase-three markup", _write_text(markup_path, initial_markup))
+	_expect_true("write phase-three stylesheet", _write_text(stylesheet_path, "Page { gap: 4px; } .entry { gap: 6px; }"))
+
+	var context := {
+		"entries": [
+			{"id": "a", "label": "Alpha"},
+			{"id": "b", "label": "Beta"},
+		],
+	}
+	var document: Control = CascadeDocument.new()
+	document.load_on_ready = false
+	document.log_diagnostics_to_console = false
+	document.watch_sources = false
+	document.binding_context = context
+	document.event_context = self
+	document.markup_path = markup_path
+	document.stylesheet_path = stylesheet_path
+	root.add_child(document)
+	_expect_true("phase-three document loads", document.reload_document())
+	_expect_int("custom component mounts once", _custom_mounts, 1)
+	var rows: Control = _find_by_id(document.generated_root(), "rows")[0]
+	_expect_int("repeat expands collection", rows.get_child_count(), 2)
+	var beta_row: Control = rows.get_child(1)
+	var beta_instance := beta_row.get_instance_id()
+	_expect_true("repeat item binding uses local scope", beta_row.get_child(0).get("text") == "Beta")
+	var beta_button: BaseButton = beta_row.get_child(1)
+	beta_button.emit_signal("pressed")
+	_expect_int("event attribute calls target method", _phase3_events, 1)
+
+	context["entries"] = [
+		{"id": "b", "label": "Beta 2"},
+		{"id": "a", "label": "Alpha"},
+		{"id": "c", "label": "Gamma"},
+	]
+	_expect_true("repeat refresh reconciles collection", document.refresh_bindings())
+	rows = _find_by_id(document.generated_root(), "rows")[0]
+	_expect_int("repeat adds a keyed item", rows.get_child_count(), 3)
+	_expect_true("repeat preserves keyed item identity after reorder", rows.get_child(0).get_instance_id() == beta_instance)
+	_expect_true("repeat refreshes scoped binding", rows.get_child(0).get_child(0).get("text") == "Beta 2")
+	_expect_true("custom component receives update lifecycle", _custom_updates > 0)
+	(rows.get_child(0).get_child(1) as BaseButton).emit_signal("pressed")
+	_expect_int("event refresh avoids duplicate connection", _phase3_events, 2)
+
+	_expect_true("write custom removal markup", _write_text(markup_path, without_custom))
+	_expect_true("custom removal reloads", document.poll_sources())
+	_expect_int("custom component unmounts before removal", _custom_unmounts, 1)
+	document.queue_free()
+	await process_frame
+	ComponentRegistry.unregister("TestCard")
+
+	var duplicate_markup := GxmlParser.parse("<Repeat items=\"{entries}\" key=\"id\"><Label text=\"{item.label}\"/></Repeat>")
+	var duplicate_build := CascadeBuilder.build(duplicate_markup["root"], [], {"entries": [{"id": "same", "label": "One"}, {"id": "same", "label": "Two"}]})
+	_expect_true("duplicate repeat keys are diagnosed", _has_error_diagnostics(duplicate_build["diagnostics"]))
+	if duplicate_build["root"] != null:
+		duplicate_build["root"].free()
+
+
+func _make_test_card() -> Control:
+	return CascadePanel.new()
+
+
+func _on_test_card_mount(_control: Control) -> void:
+	_custom_mounts += 1
+
+
+func _on_test_card_update(_control: Control) -> void:
+	_custom_updates += 1
+
+
+func _on_test_card_unmount(_control: Control) -> void:
+	_custom_unmounts += 1
+
+
+func _on_phase3_event() -> void:
+	_phase3_events += 1
 
 
 func _test_identity_preserving_reload() -> void:

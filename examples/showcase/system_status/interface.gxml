@@ -49,6 +49,9 @@
 
     <Row class="footer">
         <Label class="sync" text="{telemetry.last_sync}" />
-        <Button id="route">Review route</Button>
+        <Repeat class="tags" items="{telemetry.tags}" key="id">
+            <Label class="tag" text="{item.label}" />
+        </Repeat>
+        <Button id="route" on-pressed="_on_review_route">Review route</Button>
     </Row>
 </Page>

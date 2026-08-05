@@ -17,15 +17,17 @@ const CascadeSlider := preload("res://addons/godot_cascade/components/cascade_sl
 const CascadeImage := preload("res://addons/godot_cascade/components/cascade_image.gd")
 const PropertyCache := preload("res://addons/godot_cascade/runtime/property_cache.gd")
 const ComputedStyleCache := preload("res://addons/godot_cascade/style/computed_style_cache.gd")
+const ComponentRegistry := preload("res://addons/godot_cascade/runtime/component_registry.gd")
+const BindingResolver := preload("res://addons/godot_cascade/runtime/binding_resolver.gd")
 
 const INHERITED_PROPERTIES: PackedStringArray = ["color", "font-size"]
 
 
-static func build(root_element, rules: Array) -> Dictionary:
+static func build(root_element, rules: Array, binding_context: Variant = null) -> Dictionary:
 	var diagnostics: Array[Dictionary] = []
 	var button_groups: Dictionary = {}
 	var rule_index := _index_rules(rules)
-	var root_control := _build_element(root_element, rule_index, diagnostics, "0", button_groups)
+	var root_control := _build_element(root_element, rule_index, diagnostics, "0", button_groups, binding_context)
 	return {"root": root_control, "diagnostics": diagnostics}
 
 
@@ -34,7 +36,10 @@ static func _build_element(
 	rule_index: Dictionary,
 	diagnostics: Array[Dictionary],
 	key_path: String,
-	button_groups: Dictionary
+	button_groups: Dictionary,
+	binding_context: Variant = null,
+	binding_scope: Dictionary = {},
+	key_scope: String = ""
 ) -> Control:
 	var control := _create_control(element.tag_name, diagnostics)
 	if control == null:
@@ -44,10 +49,13 @@ static func _build_element(
 	control.set_meta("cascade_element_type", element.tag_name)
 	control.set_meta("cascade_id", element.element_id())
 	control.set_meta("cascade_classes", element.classes())
-	control.set_meta("cascade_key", "#" + element.element_id() if not element.element_id().is_empty() else key_path)
+	var local_key: String = "#" + element.element_id() if not element.element_id().is_empty() else key_path
+	control.set_meta("cascade_key", "%s/%s" % [key_scope, local_key] if not key_scope.is_empty() else local_key)
 	control.set_meta("cascade_bindings", {})
+	control.set_meta("cascade_events", {})
+	control.set_meta("cascade_binding_scope", binding_scope)
 	control.set_meta("cascade_explicit_accessible_label", false)
-	control.set_meta("cascade_compatibility_tier", "exact")
+	control.set_meta("cascade_compatibility_tier", "layout-only" if ComponentRegistry.has(element.tag_name) else "exact")
 
 	_apply_attributes(control, element.attributes, element.text, diagnostics, button_groups)
 	if element.tag_name.to_lower() == "row":
@@ -58,14 +66,78 @@ static func _build_element(
 	if control is CascadeSelect:
 		_apply_select_options(control, element, rule_index, diagnostics)
 		return control
+	if element.tag_name.to_lower() == "repeat":
+		_build_repeat_children(control, element, rule_index, diagnostics, key_path, button_groups, binding_context, key_scope)
+		return control
 
 	for index in element.children.size():
 		var child_element = element.children[index]
 		var child_key := "%s/%s:%s" % [key_path, index, child_element.tag_name]
-		var child_control := _build_element(child_element, rule_index, diagnostics, child_key, button_groups)
+		var child_control := _build_element(child_element, rule_index, diagnostics, child_key, button_groups, binding_context, binding_scope, key_scope)
 		if child_control != null:
 			control.add_child(child_control)
 	return control
+
+
+static func _build_repeat_children(
+	control: Control,
+	element,
+	rule_index: Dictionary,
+	diagnostics: Array[Dictionary],
+	key_path: String,
+	button_groups: Dictionary,
+	binding_context: Variant,
+	key_scope: String
+) -> void:
+	if element.children.size() != 1:
+		diagnostics.append(_diagnostic("error", "Repeat requires exactly one child template."))
+		return
+	var raw_items := str(element.attributes.get("items", "")).strip_edges()
+	if raw_items.length() < 3 or not raw_items.begins_with("{") or not raw_items.ends_with("}"):
+		diagnostics.append(_diagnostic("error", "Repeat 'items' must be an exact binding such as '{inventory.items}'."))
+		return
+	var items_path := raw_items.substr(1, raw_items.length() - 2).strip_edges()
+	var resolved := BindingResolver.resolve(binding_context, items_path)
+	if not resolved["found"]:
+		diagnostics.append(_diagnostic("error", "Repeat could not resolve items: %s" % resolved["message"]))
+		return
+	if not resolved["value"] is Array:
+		diagnostics.append(_diagnostic("error", "Repeat 'items' must resolve to an Array."))
+		return
+	var key_property := str(element.attributes.get("key", "")).strip_edges()
+	var seen_keys := {}
+	var items: Array = resolved["value"]
+	for index in items.size():
+		var item: Variant = items[index]
+		var item_key := str(index)
+		if not key_property.is_empty():
+			var key_result := BindingResolver.resolve(item, key_property)
+			if not key_result["found"]:
+				diagnostics.append(_diagnostic("error", "Repeat key '%s' could not be resolved for item %s." % [key_property, index]))
+				continue
+			item_key = str(key_result["value"])
+		if seen_keys.has(item_key):
+			diagnostics.append(_diagnostic("error", "Repeat key '%s' is duplicated." % item_key))
+			continue
+		seen_keys[item_key] = true
+		var repeated_scope := {
+			"item": item,
+			"index": index,
+		}
+		var repeated_key_scope := "%s%srepeat:%s" % [key_scope, "/" if not key_scope.is_empty() else "", item_key]
+		var template = element.children[0]
+		var child := _build_element(
+			template,
+			rule_index,
+			diagnostics,
+			"%s/item:%s" % [key_path, item_key],
+			button_groups,
+			binding_context,
+			repeated_scope,
+			repeated_key_scope
+		)
+		if child != null:
+			control.add_child(child)
 
 
 static func _create_control(tag_name: String, diagnostics: Array[Dictionary]) -> Control:
@@ -96,7 +168,15 @@ static func _create_control(tag_name: String, diagnostics: Array[Dictionary]) ->
 			return CascadeSlider.new()
 		"image":
 			return CascadeImage.new()
+		"repeat":
+			return CascadeBox.new()
 		_:
+			if ComponentRegistry.has(tag_name):
+				var custom := ComponentRegistry.create(tag_name)
+				if custom != null:
+					return custom
+				diagnostics.append(_diagnostic("error", "Custom component factory for <%s> did not return a Control." % tag_name))
+				return null
 			diagnostics.append(_diagnostic(
 				"error",
 				"Unknown GXML element <%s>. Register a native control factory before using it." % tag_name
@@ -523,6 +603,7 @@ static func _apply_attributes(
 	diagnostics: Array[Dictionary],
 	button_groups: Dictionary
 ) -> void:
+	_apply_event_attributes(control, attributes, diagnostics)
 	if control is CascadeLabel or control is CascadeButton:
 		var raw_text := str(attributes.get("text", element_text))
 		if not _record_binding(control, "text", raw_text):
@@ -566,6 +647,37 @@ static func _apply_attributes(
 		else:
 			diagnostics.append(_diagnostic("error", "Slider attribute 'step' requires a positive number, got '%s'." % raw_step))
 	control.set_range_values(range_values["min_value"], range_values["max_value"], range_values["value"])
+
+
+static func _apply_event_attributes(control: Control, attributes: Dictionary, diagnostics: Array[Dictionary]) -> void:
+	var events: Dictionary = control.get_meta("cascade_events", {})
+	for attribute_name in attributes:
+		var normalized_name := str(attribute_name).to_lower()
+		if not normalized_name.begins_with("on-"):
+			continue
+		var signal_name := normalized_name.trim_prefix("on-").replace("-", "_")
+		var method_name := str(attributes[attribute_name]).strip_edges()
+		if signal_name.is_empty() or not control.has_signal(signal_name):
+			diagnostics.append(_diagnostic("error", "Event attribute '%s' does not name a signal on <%s>." % [attribute_name, control.get_meta("cascade_element_type", control.get_class())]))
+			continue
+		if not _is_method_name(method_name):
+			diagnostics.append(_diagnostic("error", "Event attribute '%s' requires a method name, got '%s'." % [attribute_name, method_name]))
+			continue
+		events[signal_name] = method_name
+	control.set_meta("cascade_events", events)
+
+
+static func _is_method_name(value: String) -> bool:
+	if value.is_empty():
+		return false
+	for index in value.length():
+		var character := value[index]
+		var lowered := character.to_lower()
+		var valid_letter := lowered >= "a" and lowered <= "z"
+		var valid_digit := index > 0 and character >= "0" and character <= "9"
+		if not valid_letter and not valid_digit and character != "_":
+			return false
+	return true
 
 
 static func _apply_image_attributes(control: Control, attributes: Dictionary, diagnostics: Array[Dictionary]) -> void:

@@ -15,5 +15,14 @@ func _init() -> void:
 			"life_support": 96.0,
 			"navigation": 63.0,
 			"last_sync": "Last synchronized 14 seconds ago",
+			"tags": [
+				{"id": "live", "label": "LIVE"},
+				{"id": "linked", "label": "LINKED"},
+			],
 		}
 	}
+
+
+func _on_review_route() -> void:
+	binding_context["telemetry"]["last_sync"] = "Route review requested"
+	refresh_bindings()

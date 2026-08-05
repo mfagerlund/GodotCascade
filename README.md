@@ -87,9 +87,10 @@ The repository currently contains several working vertical slices:
 - stable ID and structural keys that reconcile edits into the existing native tree;
 - last-valid rendering when an in-progress edit has parser or builder errors;
 - focused `{dot.separated.path}` one-way bindings for text and progress values;
-- two source-generated parity scenes covering layout, components, and bound telemetry data.
+- keyed `Repeat` collections, `on-*` event methods, and registered custom-component lifecycle hooks;
+- three source-generated parity scenes covering layout, media, components, form controls, and bound telemetry data.
 
-Reactive binding adapters, broad property coverage, importers, and editor preview tooling remain roadmap work.
+Two-way binding adapters, broad property coverage, importers, and editor preview tooling remain roadmap work. Focused one-way properties, keyed repeats, and event-to-method bindings are implemented.
 
 ## Trying the prototype
 

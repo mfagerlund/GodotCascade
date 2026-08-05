@@ -104,17 +104,17 @@ The reproduced findings in the [2026-08-05 code review](docs/artifacts/review.md
 - [x] Computed-style caching and targeted invalidation
 - [x] Godot theme and `StyleBox` adapters
 
-## Phase 3 — Markup and state
+## Phase 3 — Markup and state — complete
 
 - [x] `.gxml` parser with source-aware diagnostics and nesting recovery
 - [x] Element registry and native control factories
 - [x] `CascadeDocument` GXML/GCSS-to-native vertical slice
 - [x] Stable identity and keyed reconciliation
 - [x] Preserve native identity, focus, runtime state, and signal connections for compatible controls
-- [ ] Custom component lifecycle
+- [x] Custom component lifecycle
 - [x] Focused property paths and explicitly refreshed one-way bindings
-- [ ] Repeated elements and keyed collection updates
-- [ ] Event-to-method binding
+- [x] Repeated elements and keyed collection updates
+- [x] Event-to-method binding
 
 ## Phase 4 — Tooling
 
