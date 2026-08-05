@@ -43,4 +43,4 @@ Unsupported or inexact declarations should produce a diagnostic in development b
 - Components remain native Godot nodes and retain relevant engine behavior.
 - The project owns more drawing, text layout, theme interoperability, and tests.
 - Theme adapters become optional integration paths rather than the foundation of styling.
-- The first component should be `CascadeButton`, based on `BaseButton`, because it exercises intrinsic content, interaction states, focus, disabled behavior, text/icon layout, and transitions without requiring a full text editor.
+- The first implemented component is `CascadeButton`, based on `BaseButton`, because it exercises intrinsic content, interaction states, focus, disabled behavior, and text layout without requiring a full text editor.

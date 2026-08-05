@@ -37,8 +37,8 @@ The roadmap favors end-to-end slices over isolated subsystems. Each milestone sh
 
 ### 1.4 Core components
 
-- [ ] Shared box-painting and content-box primitive
-- [ ] `CascadeButton` based on `BaseButton`
+- [x] Shared box-painting and content-box primitive
+- [x] `CascadeButton` based on `BaseButton`
 - [ ] `CascadeLabel` with wrapping and overflow rules
 - [ ] `CascadePanel`, `CascadeProgress`, and `CascadeImage`
 - [ ] Exact/adapted/layout-only compatibility diagnostics

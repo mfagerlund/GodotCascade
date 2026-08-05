@@ -81,6 +81,7 @@ The repository currently contains the first Phase 1 vertical slice:
 - start, center, end, stretch, and space distribution;
 - basic flex growth and wrapping;
 - optional background, border, and corner radius drawing;
+- `CascadeButton`, an owned `BaseButton` implementation with exact box-model sizing;
 - an example scene that exercises the layout container.
 
 Markup, stylesheet parsing, selectors, data binding, and hot reload remain roadmap work.
@@ -99,6 +100,7 @@ Run the current headless smoke test with:
 ```shell
 godot --headless --path . --script res://tests/layout_smoke_test.gd
 godot --headless --path . --script res://tests/flex_layout_engine_test.gd
+godot --headless --path . --script res://tests/component_test.gd
 ```
 
 ## Using `CascadeBox`
@@ -127,7 +129,11 @@ cascade_max_width        cascade_max_height
 
 The metadata bridge is an early compatibility mechanism. Later phases will apply these values through the style engine, so standard controls will not need wrappers or manual metadata.
 
-GodotCascade will own the visual implementation of its core components so supported CSS settings have exact, shared semantics. Those components still derive from useful native primitives—for example, `CascadeButton` will derive from `BaseButton` to retain focus, activation, toggle, shortcut, accessibility, and signal behavior. Ordinary Godot controls remain usable through documented compatibility tiers. See [ADR 0001](docs/decisions/0001-owned-core-controls.md) for the decision and tradeoffs.
+GodotCascade owns the visual implementation of its core components so supported CSS settings have exact, shared semantics. Those components still derive from useful native primitives—for example, `CascadeButton` derives from `BaseButton` to retain focus, activation, toggle, shortcut, accessibility, and signal behavior. Ordinary Godot controls remain usable through documented compatibility tiers. See [ADR 0001](docs/decisions/0001-owned-core-controls.md) for the decision and tradeoffs.
+
+### Using `CascadeButton`
+
+Add a **CascadeButton** from the Create New Node dialog after enabling the addon. Its inspector exposes content, padding, margin, sizing, base/hover/pressed/disabled appearance, and focus-ring settings. Because it derives from `BaseButton`, connect `pressed`, `button_down`, `button_up`, and `toggled` exactly as you would for a native Godot button.
 
 ## Architecture
 

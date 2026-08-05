@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://addons/godot_cascade/layout/cascade_box.gd" id="1_box"]
+[ext_resource type="Script" path="res://addons/godot_cascade/components/cascade_button.gd" id="2_button"]
 
 [node name="BasicLayout" type="Control"]
 layout_mode = 3
@@ -150,7 +151,8 @@ theme_override_colors/font_color = Color(0.49, 0.75, 1, 1)
 text = "Phase 1 · Layout foundation"
 metadata/cascade_flex_grow = 1.0
 
-[node name="Inspect" type="Button" parent="Page/Actions"]
+[node name="Inspect" type="BaseButton" parent="Page/Actions"]
 custom_minimum_size = Vector2(150, 42)
 layout_mode = 2
+script = ExtResource("2_button")
 text = "Inspect layout"

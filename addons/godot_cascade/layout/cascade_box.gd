@@ -26,6 +26,7 @@ enum CrossAlignment {
 
 const META_PREFIX := "cascade_"
 const FlexLayoutEngine := preload("res://addons/godot_cascade/layout/flex_layout_engine.gd")
+const BoxPainter := preload("res://addons/godot_cascade/components/box_painter.gd")
 
 @export_group("Layout")
 @export var direction: FlowDirection = FlowDirection.COLUMN:
@@ -266,12 +267,11 @@ func _on_resized() -> void:
 
 
 func _draw_box() -> void:
-	if background_color.a <= 0.0 and (border_color.a <= 0.0 or border_width <= 0.0):
-		return
-
-	var style := StyleBoxFlat.new()
-	style.bg_color = background_color
-	style.border_color = border_color
-	style.set_border_width_all(roundi(border_width))
-	style.set_corner_radius_all(roundi(border_radius))
-	draw_style_box(style, Rect2(Vector2.ZERO, size))
+	BoxPainter.draw_box(
+		self,
+		Rect2(Vector2.ZERO, size),
+		background_color,
+		border_color,
+		border_width,
+		border_radius
+	)
