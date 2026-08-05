@@ -2,6 +2,9 @@ extends SceneTree
 
 const BoxPainter := preload("res://addons/godot_cascade/components/box_painter.gd")
 const CascadeBox := preload("res://addons/godot_cascade/layout/cascade_box.gd")
+const CascadeStack := preload("res://addons/godot_cascade/layout/cascade_stack.gd")
+const CascadeGrid := preload("res://addons/godot_cascade/layout/cascade_grid.gd")
+const GridLayoutEngine := preload("res://addons/godot_cascade/layout/grid_layout_engine.gd")
 const CascadeButton := preload("res://addons/godot_cascade/components/cascade_button.gd")
 const CascadeCheckbox := preload("res://addons/godot_cascade/components/cascade_checkbox.gd")
 const CascadeRadioButton := preload("res://addons/godot_cascade/components/cascade_radio_button.gd")
@@ -24,6 +27,9 @@ func _run() -> void:
 	_test_box_geometry()
 	await _test_button_measurement()
 	await _test_button_in_flex_layout()
+	await _test_stack_and_absolute_layout()
+	_test_grid_track_engine()
+	await _test_native_grid_layout()
 	await _test_shared_style_invalidation()
 	await _test_overflow_and_align_self()
 	await _test_owned_label_box()
@@ -107,6 +113,94 @@ func _test_button_in_flex_layout() -> void:
 	_expect_rect("owned button flex rectangle", Rect2(button.position, button.size), Rect2(10.0, 10.0, 155.0, 40.0))
 	_expect_rect("owned button sibling rectangle", Rect2(fixed.position, fixed.size), Rect2(170.0, 10.0, 20.0, 40.0))
 	box.queue_free()
+
+
+func _test_stack_and_absolute_layout() -> void:
+	var stack := CascadeStack.new()
+	stack.size = Vector2(200.0, 100.0)
+	stack.cascade_style.padding_left = 10.0
+	stack.cascade_style.padding_top = 10.0
+	stack.cascade_style.padding_right = 10.0
+	stack.cascade_style.padding_bottom = 10.0
+	root.add_child(stack)
+	var overlay := Control.new()
+	stack.add_child(overlay)
+	var positioned := CascadeButton.new()
+	positioned.text = ""
+	positioned.cascade_style.preferred_width = 40.0
+	positioned.cascade_style.preferred_height = 20.0
+	positioned.set_meta("cascade_position", "absolute")
+	positioned.set_meta("cascade_right", 5.0)
+	positioned.set_meta("cascade_bottom", 7.0)
+	stack.add_child(positioned)
+	await process_frame
+	await process_frame
+	_expect_rect("stack overlay fills content box", Rect2(overlay.position, overlay.size), Rect2(10.0, 10.0, 180.0, 80.0))
+	_expect_rect("absolute stack child uses trailing insets", Rect2(positioned.position, positioned.size), Rect2(145.0, 63.0, 40.0, 20.0))
+	stack.queue_free()
+
+
+func _test_grid_track_engine() -> void:
+	var result := GridLayoutEngine.arrange(
+		Vector2(300.0, 100.0),
+		[{"kind": "fixed", "value": 50.0}, {"kind": "fraction", "value": 1.0}, {"kind": "fraction", "value": 2.0}],
+		[{"kind": "fraction", "value": 1.0}],
+		[
+			{"minimum": Vector2(10.0, 10.0), "column": 0, "row": 0},
+			{"minimum": Vector2(10.0, 10.0), "column": 1, "row": 0, "column_span": 2},
+		],
+		10.0,
+		0.0
+	)
+	_expect_float("grid fixed track", result["column_sizes"][0], 50.0)
+	_expect_float("grid first fraction", result["column_sizes"][1], 230.0 / 3.0)
+	_expect_float("grid second fraction", result["column_sizes"][2], 460.0 / 3.0)
+	_expect_float("grid spanning item width", result["rects"][1].size.x, 240.0)
+
+	var bounded := GridLayoutEngine.arrange(
+		Vector2(300.0, 40.0),
+		[{"kind": "minmax", "min": 40.0, "max": 100.0}, {"kind": "fraction", "value": 1.0}],
+		[{"kind": "fraction", "value": 1.0}],
+		[],
+		0.0,
+		0.0
+	)
+	_expect_float("bounded grid track reaches maximum", bounded["column_sizes"][0], 100.0)
+	_expect_float("fraction receives remaining grid space", bounded["column_sizes"][1], 200.0)
+
+	var reserved := GridLayoutEngine.arrange(
+		Vector2(200.0, 80.0),
+		[{"kind": "fraction", "value": 1.0}, {"kind": "fraction", "value": 1.0}],
+		[{"kind": "fraction", "value": 1.0}],
+		[
+			{"minimum": Vector2.ZERO},
+			{"minimum": Vector2.ZERO, "column": 0, "row": 0},
+		],
+		0.0,
+		0.0
+	)
+	_expect_float("late explicit grid item reserves first cell", reserved["placements"][1]["column"], 0.0)
+	_expect_float("earlier automatic grid item avoids reserved cell", reserved["placements"][0]["column"], 1.0)
+
+
+func _test_native_grid_layout() -> void:
+	var grid := CascadeGrid.new()
+	grid.size = Vector2(220.0, 100.0)
+	grid.column_tracks = [{"kind": "fixed", "value": 60.0}, {"kind": "fraction", "value": 1.0}]
+	grid.row_tracks = [{"kind": "fraction", "value": 1.0}, {"kind": "fraction", "value": 1.0}]
+	grid.column_gap = 10.0
+	grid.row_gap = 8.0
+	root.add_child(grid)
+	for index in 3:
+		var child := Control.new()
+		child.custom_minimum_size = Vector2(10.0, 10.0)
+		grid.add_child(child)
+	await process_frame
+	await process_frame
+	_expect_rect("grid explicit first cell", Rect2(grid.get_child(0).position, grid.get_child(0).size), Rect2(0.0, 0.0, 60.0, 46.0))
+	_expect_rect("grid auto second cell", Rect2(grid.get_child(1).position, grid.get_child(1).size), Rect2(70.0, 0.0, 150.0, 46.0))
+	_expect_rect("grid auto wrapped cell", Rect2(grid.get_child(2).position, grid.get_child(2).size), Rect2(0.0, 54.0, 60.0, 46.0))
+	grid.queue_free()
 
 
 func _test_shared_style_invalidation() -> void:

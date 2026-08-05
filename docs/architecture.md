@@ -52,7 +52,7 @@ Layout has two conceptual passes:
 1. **Measure** computes desired sizes from constraints and intrinsic content.
 2. **Arrange** assigns final rectangles to boxes and their children.
 
-`FlexLayoutEngine` consumes plain layout requests and item value objects and produces rectangles without touching the scene tree. `CascadeBox` is the native `Container` adapter: it measures children, translates `CascadeStyle` and compatibility metadata into engine values, then applies the resulting rectangles. Grid, stack, and absolute positioning will use parallel engine boundaries rather than adding unrelated policy to `CascadeBox`.
+`FlexLayoutEngine` and `GridLayoutEngine` consume plain layout requests and item values and produce rectangles without touching the scene tree. `CascadeBox` and `CascadeGrid` are native `Container` adapters that measure children, translate `CascadeStyle` and compatibility metadata into engine values, then apply the resulting rectangles. `CascadeStack` owns overlay and absolute-inset placement without adding unrelated policy to `CascadeBox`.
 
 ### Data binding
 

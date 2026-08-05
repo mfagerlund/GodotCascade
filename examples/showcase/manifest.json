@@ -6,7 +6,7 @@
     {
       "id": "layout-foundation",
       "title": "Layout foundation",
-      "summary": "A responsive feature-card layout exercising column flow, wrapping rows, gaps, growth, padding, borders, and the owned button component.",
+      "summary": "A feature-card layout exercising fractional grid tracks, gaps, stack overlays, absolute insets, flex flow, box styling, and the owned button component.",
       "viewport": [960, 540],
       "html": "examples/showcase/layout_foundation/reference.html",
       "gxml": "examples/showcase/layout_foundation/interface.gxml",
@@ -15,9 +15,10 @@
       "godot_screenshot": "docs/showcase/assets/layout-foundation-godot.png",
       "mappings": [
         ["<main>", "<Page>", "CascadeBox (column)"],
-        ["display: flex", "display: flex", "CascadeBox flow direction"],
-        ["padding / gap", "padding / gap", "CascadeStyle + layout request"],
-        ["flex: 1 1 230px", "flex-grow + width", "LayoutItem growth and constraints"],
+        ["display: grid", "<Grid>", "CascadeGrid track layout"],
+        ["1fr 1fr 1fr", "grid-template-columns", "Fractional track resolution"],
+        ["position: absolute", "<Stack> + right/top", "Overlay inset placement"],
+        ["padding / gap", "padding / column-gap", "CascadeStyle + layout request"],
         ["<button>", "<Button>", "CascadeButton (BaseButton)"],
         [":hover / :active", ":hover / :pressed", "Native button state drawing"]
       ]

@@ -75,7 +75,7 @@
         <div>
           <p class="eyebrow">Current demo</p>
           <h2>Layout foundation</h2>
-          <p>A responsive feature-card layout exercising column flow, wrapping rows, gaps, growth, padding, borders, and the owned button component.</p>
+          <p>A feature-card layout exercising fractional grid tracks, gaps, stack overlays, absolute insets, flex flow, box styling, and the owned button component.</p>
         </div>
         <dl>
           <div><dt>Viewport</dt><dd>960 × 540</dd></div>
@@ -119,12 +119,31 @@
       gap: 24px;
     }
 
+    .hero {
+      position: relative;
+      height: 38px;
+    }
+
     h1 {
       margin: 0;
       color: #dbe8ff;
       font-size: 30px;
       font-weight: 500;
       line-height: 1.2;
+    }
+
+    .layout-badge {
+      position: absolute;
+      right: 0;
+      top: 2px;
+      width: 112px;
+      height: 28px;
+      padding: 5px 8px;
+      color: #7dbfff;
+      font-size: 12px;
+      background: #17253a;
+      border: 1px solid #315a89;
+      border-radius: 6px;
     }
 
     .lede {
@@ -136,16 +155,15 @@
 
     .cards {
       min-height: 230px;
-      display: flex;
+      display: grid;
       flex: 1;
-      flex-wrap: wrap;
-      gap: 18px;
+      grid-template-columns: 1fr 1fr 1fr;
+      grid-template-rows: minmax(210px, 1fr);
+      column-gap: 18px;
     }
 
     .card {
-      min-width: 230px;
       min-height: 210px;
-      flex: 1 1 230px;
       padding: 20px 22px;
       display: flex;
       flex-direction: column;
@@ -204,7 +222,10 @@
 &lt;/head&gt;
 &lt;body&gt;
   &lt;main class=&quot;page&quot;&gt;
-    &lt;h1&gt;GodotCascade&lt;/h1&gt;
+    &lt;div class=&quot;hero&quot;&gt;
+      &lt;h1&gt;GodotCascade&lt;/h1&gt;
+      &lt;span class=&quot;layout-badge&quot;&gt;GRID + STACK&lt;/span&gt;
+    &lt;/div&gt;
     &lt;p class=&quot;lede&quot;&gt;Native controls. A predictable box model. Far fewer wrappers.&lt;/p&gt;
 
     &lt;section class=&quot;cards&quot; aria-label=&quot;Features&quot;&gt;
@@ -246,7 +267,7 @@
         </div>
         <table>
           <thead><tr><th>HTML/CSS</th><th>GodotCascade source</th><th>Runtime</th></tr></thead>
-          <tbody><tr><td><code>&lt;main&gt;</code></td><td><code>&lt;Page&gt;</code></td><td><code>CascadeBox (column)</code></td></tr><tr><td><code>display: flex</code></td><td><code>display: flex</code></td><td><code>CascadeBox flow direction</code></td></tr><tr><td><code>padding / gap</code></td><td><code>padding / gap</code></td><td><code>CascadeStyle + layout request</code></td></tr><tr><td><code>flex: 1 1 230px</code></td><td><code>flex-grow + width</code></td><td><code>LayoutItem growth and constraints</code></td></tr><tr><td><code>&lt;button&gt;</code></td><td><code>&lt;Button&gt;</code></td><td><code>CascadeButton (BaseButton)</code></td></tr><tr><td><code>:hover / :active</code></td><td><code>:hover / :pressed</code></td><td><code>Native button state drawing</code></td></tr></tbody>
+          <tbody><tr><td><code>&lt;main&gt;</code></td><td><code>&lt;Page&gt;</code></td><td><code>CascadeBox (column)</code></td></tr><tr><td><code>display: grid</code></td><td><code>&lt;Grid&gt;</code></td><td><code>CascadeGrid track layout</code></td></tr><tr><td><code>1fr 1fr 1fr</code></td><td><code>grid-template-columns</code></td><td><code>Fractional track resolution</code></td></tr><tr><td><code>position: absolute</code></td><td><code>&lt;Stack&gt; + right/top</code></td><td><code>Overlay inset placement</code></td></tr><tr><td><code>padding / gap</code></td><td><code>padding / column-gap</code></td><td><code>CascadeStyle + layout request</code></td></tr><tr><td><code>&lt;button&gt;</code></td><td><code>&lt;Button&gt;</code></td><td><code>CascadeButton (BaseButton)</code></td></tr><tr><td><code>:hover / :active</code></td><td><code>:hover / :pressed</code></td><td><code>Native button state drawing</code></td></tr></tbody>
         </table>
       </section>
 
@@ -286,12 +307,31 @@
       gap: 24px;
     }
 
+    .hero {
+      position: relative;
+      height: 38px;
+    }
+
     h1 {
       margin: 0;
       color: #dbe8ff;
       font-size: 30px;
       font-weight: 500;
       line-height: 1.2;
+    }
+
+    .layout-badge {
+      position: absolute;
+      right: 0;
+      top: 2px;
+      width: 112px;
+      height: 28px;
+      padding: 5px 8px;
+      color: #7dbfff;
+      font-size: 12px;
+      background: #17253a;
+      border: 1px solid #315a89;
+      border-radius: 6px;
     }
 
     .lede {
@@ -303,16 +343,15 @@
 
     .cards {
       min-height: 230px;
-      display: flex;
+      display: grid;
       flex: 1;
-      flex-wrap: wrap;
-      gap: 18px;
+      grid-template-columns: 1fr 1fr 1fr;
+      grid-template-rows: minmax(210px, 1fr);
+      column-gap: 18px;
     }
 
     .card {
-      min-width: 230px;
       min-height: 210px;
-      flex: 1 1 230px;
       padding: 20px 22px;
       display: flex;
       flex-direction: column;
@@ -371,7 +410,10 @@
 &lt;/head&gt;
 &lt;body&gt;
   &lt;main class=&quot;page&quot;&gt;
-    &lt;h1&gt;GodotCascade&lt;/h1&gt;
+    &lt;div class=&quot;hero&quot;&gt;
+      &lt;h1&gt;GodotCascade&lt;/h1&gt;
+      &lt;span class=&quot;layout-badge&quot;&gt;GRID + STACK&lt;/span&gt;
+    &lt;/div&gt;
     &lt;p class=&quot;lede&quot;&gt;Native controls. A predictable box model. Far fewer wrappers.&lt;/p&gt;
 
     &lt;section class=&quot;cards&quot; aria-label=&quot;Features&quot;&gt;
@@ -403,10 +445,13 @@
         <summary><span>GodotCascade markup</span><code>examples/showcase/layout_foundation/interface.gxml</code></summary>
         <pre><code class="language-xml">&lt;!-- Executed by CascadeDocument&#x27;s focused GXML/GCSS vertical slice. --&gt;
 &lt;Page class=&quot;page&quot;&gt;
-    &lt;Label class=&quot;heading&quot;&gt;GodotCascade&lt;/Label&gt;
+    &lt;Stack class=&quot;hero&quot;&gt;
+        &lt;Label class=&quot;heading&quot;&gt;GodotCascade&lt;/Label&gt;
+        &lt;Label class=&quot;layout-badge&quot;&gt;GRID + STACK&lt;/Label&gt;
+    &lt;/Stack&gt;
     &lt;Label class=&quot;lede&quot;&gt;Native controls. A predictable box model. Far fewer wrappers.&lt;/Label&gt;
 
-    &lt;Row class=&quot;cards&quot;&gt;
+    &lt;Grid class=&quot;cards&quot;&gt;
         &lt;Panel class=&quot;card box-model&quot;&gt;
             &lt;Label class=&quot;card-title&quot;&gt;Box model&lt;/Label&gt;
             &lt;Label class=&quot;card-body&quot;&gt;
@@ -427,7 +472,7 @@
                 Every element remains a real Control with Godot rendering, input, themes, and signals.
             &lt;/Label&gt;
         &lt;/Panel&gt;
-    &lt;/Row&gt;
+    &lt;/Grid&gt;
 
     &lt;Row class=&quot;actions&quot;&gt;
         &lt;Label class=&quot;status&quot;&gt;Phase 1 · Layout foundation&lt;/Label&gt;
@@ -454,6 +499,22 @@
     font-size: 30px;
 }
 
+.hero { height: 38px; }
+
+.layout-badge {
+    position: absolute;
+    right: 0px;
+    top: 2px;
+    width: 112px;
+    height: 28px;
+    padding: 5px 8px;
+    color: #7dbfff;
+    font-size: 12px;
+    background: #17253a;
+    border: 1px solid #315a89;
+    border-radius: 6px;
+}
+
 .lede {
     color: #9eacc7;
     font-size: 17px;
@@ -461,18 +522,14 @@
 
 .cards {
     min-height: 230px;
-    display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
     flex-grow: 1;
-    gap: 18px;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: minmax(210px, 1fr);
+    column-gap: 18px;
 }
 
 .card {
-    width: 250px;
-    min-width: 230px;
     min-height: 210px;
-    flex-grow: 1;
     padding: 20px 22px;
     display: flex;
     flex-direction: column;

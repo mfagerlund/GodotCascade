@@ -14,7 +14,7 @@ Godot's container system is capable, but non-trivial interfaces often require de
 GodotCascade is built around a few ideas:
 
 - one consistent box model for margin, padding, border, and size;
-- flex layout today, with grid and stack planned, without excessive wrapper nodes;
+- flex, grid, and stack/overlay layout without excessive wrapper nodes;
 - reusable styles separated from scene structure;
 - declarative markup for concise, reviewable interfaces;
 - hot reload for short iteration cycles;
@@ -188,7 +188,7 @@ Add a **CascadeButton** from the Create New Node dialog after enabling the addon
 
 ## HTML parity showcase
 
-The generated [parity showcase](docs/showcase/index.html) presents each demo as a fixed-viewport HTML reference beside an actual capture of its source-generated GodotCascade scene. It includes the executable `.gxml` and `.gcss` translation and a semantic mapping table. The current demos cover the flex/box foundation and a telemetry dashboard that translates browser `<progress>` elements into owned `CascadeProgress` controls.
+The generated [parity showcase](docs/showcase/index.html) presents each demo as a fixed-viewport HTML reference beside an actual capture of its source-generated GodotCascade scene. It includes the executable `.gxml` and `.gcss` translation and a semantic mapping table. The current demos cover flex/box, grid/stack overlays, a telemetry dashboard, and native form controls.
 
 Showcases are registered in `examples/showcase/manifest.json`. A demo keeps four artifacts together:
 
@@ -227,7 +227,7 @@ The major boundaries are intentionally separate:
 - **Parser:** turns source files into logical syntax trees and diagnostics.
 - **UI tree:** carries authored elements into keyed native candidates with binding metadata.
 - **Style engine:** matches the focused selector/property subset and applies typed values.
-- **Layout engine:** translates the current box/flex rules into control rectangles; grid remains planned.
+- **Layout engine:** translates box/flex and grid rules into control rectangles; stack overlays provide a constrained absolute-inset escape hatch.
 - **Reconciler:** updates existing Godot nodes while preserving runtime state and signal connections.
 - **Tooling:** watches source files and generates the HTML/native parity report; editor inspection remains planned.
 

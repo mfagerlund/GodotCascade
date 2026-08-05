@@ -6,7 +6,7 @@ The roadmap favors end-to-end slices over isolated subsystems. Each milestone sh
 
 The roadmap is not empty. The executable foundation now covers flex/box layout, owned button/label/panel/progress controls, GXML and focused GCSS parsing, native-tree construction, keyed hot reload, last-valid diagnostics, one-way property-path bindings, automated captures, and the HTML parity report.
 
-The source-generated settings-menu slice now includes shared interactive-state precedence, a native mouse/keyboard/controller test matrix, and owned checkbox, grouped radio-button, switch, select, and slider components. Every first-public-preview acceptance item is complete.
+The source-generated settings-menu slice now includes shared interactive-state precedence, a native mouse/keyboard/controller test matrix, and owned checkbox, grouped radio-button, switch, select, and slider components. The layout foundation also includes native grid tracks, automatic and explicit placement, stack overlays, and absolute insets. Every first-public-preview acceptance item is complete.
 
 The reproduced findings in the [2026-08-05 code review](docs/artifacts/review.md) are part of this roadmap. Blocking correctness fixes take priority when they touch the same runtime layer as an active vertical slice.
 
@@ -54,13 +54,13 @@ The reproduced findings in the [2026-08-05 code review](docs/artifacts/review.md
 - [x] Add dirty flags for measure and arrange invalidation
 - [x] Define pixel rounding rules
 
-### 1.3 Grid and stack
+### 1.3 Grid and stack — complete
 
-- [ ] Fixed, fractional, content-sized, and min/max grid tracks
-- [ ] Row and column gaps
-- [ ] Explicit and automatic placement
-- [ ] Stack/overlay layout
-- [ ] Absolute positioning escape hatch
+- [x] Fixed, fractional, content-sized, and min/max grid tracks
+- [x] Row and column gaps
+- [x] Explicit and automatic placement
+- [x] Stack/overlay layout
+- [x] Absolute positioning escape hatch
 
 ### 1.4 Core components
 

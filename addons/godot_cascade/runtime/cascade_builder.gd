@@ -3,6 +3,8 @@ extends RefCounted
 ## Converts parsed GodotCascade elements and rules into native Control nodes.
 
 const CascadeBox := preload("res://addons/godot_cascade/layout/cascade_box.gd")
+const CascadeStack := preload("res://addons/godot_cascade/layout/cascade_stack.gd")
+const CascadeGrid := preload("res://addons/godot_cascade/layout/cascade_grid.gd")
 const CascadePanel := preload("res://addons/godot_cascade/components/cascade_panel.gd")
 const CascadeLabel := preload("res://addons/godot_cascade/components/cascade_label.gd")
 const CascadeButton := preload("res://addons/godot_cascade/components/cascade_button.gd")
@@ -65,6 +67,10 @@ static func _create_control(tag_name: String, diagnostics: Array[Dictionary]) ->
 	match tag_name.to_lower():
 		"page", "row", "column":
 			return CascadeBox.new()
+		"stack":
+			return CascadeStack.new()
+		"grid":
+			return CascadeGrid.new()
 		"panel":
 			return CascadePanel.new()
 		"label":
@@ -286,7 +292,23 @@ static func _apply_declaration(
 				"stretch": CascadeBox.CrossAlignment.STRETCH,
 			}, line, diagnostics)
 		"gap":
-			_set_length_property(control, "gap", value, line, diagnostics)
+			if control is CascadeGrid:
+				var gaps := _split_whitespace(value)
+				if gaps.size() < 1 or gaps.size() > 2:
+					_diagnostic_bad_value(diagnostics, line, property_name, value)
+				else:
+					_set_length_property(control, "row_gap", gaps[0], line, diagnostics)
+					_set_length_property(control, "column_gap", gaps[0] if gaps.size() == 1 else gaps[1], line, diagnostics)
+			else:
+				_set_length_property(control, "gap", value, line, diagnostics)
+		"column-gap", "row-gap":
+			_set_length_property(control, property_name.replace("-", "_"), value, line, diagnostics)
+		"grid-template-columns", "grid-template-rows":
+			var tracks := _parse_grid_tracks(value, line, diagnostics)
+			if not tracks.is_empty():
+				control.set("column_tracks" if property_name.ends_with("columns") else "row_tracks", tracks)
+		"grid-column", "grid-row":
+			_apply_grid_placement(control, property_name, value, line, diagnostics)
 		"padding":
 			_apply_edges(style, "padding", value, line, diagnostics)
 		"margin":
@@ -321,6 +343,17 @@ static func _apply_declaration(
 				"clip": CascadeStyle.Overflow.CLIP,
 				"hidden": CascadeStyle.Overflow.CLIP,
 			}, line, diagnostics)
+		"position":
+			if value.to_lower() in ["relative", "absolute"]:
+				control.set_meta("cascade_position", value.to_lower())
+			else:
+				_diagnostic_bad_value(diagnostics, line, property_name, value)
+		"left", "top", "right", "bottom":
+			var inset := _parse_length(value)
+			if is_nan(inset):
+				_diagnostic_bad_value(diagnostics, line, property_name, value)
+			else:
+				control.set_meta("cascade_%s" % property_name, inset)
 		"background", "background-color":
 			style.background_color = _parse_color(value, line, diagnostics)
 		"border-color":
@@ -638,6 +671,85 @@ static func _parse_length(value: String) -> float:
 	if not normalized.is_valid_float():
 		return NAN
 	return normalized.to_float()
+
+
+static func _parse_grid_tracks(value: String, line: int, diagnostics: Array[Dictionary]) -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	for token in _split_grid_tracks(value):
+		var normalized := token.to_lower()
+		if normalized in ["auto", "content"]:
+			result.append({"kind": "content"})
+		elif normalized.ends_with("fr"):
+			var weight := normalized.trim_suffix("fr")
+			if not weight.is_valid_float() or weight.to_float() <= 0.0:
+				_diagnostic_bad_value(diagnostics, line, "grid-track", token)
+				return []
+			result.append({"kind": "fraction", "value": weight.to_float()})
+		elif normalized.begins_with("minmax(") and normalized.ends_with(")"):
+			var parts := normalized.trim_prefix("minmax(").trim_suffix(")").split(",", false)
+			if parts.size() != 2:
+				_diagnostic_bad_value(diagnostics, line, "grid-track", token)
+				return []
+			var minimum := _parse_length(parts[0])
+			if is_nan(minimum) or minimum < 0.0:
+				_diagnostic_bad_value(diagnostics, line, "grid-track", token)
+				return []
+			var maximum := str(parts[1]).strip_edges()
+			if maximum.ends_with("fr"):
+				var fraction := maximum.trim_suffix("fr")
+				if not fraction.is_valid_float() or fraction.to_float() <= 0.0:
+					_diagnostic_bad_value(diagnostics, line, "grid-track", token)
+					return []
+				result.append({"kind": "minmax", "min": minimum, "fraction": fraction.to_float()})
+			else:
+				var parsed_max := _parse_length(maximum)
+				if is_nan(parsed_max) or parsed_max < minimum:
+					_diagnostic_bad_value(diagnostics, line, "grid-track", token)
+					return []
+				result.append({"kind": "minmax", "min": minimum, "max": parsed_max})
+		else:
+			var fixed := _parse_length(normalized)
+			if is_nan(fixed) or fixed < 0.0:
+				_diagnostic_bad_value(diagnostics, line, "grid-track", token)
+				return []
+			result.append({"kind": "fixed", "value": fixed})
+	return result
+
+
+static func _split_grid_tracks(value: String) -> PackedStringArray:
+	var result := PackedStringArray()
+	var token := ""
+	var depth := 0
+	for character in value:
+		if character == "(":
+			depth += 1
+		elif character == ")":
+			depth = maxi(depth - 1, 0)
+		if character in [" ", "\t", "\r", "\n"] and depth == 0:
+			if not token.is_empty():
+				result.append(token)
+				token = ""
+		else:
+			token += character
+	if not token.is_empty():
+		result.append(token)
+	return result
+
+
+static func _apply_grid_placement(control: Control, property_name: String, value: String, line: int, diagnostics: Array[Dictionary]) -> void:
+	var parts := value.split("/", false)
+	var start := str(parts[0]).strip_edges()
+	if not start.is_valid_int() or start.to_int() < 1:
+		_diagnostic_bad_value(diagnostics, line, property_name, value)
+		return
+	var axis := "column" if property_name.ends_with("column") else "row"
+	control.set_meta("cascade_grid_%s" % axis, start.to_int() - 1)
+	if parts.size() == 2:
+		var span := str(parts[1]).strip_edges().trim_prefix("span ")
+		if not span.is_valid_int() or span.to_int() < 1:
+			_diagnostic_bad_value(diagnostics, line, property_name, value)
+			return
+		control.set_meta("cascade_grid_%s_span" % axis, span.to_int())
 
 
 static func _parse_color(value: String, line: int, diagnostics: Array[Dictionary]) -> Color:

@@ -6,6 +6,7 @@ const PropertyCache := preload("res://addons/godot_cascade/runtime/property_cach
 
 const COPIED_PROPERTIES: PackedStringArray = [
 	"direction", "wrap", "gap", "line_gap", "justify_content", "align_items", "pixel_snap",
+	"column_tracks", "row_tracks", "column_gap", "row_gap",
 	"text", "font", "font_size", "text_color", "horizontal_alignment", "vertical_alignment",
 	"autowrap_mode", "text_overrun_behavior", "max_lines_visible", "text_alignment",
 	"hover_background_color", "pressed_background_color", "checked_background_color", "open_background_color", "disabled_background_color",
@@ -83,6 +84,16 @@ static func _copy_properties(existing: Control, desired: Control) -> void:
 	existing.visible = desired.visible
 	for metadata_name in ["cascade_element_type", "cascade_id", "cascade_classes", "cascade_key", "cascade_bindings", "cascade_explicit_accessible_label"]:
 		existing.set_meta(metadata_name, desired.get_meta(metadata_name))
+	for metadata_name in ["cascade_position", "cascade_left", "cascade_top", "cascade_right", "cascade_bottom"]:
+		if desired.has_meta(metadata_name):
+			existing.set_meta(metadata_name, desired.get_meta(metadata_name))
+		elif existing.has_meta(metadata_name):
+			existing.remove_meta(metadata_name)
+	for metadata_name in ["cascade_grid_column", "cascade_grid_row", "cascade_grid_column_span", "cascade_grid_row_span"]:
+		if desired.has_meta(metadata_name):
+			existing.set_meta(metadata_name, desired.get_meta(metadata_name))
+		elif existing.has_meta(metadata_name):
+			existing.remove_meta(metadata_name)
 
 	if _has_property(existing, "cascade_style") and _has_property(desired, "cascade_style"):
 		var desired_style: CascadeStyle = desired.get("cascade_style")

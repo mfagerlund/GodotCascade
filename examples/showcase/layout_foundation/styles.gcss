@@ -13,6 +13,22 @@
     font-size: 30px;
 }
 
+.hero { height: 38px; }
+
+.layout-badge {
+    position: absolute;
+    right: 0px;
+    top: 2px;
+    width: 112px;
+    height: 28px;
+    padding: 5px 8px;
+    color: #7dbfff;
+    font-size: 12px;
+    background: #17253a;
+    border: 1px solid #315a89;
+    border-radius: 6px;
+}
+
 .lede {
     color: #9eacc7;
     font-size: 17px;
@@ -20,18 +36,14 @@
 
 .cards {
     min-height: 230px;
-    display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
     flex-grow: 1;
-    gap: 18px;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: minmax(210px, 1fr);
+    column-gap: 18px;
 }
 
 .card {
-    width: 250px;
-    min-width: 230px;
     min-height: 210px;
-    flex-grow: 1;
     padding: 20px 22px;
     display: flex;
     flex-direction: column;

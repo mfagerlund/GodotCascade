@@ -1,9 +1,12 @@
 <!-- Executed by CascadeDocument's focused GXML/GCSS vertical slice. -->
 <Page class="page">
-    <Label class="heading">GodotCascade</Label>
+    <Stack class="hero">
+        <Label class="heading">GodotCascade</Label>
+        <Label class="layout-badge">GRID + STACK</Label>
+    </Stack>
     <Label class="lede">Native controls. A predictable box model. Far fewer wrappers.</Label>
 
-    <Row class="cards">
+    <Grid class="cards">
         <Panel class="card box-model">
             <Label class="card-title">Box model</Label>
             <Label class="card-body">
@@ -24,7 +27,7 @@
                 Every element remains a real Control with Godot rendering, input, themes, and signals.
             </Label>
         </Panel>
-    </Row>
+    </Grid>
 
     <Row class="actions">
         <Label class="status">Phase 1 · Layout foundation</Label>

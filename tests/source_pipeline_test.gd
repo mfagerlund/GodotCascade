@@ -22,6 +22,8 @@ func _run() -> void:
 	_test_form_controls_pipeline()
 	_test_select_pipeline()
 	_test_slider_pipeline()
+	_test_stack_pipeline()
+	_test_grid_pipeline()
 	_test_review_regressions()
 	_test_parser_recovery()
 	_test_binding_resolver()
@@ -37,21 +39,23 @@ func _run() -> void:
 	var generated_root: Control = document.generated_root()
 	_expect_true("source document generated a root", generated_root != null)
 	if generated_root != null:
-		var card_rows := _find_by_class(generated_root, "cards")
-		_expect_int("one cards row", card_rows.size(), 1)
-		if card_rows.size() == 1:
-			var cards_row: Control = card_rows[0]
-			_expect_int("cards row direction", int(cards_row.get("direction")), 0)
-			_expect_true("cards row wraps", bool(cards_row.get("wrap")))
+		var card_grids := _find_by_class(generated_root, "cards")
+		_expect_int("one cards grid", card_grids.size(), 1)
+		if card_grids.size() == 1:
+			var cards_grid: Control = card_grids[0]
+			_expect_int("cards grid column count", cards_grid.get("column_tracks").size(), 3)
+			_expect_float("cards grid column gap", cards_grid.get("column_gap"), 18.0)
 
 		var cards := _find_by_class(generated_root, "card")
 		_expect_int("three generated cards", cards.size(), 3)
 		if cards.size() == 3:
 			for index in cards.size():
 				var style: CascadeStyle = cards[index].get("cascade_style")
-				_expect_float("card %s preferred width" % index, style.preferred_width, 250.0)
+				_expect_float("card %s minimum height" % index, style.min_height, 210.0)
 			_expect_float("cards share first row y (second)", cards[1].position.y, cards[0].position.y)
 			_expect_float("cards share first row y (third)", cards[2].position.y, cards[0].position.y)
+			_expect_float("fractional cards share width (second)", cards[1].size.x, cards[0].size.x)
+			_expect_float("fractional cards share width (third)", cards[2].size.x, cards[0].size.x)
 
 		var inspect_buttons := _find_by_id(generated_root, "inspect")
 		_expect_int("one generated inspect button", inspect_buttons.size(), 1)
@@ -242,6 +246,36 @@ func _test_slider_pipeline() -> void:
 	_expect_true("slider GCSS fill", slider.get("fill_color") == Color("55aaff"))
 	_expect_true("slider accessibility name", slider.get("accessibility_name") == "Master volume")
 	slider.free()
+
+
+func _test_stack_pipeline() -> void:
+	var markup := GxmlParser.parse("<Stack><Panel id=\"back\"/><Button id=\"badge\">New</Button></Stack>")
+	var stylesheet := GcssParser.parse("Stack { width: 200px; height: 100px; padding: 10px; } #badge { position: absolute; right: 5px; top: 7px; width: 50px; height: 24px; }")
+	var build := CascadeBuilder.build(markup["root"], stylesheet["rules"])
+	_expect_int("stack builder diagnostics", build["diagnostics"].size(), 0)
+	var built_root: Control = build["root"]
+	if built_root != null:
+		var badge: Control = _find_by_id(built_root, "badge")[0]
+		_expect_true("absolute position metadata", badge.get_meta("cascade_position") == "absolute")
+		_expect_float("absolute right metadata", badge.get_meta("cascade_right"), 5.0)
+		built_root.free()
+
+
+func _test_grid_pipeline() -> void:
+	var markup := GxmlParser.parse("<Grid><Panel id=\"first\"/><Panel id=\"featured\"/><Panel id=\"auto\"/></Grid>")
+	var stylesheet := GcssParser.parse("Grid { width: 320px; height: 180px; grid-template-columns: 80px 1fr 2fr; grid-template-rows: minmax(40px, 1fr) auto; gap: 8px 12px; } #featured { grid-column: 2 / span 2; grid-row: 1; }")
+	var build := CascadeBuilder.build(markup["root"], stylesheet["rules"])
+	_expect_int("grid builder diagnostics", build["diagnostics"].size(), 0)
+	var grid: Control = build["root"]
+	if grid != null:
+		_expect_int("grid column track count", grid.get("column_tracks").size(), 3)
+		_expect_int("grid row track count", grid.get("row_tracks").size(), 2)
+		_expect_float("grid column gap", grid.get("column_gap"), 12.0)
+		_expect_float("grid row gap", grid.get("row_gap"), 8.0)
+		var featured: Control = _find_by_id(grid, "featured")[0]
+		_expect_int("grid authored column", int(featured.get_meta("cascade_grid_column")), 1)
+		_expect_int("grid authored column span", int(featured.get_meta("cascade_grid_column_span")), 2)
+		grid.free()
 
 
 func _test_review_regressions() -> void:

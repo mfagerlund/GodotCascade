@@ -9,6 +9,8 @@ This page documents the executable subset on `main`. GodotCascade borrows produc
 | `Page` | `CascadeBox` | Column layout by default; useful as a document root |
 | `Row` | `CascadeBox` | Row layout by default |
 | `Column` | `CascadeBox` | Column layout by default |
+| `Grid` | `CascadeGrid` | Fixed, fractional, content, and min/max tracks with explicit or automatic placement |
+| `Stack` | `CascadeStack` | Overlay layout with an absolute-inset escape hatch |
 | `Panel` | `CascadePanel` | Semantic styled `CascadeBox` |
 | `Label` | `CascadeLabel` | Owned outer box with an internal native `Label` |
 | `Button` | `CascadeButton` | Owned drawing on `BaseButton` behavior |
@@ -22,7 +24,7 @@ This page documents the executable subset on `main`. GodotCascade borrows produc
 
 Every element accepts `id`, `class`, `accessible-label`, and `accessible-description`. Text-bearing controls use their visible text as the native accessibility name when no explicit label is authored. `Label`, `Button`, `Checkbox`, `RadioButton`, and `Switch` accept text as element content or through a `text` attribute. Interactive controls accept boolean `disabled`; toggle controls accept boolean `checked`; radio buttons use `group` to share a native `ButtonGroup`. `Select` accepts `selected` as an option value or zero-based index; `Option` accepts `value` and boolean `disabled`. `Progress` and `Slider` accept numeric `min`, `max`, and `value`; `Slider` also accepts a positive `step`.
 
-Unknown elements are build errors. `Window`, `Grid`, `Stack`, `TextInput`, `Image`, repeated elements, and custom components are not implemented yet.
+Unknown elements are build errors. `Window`, `TextInput`, `Image`, repeated elements, and custom components are not implemented yet.
 
 ## Bindings
 
@@ -88,6 +90,8 @@ When a select popup is open, `ui_up` and `ui_down` move through enabled options,
 | Distribution | `justify-content: start\|center\|end\|space-between\|space-around\|space-evenly` |
 | Alignment | `align-items: start\|center\|end\|stretch`, `align-self: auto\|start\|center\|end\|stretch` |
 | Spacing | `gap`, `padding`, `margin`, and individual padding/margin edges |
+| Grid | `grid-template-columns`, `grid-template-rows`, `column-gap`, `row-gap`, `grid-column`, `grid-row` |
+| Position | `position: relative\|absolute`, `left`, `top`, `right`, `bottom` within `Stack` |
 | Size | `width`, `height`, `min-width`, `min-height`, `max-width`, `max-height`, `flex-grow` |
 | Box | `background`, `background-color`, `border`, `border-color`, `border-width`, `border-radius`, `overflow` |
 | Text | `color`, `font-size` on controls exposing the corresponding property |
@@ -100,15 +104,17 @@ Unsupported properties produce warnings; unsupported values for known properties
 ## Layout behavior
 
 - Flex rows and columns support wrapping, gaps, growth, main-axis distribution, cross-axis alignment, and `align-self`.
+- Grid tracks accept fixed lengths, `fr`, `auto`/`content`, and `minmax(<length>, <length-or-fr>)`; children are placed row-major unless `grid-column` or `grid-row` specifies a one-based start and optional `span`.
+- `Stack` overlays normal children across its content box. Children using `position: absolute` may use pixel `left`, `top`, `right`, and `bottom` insets; opposing insets stretch that axis.
 - Every Cascade-owned element uses the same padding, margin, border, preferred/min/max size, and overflow model.
 - Margins do not collapse.
 - Final rectangles are pixel-snapped by rounding leading and trailing edges independently.
 - `overflow` supports `visible`, `clip`, and `hidden` as an alias for clipping.
-- Grid, stack/overlay, absolute positioning, percentages, and flex shrink/basis shorthands are roadmap work.
+- Percentages and flex shrink/basis shorthands are roadmap work.
 
 ## Component support
 
-Implemented exact components are `CascadeBox`, `CascadePanel`, `CascadeLabel`, `CascadeButton`, `CascadeCheckbox`, `CascadeRadioButton`, `CascadeSwitch`, `CascadeSelect`, `CascadeSlider`, and `CascadeProgress`. Exact means GodotCascade owns the supported measurement and visual semantics.
+Implemented exact components are `CascadeBox`, `CascadeGrid`, `CascadeStack`, `CascadePanel`, `CascadeLabel`, `CascadeButton`, `CascadeCheckbox`, `CascadeRadioButton`, `CascadeSwitch`, `CascadeSelect`, `CascadeSlider`, and `CascadeProgress`. Exact means GodotCascade owns the supported measurement and visual semantics.
 
 Ordinary Godot `Control` children can participate in Cascade layout through compatibility metadata, but the exact/adapted/layout-only diagnostic system is not implemented yet. See [ADR 0001](decisions/0001-owned-core-controls.md).
 
