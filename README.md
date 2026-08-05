@@ -14,34 +14,30 @@ Godot's container system is capable, but non-trivial interfaces often require de
 GodotCascade is built around a few ideas:
 
 - one consistent box model for margin, padding, border, and size;
-- flex and grid layout without excessive wrapper nodes;
+- flex layout today, with grid and stack planned, without excessive wrapper nodes;
 - reusable styles separated from scene structure;
 - declarative markup for concise, reviewable interfaces;
 - hot reload for short iteration cycles;
 - native Godot controls at runtime.
 
-## The intended authoring experience
+## The current authoring experience
 
 Markup files use the `.gxml` extension:
 
 ```xml
-<Window class="inventory">
-    <Label class="title">Inventory</Label>
-
-    <Grid class="items">
-        <ItemSlot repeat="player.inventory" />
-    </Grid>
-
-    <Button id="close">Close</Button>
-</Window>
+<Page class="hud">
+    <Label class="title" text="{player.name}" />
+    <Label class="caption">Health</Label>
+    <Progress value="{player.health}" max="100" />
+    <Button id="inspect">Inspect loadout</Button>
+</Page>
 ```
 
 Stylesheets provide layout and appearance:
 
 ```css
-.inventory {
-    width: 600px;
-    margin: 20px;
+.hud {
+    min-width: 420px;
     padding: 24px;
     display: flex;
     flex-direction: column;
@@ -52,28 +48,25 @@ Stylesheets provide layout and appearance:
 
 .title {
     font-size: 26px;
-    margin-bottom: 8px;
 }
 
-Button:hover {
-    background: #444;
-    scale: 1.05;
-}
+#inspect { background: #344054; }
+#inspect:hover { background: #475467; }
+#inspect:pressed { background: #1d2939; }
 ```
 
 Bindings connect the interface to game state:
 
 ```xml
 <Label text="{player.name}" />
-<ProgressBar value="{player.health}" />
-<ItemList items="{inventory.items}" />
+<Progress value="{player.health}" max="100" />
 ```
 
 These formats deliberately borrow familiar ideas from HTML and CSS, but they are small, Godot-specific languages. GodotCascade is not a browser engine and does not aim for web standards compatibility.
 
 ## What works today
 
-The repository currently contains the first Phase 1 vertical slice:
+The repository currently contains several working vertical slices:
 
 - an installable Godot 4 editor addon;
 - `CascadeBox`, a native `Container` with row and column flow;
@@ -93,13 +86,13 @@ The repository currently contains the first Phase 1 vertical slice:
 - stable ID and structural keys that reconcile edits into the existing native tree;
 - last-valid rendering when an in-progress edit has parser or builder errors;
 - focused `{dot.separated.path}` one-way bindings for text and progress values;
-- an example scene that exercises the layout container.
+- two source-generated parity scenes covering layout, components, and bound telemetry data.
 
 Reactive binding adapters, broad property coverage, direct-child selectors, importers, and editor preview tooling remain roadmap work.
 
 ## Trying the prototype
 
-1. Open this folder with Godot 4.3 or newer.
+1. Open this folder with Godot 4.7, the currently tested editor version.
 2. Enable **GodotCascade** under **Project → Project Settings → Plugins**.
 3. Run the project. The configured main scene is `examples/generated_showcase.tscn`, built at runtime from the showcase `.gxml` and `.gcss` files.
 4. Add a **CascadeBox** from the Create New Node dialog to experiment in your own scene.
@@ -132,6 +125,21 @@ document.refresh_bindings()
 ```
 
 Assigning a new context refreshes automatically. The current focused slice supports text on `Label`/`Button` and `min`, `max`, and `value` on `Progress`; unresolved paths produce binding diagnostics instead of executing expressions or methods.
+
+## Components and interactive states
+
+The executable GXML elements are `Page`, `Row`, `Column`, `Panel`, `Label`, `Button`, and `Progress`. GodotCascade owns the measurement and drawing of its core components while retaining useful native behavior underneath.
+
+Button state selectors respond dynamically to Godot's native interaction state:
+
+```css
+Button:hover { background: #475467; }
+Button:pressed { background: #1d2939; }
+Button:focused { border-color: #84adff; border-width: 2px; }
+Button:disabled { background: #1f2937; color: #98a2b3; }
+```
+
+This is a focused subset, not browser-wide pseudo-class support. State styling is currently limited to `CascadeButton`; `:checked`, `:open`, generalized `:selected`, transitions, and hover on arbitrary controls are roadmap work. See the [current support reference](docs/current-support.md) for the exact element, selector, property, and state matrices.
 
 Run the current headless smoke test with:
 
@@ -204,22 +212,25 @@ python tools/showcase/generate_showcase.py --check
 ## Architecture
 
 ```text
-Markup (.gxml) ──→ Parser ──→ UI tree ──→ Style engine
-                                                │
-                                                ▼
-Native Controls ←── Reconciler ←── Layout engine
+GXML + GCSS ──→ parsers ──→ off-tree native candidate
+                                      │
+                                      ▼
+binding context ──→ reconciler ──→ live native Controls
+                                      │
+                                      ▼
+                               flex layout engine
 ```
 
 The major boundaries are intentionally separate:
 
-- **Parser:** turns source files into immutable syntax and diagnostics.
-- **UI tree:** stores element identity, attributes, bindings, and component boundaries.
-- **Style engine:** matches selectors and computes resolved values.
-- **Layout engine:** translates box, flex, and grid rules into control rectangles.
+- **Parser:** turns source files into logical syntax trees and diagnostics.
+- **UI tree:** carries authored elements into keyed native candidates with binding metadata.
+- **Style engine:** matches the focused selector/property subset and applies typed values.
+- **Layout engine:** translates the current box/flex rules into control rectangles; grid remains planned.
 - **Reconciler:** updates existing Godot nodes while preserving runtime state and signal connections.
-- **Tooling:** watches source files and explains markup, style, and layout decisions.
+- **Tooling:** watches source files and generates the HTML/native parity report; editor inspection remains planned.
 
-See [docs/architecture.md](docs/architecture.md) for design constraints and [ROADMAP.md](ROADMAP.md) for the planned delivery sequence.
+See the [documentation index](docs/README.md), [architecture](docs/architecture.md), [current support reference](docs/current-support.md), and [roadmap](ROADMAP.md).
 
 ## Project principles
 
@@ -233,6 +244,7 @@ See [docs/architecture.md](docs/architecture.md) for design constraints and [ROA
 ## Roadmap
 
 - **Phase 1 — Layout:** box model, flex flow, wrapping, constraints, and core controls.
+- **Phase 1.5 — Form controls:** generalized pseudo states, checkbox, radio button, switch, select, slider, and a settings-menu showcase.
 - **Phase 2 — Styling:** stylesheets, selectors, cascade, inheritance, and pseudo states.
 - **Phase 3 — Markup:** `.gxml`, components, bindings, and reconciliation.
 - **Phase 4 — Tooling:** editor integration, live preview, hot reload, and inspection.

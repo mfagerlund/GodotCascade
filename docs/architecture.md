@@ -5,22 +5,18 @@ GodotCascade is split into pure data transformations around a narrow Godot adapt
 ## Runtime pipeline
 
 ```text
-source files
-    │
-    ├── .gxml ───────→ markup syntax tree
-    └── .gcss ───────→ stylesheet syntax tree
-                              │
-                              ▼
-                    logical element tree
-                              │
-                              ▼
-                      computed styles
-                              │
-                              ▼
-                       layout boxes
-                              │
-                              ▼
-                     native Control tree
+.gxml ──→ GxmlParser ──┐
+                       ├──→ CascadeBuilder ──→ off-tree candidate Controls
+.gcss ──→ GcssParser ──┘                              │
+                                                      ▼
+source watcher ──→ CascadeDocument ──→ CascadeReconciler ──→ live Controls
+                                                      │
+binding context ──→ BindingResolver ──────────────────┤
+                                                      ▼
+                                             CascadeBox adapter
+                                                      │
+                                                      ▼
+                                             FlexLayoutEngine
 ```
 
 The source formats are tentatively named `.gxml` and `.gcss`. The stylesheet extension should be confirmed before the public API stabilizes.
@@ -29,19 +25,25 @@ The source formats are tentatively named `.gxml` and `.gcss`. The stylesheet ext
 
 ### Source and diagnostics
 
-Parsers retain source spans rather than returning only values. Every recoverable error carries a file, range, explanation, and ideally a suggested correction. Parsing does not create Godot nodes.
+Parsers return logical values plus recoverable line/column diagnostics; `CascadeDocument` stamps the source path. Parsing does not create Godot nodes. Complete source spans, ranges, and fix suggestions remain improvements for the tokenizer/parser milestone.
 
 ### Logical element tree
 
-The logical tree represents authored structure and component expansion. Elements have stable identities, type names, attributes, classes, optional IDs, bindings, and children. It is deliberately smaller than a browser DOM and is not exposed as a general scripting platform.
+The logical tree represents authored structure before native construction. Elements have type names, attributes, classes, optional IDs, text, parent links, and children. `CascadeBuilder` derives explicit-ID or structural keys and binding metadata when it creates the candidate native tree. The logical tree is deliberately smaller than a browser DOM and is not exposed as a general scripting platform.
 
 ### Style engine
 
-The style engine indexes rules by the rightmost selector, matches only plausible candidates, and produces immutable computed styles. It owns specificity, inheritance, initial values, pseudo states, and custom properties. Resolved style is kept separate from mutable Godot theme resources.
+The target style engine will index rules by the rightmost selector, match only plausible candidates, and produce immutable computed styles. It will own specificity, inheritance, initial values, pseudo states, and custom properties while keeping resolved style separate from mutable Godot theme resources.
 
-The current prototype exposes the computed box-model shape as a mutable `CascadeStyle` resource. Both `CascadeBox` and owned components consume it and react to draw, measure, and arrange invalidation flags. Stylesheet resolution will eventually produce immutable snapshots of this same property surface; the editable resource is the bridge used before parsing and selector matching exist.
+The current executable slice parses rules, matches them against the logical element tree, resolves specificity and source order in `CascadeBuilder`, and applies a focused typed property registry. It exposes the computed box-model shape as a mutable `CascadeStyle` resource. `CascadeBox` and owned components consume it and react to draw, measure, and arrange invalidation flags. A later computed-style layer will produce immutable snapshots of this same property surface.
 
-The first executable stylesheet slice parses type, class, ID, and descendant selectors; resolves specificity and source order; and applies a focused property registry through `CascadeBuilder`. It intentionally emits diagnostics for unsupported values instead of retaining unknown CSS. This is a vertical slice, not the final tokenizer or computed-style cache.
+Type, class, ID, combined-compound, and descendant selectors work today. Selector lists, direct-child and sibling combinators, inheritance, variables, and computed-style caching do not. Unsupported values are diagnosed rather than retained as arbitrary CSS. The exact matrix lives in [current-support.md](current-support.md).
+
+### Interactive state
+
+Pseudo-state selectors are parsed separately from base declarations. The current builder resolves button state declarations into explicit `CascadeButton` appearance properties. The component then selects those colors from native `BaseButton` hover, pressed, focus, and disabled state during drawing; it does not rematch the stylesheet on every pointer event.
+
+This adapter is deliberately component-specific today. The next form-controls slice will define shared state precedence and adapters for `:checked`, generalized `:selected`, and `:open` before checkbox, radio-button, and select components depend on them.
 
 ### Layout engine
 
@@ -50,7 +52,7 @@ Layout has two conceptual passes:
 1. **Measure** computes desired sizes from constraints and intrinsic content.
 2. **Arrange** assigns final rectangles to boxes and their children.
 
-The layout engine consumes plain value objects and produces rectangles. The Phase 1 `CascadeBox` currently performs these operations inside a `Container`; extracting the calculations into engine-only types is the next architectural step.
+`FlexLayoutEngine` consumes plain layout requests and item value objects and produces rectangles without touching the scene tree. `CascadeBox` is the native `Container` adapter: it measures children, translates `CascadeStyle` and compatibility metadata into engine values, then applies the resulting rectangles. Grid, stack, and absolute positioning will use parallel engine boundaries rather than adding unrelated policy to `CascadeBox`.
 
 ### Data binding
 
@@ -68,7 +70,7 @@ The runtime watcher compares source-content signatures rather than filesystem ti
 
 The adapter owns control factories, property conversion, theme integration, input-state observation, and intrinsic measurement. Godot-specific behavior should terminate here instead of leaking into parsers or rule matching.
 
-Core components use Godot's lowest useful behavioral primitive while owning their box model and drawing. For example, `CascadeButton` derives from `BaseButton` rather than adapting Godot's themed `Button`. Ordinary native controls remain supported through explicit exact, adapted, or layout-only compatibility tiers. See [ADR 0001](decisions/0001-owned-core-controls.md).
+Core components use Godot's lowest useful behavioral primitive while owning their box model and drawing. For example, `CascadeButton` derives from `BaseButton` rather than adapting Godot's themed `Button`. Ordinary native controls already participate in layout through compatibility metadata; explicit exact, adapted, or layout-only diagnostics remain planned. See [ADR 0001](decisions/0001-owned-core-controls.md).
 
 ## Invalidation model
 
@@ -89,10 +91,10 @@ The exact dependency table will eventually become property metadata in the style
 
 - Logical pixels map directly to Godot UI units.
 - Margins do not collapse.
-- Percentages are accepted only where their containing block is unambiguous.
+- Percentages are not accepted in the current length subset.
 - Unsupported properties produce diagnostics instead of being silently stored.
 - Native control minimum sizes participate in measurement.
-- Theme resolution remains available to native controls.
+- Theme resolution remains available to ordinary/adapted native controls; exact owned components use their explicit Cascade appearance surface.
 - Arranged rectangles round their leading and trailing edges independently by default, so adjacent boundaries remain stable; containers may opt into subpixel output.
 - Overflow is explicit (`visible` or `clip`) and never inferred from a control type.
 

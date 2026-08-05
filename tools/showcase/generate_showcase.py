@@ -124,6 +124,9 @@ def generate(check: bool = False) -> None:
     .pipeline {{ display:flex; align-items:center; gap:8px; color:#aab7d1; }}
     .pipeline span {{ padding:10px 14px; border:1px solid #2c3c5d; border-radius:999px; background:#111827; white-space:nowrap; }}
     .pipeline b {{ color:#5f79a9; }}
+    .doc-links {{ margin-top:22px; display:flex; flex-wrap:wrap; gap:10px; }}
+    .doc-links a {{ padding:8px 12px; color:#b9d2ff; text-decoration:none; border:1px solid #2c3c5d; border-radius:8px; background:#101827; }}
+    .doc-links a:hover {{ color:#fff; border-color:#5f79a9; }}
     .demo {{ margin-bottom:60px; border:1px solid #263554; border-radius:22px; background:rgba(12,17,29,.92); overflow:hidden; box-shadow:0 35px 100px rgba(0,0,0,.3); }}
     .demo-heading {{ padding:30px 34px; display:grid; grid-template-columns:minmax(0,1fr) auto; gap:36px; border-bottom:1px solid #263554; }}
     .eyebrow {{ margin:0 0 7px!important; color:#76a9fa!important; font-size:12px!important; font-weight:700; letter-spacing:.12em; text-transform:uppercase; }}
@@ -163,7 +166,12 @@ def generate(check: bool = False) -> None:
     <div>
       <div class="brand">GodotCascade</div>
       <h1>Design in HTML. Rebuild with native Godot controls.</h1>
-      <p>{html.escape(manifest['description'])} This page is generated from the showcase manifest so reference designs, proposed source, scenes, and captures evolve together.</p>
+      <p>{html.escape(manifest['description'])} This page is generated from the showcase manifest so reference designs, executable source, scenes, and captures evolve together.</p>
+      <nav class="doc-links" aria-label="Project documentation">
+        <a href="../current-support.md">Current support</a>
+        <a href="../architecture.md">Architecture</a>
+        <a href="../../ROADMAP.md">Roadmap</a>
+      </nav>
     </div>
     <div class="pipeline" aria-label="Migration pipeline"><span>HTML + CSS</span><b>→</b><span>GXML + GCSS</span><b>→</b><span>Godot Controls</span></div>
   </header>

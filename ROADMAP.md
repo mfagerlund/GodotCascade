@@ -2,6 +2,12 @@
 
 The roadmap favors end-to-end slices over isolated subsystems. Each milestone should produce something visible in a running Godot project and leave behind testable boundaries for the next slice.
 
+## Status snapshot
+
+The roadmap is not empty. The executable foundation now covers flex/box layout, owned button/label/panel/progress controls, GXML and focused GCSS parsing, native-tree construction, keyed hot reload, last-valid diagnostics, one-way property-path bindings, automated captures, and the HTML parity report.
+
+The recommended next vertical slice is a source-generated settings menu. It requires generalized interactive-state adapters followed by owned checkbox and radio-button components. Dropdown/select behavior follows after the shared state and keyboard test matrix is established.
+
 ## Phase 1 — Layout foundation
 
 ### 1.1 Box and flex prototype — complete
@@ -47,6 +53,21 @@ The roadmap favors end-to-end slices over isolated subsystems. Each milestone sh
 - [ ] Exact/adapted/layout-only compatibility diagnostics
 - [ ] State matrix tests for hover, pressed, focused, and disabled controls
 
+### 1.5 Form controls and settings showcase — next
+
+- [ ] Generalize native pseudo-state adapters beyond `CascadeButton`
+- [ ] Define shared state names and precedence: disabled, pressed, checked/selected, hover, focus
+- [ ] `CascadeCheckbox` on `BaseButton` toggle behavior with owned indicator, label, and box model
+- [ ] `CascadeRadioButton` on `BaseButton` plus native `ButtonGroup`
+- [ ] GXML `checked`, `disabled`, `group`, and accessible-label attributes
+- [ ] `:checked` pseudo state and generalized `:disabled`, `:hover`, and `:focused`
+- [ ] Mouse, keyboard, controller, focus, checked, and disabled state matrix tests
+- [ ] Source-generated settings-menu HTML/Godot parity demo
+- [ ] `CascadeSwitch` using checkbox semantics and switch-specific drawing
+- [ ] `CascadeSelect` composite with popup placement, option selection, keyboard navigation, and `:open`/`:selected`
+- [ ] `CascadeSlider` on native range semantics with owned track, fill, and thumb drawing
+- [ ] Adapted `CascadeTextInput` plan covering selection, IME, clipboard, bidi, and accessibility
+
 ## Phase 2 — Styles
 
 - [ ] Tokenizer with source spans and recovery
@@ -59,7 +80,7 @@ The roadmap favors end-to-end slices over isolated subsystems. Each milestone sh
 - [x] Specificity and source ordering
 - [ ] Style inheritance
 - [x] Button `:hover`, `:pressed`, `:focused`, and `:disabled`
-- [ ] Generalized `:selected` and pseudo-state adapters
+- [ ] Generalized `:checked`, `:selected`, `:open`, and pseudo-state adapters
 - [ ] Computed-style caching and targeted invalidation
 - [ ] Godot theme and `StyleBox` adapters
 
@@ -95,4 +116,14 @@ The roadmap favors end-to-end slices over isolated subsystems. Each milestone sh
 
 ## First public preview
 
-The first public preview should build a small settings menu from `.gxml` and a stylesheet, update bound values, react to pointer and focus states, and hot-reload edits without losing focus or signal connections. It should include malformed-source diagnostics and layout tests that run in headless Godot.
+The first public preview should build a small settings menu from `.gxml` and a stylesheet, update bound values, react to pointer and focus states, and hot-reload edits without losing focus or signal connections.
+
+- [ ] Settings menu built from GXML/GCSS
+- [ ] Checkbox, radio button, and select controls with keyboard/controller behavior
+- [x] Focused one-way bound values
+- [x] Pointer and focus states on buttons
+- [x] Keyed hot reload preserving compatible native instances and signal connections
+- [x] Malformed-source diagnostics with last-valid rendering
+- [x] Headless layout, component, and source-pipeline tests
+- [ ] Accessibility pass and documented keyboard navigation
+- [ ] Public-preview API and source-format stability notes

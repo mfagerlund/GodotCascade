@@ -17,13 +17,23 @@ GodotCascade will own the visual and measurement implementation of its core comp
 
 Examples:
 
-| GodotCascade component | Native base | Godot behavior retained | Behavior owned by GodotCascade |
-| --- | --- | --- | --- |
-| `CascadeButton` | `BaseButton` | activation, focus, toggle, disabled state, shortcuts, signals | box model, text/icon layout, state drawing |
-| `CascadeLabel` | `Control` with internal `Label` | shaping, wrapping, bidi, localization, accessibility hooks | outer box model, clipping, sizing contract |
-| `CascadeProgress` | `Range` | value constraints and change signals | track/fill layout and drawing |
-| `CascadePanel` | `Control` | native scene/input lifecycle | box model and drawing |
-| `CascadeImage` | `Control` | native texture resources | fit, position, clipping, and drawing |
+| GodotCascade component | Status | Native base | Godot behavior retained | Behavior owned by GodotCascade |
+| --- | --- | --- | --- | --- |
+| `CascadeButton` | Implemented | `BaseButton` | activation, focus, toggle, disabled state, shortcuts, signals | box model, text layout, and state drawing |
+| `CascadeLabel` | Implemented | `Control` with internal `Label` | shaping, wrapping, bidi, localization, accessibility hooks | outer box model, clipping, and sizing contract |
+| `CascadeProgress` | Implemented | `Control` | native scene and drawing lifecycle | clamped range values, track/fill layout, drawing, and box model |
+| `CascadePanel` | Implemented | `CascadeBox` / `Container` | container lifecycle and child layout notifications | semantic component identity plus shared box/flex behavior |
+| `CascadeImage` | Proposed | `Control` | native texture resources | fit, position, clipping, and drawing |
+
+The form-control roadmap follows the same rule:
+
+| Proposed component | Behavioral foundation | GodotCascade-owned surface |
+| --- | --- | --- |
+| `CascadeCheckbox` | `BaseButton` toggle behavior | indicator, label layout, box model, and checked-state drawing |
+| `CascadeRadioButton` | `BaseButton` plus `ButtonGroup` | indicator, group-facing attributes, label layout, and state drawing |
+| `CascadeSwitch` | Checkbox/toggle semantics | switch track, thumb, and state drawing |
+| `CascadeSelect` | Composite native button, popup, and option list behavior | closed control, popup styling, option layout, and open/selected states |
+| `CascadeSlider` | Native range semantics | track, fill, thumb geometry, and pointer/focus states |
 
 Complex editors such as line edits and rich text will initially use native controls behind explicit compatibility adapters. Replacing them requires separate design work around selection, IME composition, shaping, bidirectional text, clipboard behavior, and accessibility.
 
@@ -43,4 +53,5 @@ Unsupported or inexact declarations should produce a diagnostic in development b
 - Components remain native Godot nodes and retain relevant engine behavior.
 - The project owns more drawing, text layout, theme interoperability, and tests.
 - Theme adapters become optional integration paths rather than the foundation of styling.
-- The first implemented component is `CascadeButton`, based on `BaseButton`, because it exercises intrinsic content, interaction states, focus, disabled behavior, and text layout without requiring a full text editor.
+- `CascadeButton`, `CascadeLabel`, `CascadePanel`, and `CascadeProgress` now validate the decision across interactive, textual, container, and value-display controls.
+- Checkbox and radio-button work should generalize pseudo-state adapters before select/dropdown introduces popup, option-selection, and keyboard-navigation complexity.

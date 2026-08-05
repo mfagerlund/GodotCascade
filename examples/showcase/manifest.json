@@ -1,7 +1,7 @@
 {
   "version": 1,
   "title": "GodotCascade parity showcase",
-  "description": "Reference HTML and native GodotCascade output generated from paired demo sources.",
+  "description": "Executable HTML references and native GodotCascade output generated from paired demo sources against the current focused language subset.",
   "demos": [
     {
       "id": "layout-foundation",
