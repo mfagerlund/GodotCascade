@@ -5,6 +5,7 @@ extends BaseButton
 ## Interaction, focus, shortcuts, toggle state, and signals remain Godot-native.
 
 const BoxPainter := preload("res://addons/godot_cascade/components/box_painter.gd")
+const InteractiveStateAdapter := preload("res://addons/godot_cascade/components/interactive_state_adapter.gd")
 
 @export_group("Content")
 @export var text := "Button":
@@ -44,6 +45,10 @@ const BoxPainter := preload("res://addons/godot_cascade/components/box_painter.g
 	set(value):
 		pressed_background_color = value
 		queue_redraw()
+@export var checked_background_color := Color("1d2939"):
+	set(value):
+		checked_background_color = value
+		queue_redraw()
 @export var disabled_background_color := Color("1f2937"):
 	set(value):
 		disabled_background_color = value
@@ -56,6 +61,10 @@ const BoxPainter := preload("res://addons/godot_cascade/components/box_painter.g
 	set(value):
 		disabled_text_color = value
 		queue_redraw()
+@export var checked_text_color := Color("f2f4f7"):
+	set(value):
+		checked_text_color = value
+		queue_redraw()
 @export_group("Focus")
 @export var focus_ring_color := Color("84adff"):
 	set(value):
@@ -65,6 +74,8 @@ const BoxPainter := preload("res://addons/godot_cascade/components/box_painter.g
 	set(value):
 		focus_ring_width = maxf(value, 0.0)
 		queue_redraw()
+
+var _state_adapter: RefCounted
 
 
 func _init() -> void:
@@ -83,13 +94,9 @@ func _ready() -> void:
 	_connect_style()
 	_apply_overflow()
 	mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	button_down.connect(_on_visual_state_changed)
-	button_up.connect(_on_visual_state_changed)
-	mouse_entered.connect(_on_visual_state_changed)
-	mouse_exited.connect(_on_visual_state_changed)
-	focus_entered.connect(_on_visual_state_changed)
-	focus_exited.connect(_on_visual_state_changed)
-	toggled.connect(_on_toggled)
+	_state_adapter = InteractiveStateAdapter.new()
+	_state_adapter.attach(self)
+	_state_adapter.changed.connect(queue_redraw)
 	resized.connect(_on_visual_state_changed)
 
 
@@ -156,18 +163,37 @@ func _draw_text(content: Rect2) -> void:
 		text_alignment,
 		content.size.x,
 		font_size,
-		disabled_text_color if disabled else text_color
+		_current_text_color()
 	)
 
 
 func _current_background_color() -> Color:
-	if disabled:
-		return disabled_background_color
-	if is_pressed() or button_pressed:
-		return pressed_background_color
-	if is_hovered():
-		return hover_background_color
-	return cascade_style.background_color
+	match cascade_visual_state():
+		InteractiveStateAdapter.DISABLED:
+			return disabled_background_color
+		InteractiveStateAdapter.PRESSED:
+			return pressed_background_color
+		InteractiveStateAdapter.CHECKED:
+			return checked_background_color
+		InteractiveStateAdapter.HOVER:
+			return hover_background_color
+		_:
+			return cascade_style.background_color
+
+
+func _current_text_color() -> Color:
+	match cascade_visual_state():
+		InteractiveStateAdapter.DISABLED:
+			return disabled_text_color
+		InteractiveStateAdapter.CHECKED:
+			return checked_text_color
+		_:
+			return text_color
+
+
+## Returns the normalized native state used for pseudo-state drawing.
+func cascade_visual_state() -> String:
+	return InteractiveStateAdapter.BASE if _state_adapter == null else _state_adapter.current_state()
 
 
 func _resolved_font() -> Font:
@@ -223,8 +249,4 @@ func _notify_parent_layout_changed() -> void:
 
 
 func _on_visual_state_changed() -> void:
-	queue_redraw()
-
-
-func _on_toggled(_is_pressed: bool) -> void:
 	queue_redraw()

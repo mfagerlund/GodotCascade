@@ -833,6 +833,224 @@
 </code></pre>
       </details>
       </section>
+    </article>
+    <article class="demo" id="settings-menu">
+      <header class="demo-heading">
+        <div>
+          <p class="eyebrow">Current demo</p>
+          <h2>Settings menu</h2>
+          <p>A source-generated settings surface exercising owned checkboxes, switches, grouped radio buttons, native focus/toggle state, disabled semantics, and shared pseudo-state precedence.</p>
+        </div>
+        <dl>
+          <div><dt>Viewport</dt><dd>960 × 540</dd></div>
+          <div><dt>Godot scene</dt><dd><code>examples/settings_menu_showcase.tscn</code></dd></div>
+        </dl>
+      </header>
+
+      <div class="comparison">
+        <section class="render-column">
+          <div class="render-label"><span>HTML reference</span><small>Live browser rendering</small></div>
+          <div class="render-frame" data-viewport-width="960" data-viewport-height="540" style="--viewport-width:960px; --viewport-height:540px; aspect-ratio:960/540">
+            <iframe width="960" height="540" title="HTML rendering of Settings menu" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;utf-8&quot;&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+  &lt;title&gt;GodotCascade — Settings menu HTML reference&lt;/title&gt;
+  &lt;style&gt;
+    :root { color-scheme:dark; font-family:Inter,ui-sans-serif,system-ui,sans-serif; background:#0a0f19; color:#f1f5ff; }
+    * { box-sizing:border-box; }
+    html,body { margin:0; min-height:100%; }
+    body { min-height:540px; background:#0a0f19; }
+    main { min-height:540px; padding:34px 52px; display:flex; flex-direction:column; gap:22px; }
+    header { display:flex; flex-direction:column; gap:6px; }
+    .eyebrow { margin:0; color:#7dbfff; font-size:12px; letter-spacing:.11em; }
+    h1 { margin:0; font-size:32px; font-weight:500; }
+    .subtitle { margin:0; color:#8d9bb5; font-size:15px; }
+    .content { display:flex; flex:1; gap:18px; }
+    section { flex:1; padding:22px; display:flex; flex-direction:column; gap:12px; background:#131b2a; border:1px solid #2b3b57; border-radius:14px; }
+    h2 { margin:0; font-size:20px; font-weight:500; }
+    .help { margin:0 0 5px; color:#7f91af; font-size:13px; }
+    label { min-height:35px; padding:4px; display:flex; align-items:center; gap:10px; color:#c9d5e9; border:2px solid transparent; border-radius:7px; }
+    label:hover { background:#1d2939; }
+    label:has(input:checked) { color:#fff; background:#16233a; }
+    label:has(input:disabled) { color:#667085; background:#111827; }
+    input { width:18px; height:18px; margin:0; accent-color:#528bff; }
+    .switch input { width:38px; height:20px; position:relative; appearance:none; border:1px solid #667085; border-radius:99px; background:#344054; }
+    .switch input::after { content:&quot;&quot;; position:absolute; top:2px; left:2px; width:14px; height:14px; border-radius:50%; background:#fff; transition:left .1s ease; }
+    .switch input:checked { background:#528bff; }
+    .switch input:checked::after { left:20px; }
+    footer { display:flex; align-items:center; gap:16px; }
+    .hint { flex:1; color:#6f7f9b; font-size:13px; }
+    button { min-width:148px; min-height:42px; padding:9px 14px; color:#f2f4f7; font:inherit; background:#1c64d1; border:1px solid #5aa7ff; border-radius:8px; }
+  &lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;main&gt;
+    &lt;header&gt;&lt;p class=&quot;eyebrow&quot;&gt;GAME SETTINGS&lt;/p&gt;&lt;h1&gt;Graphics &amp;amp; display&lt;/h1&gt;&lt;p class=&quot;subtitle&quot;&gt;Native focus, toggle, and radio-group behavior with Cascade-owned drawing.&lt;/p&gt;&lt;/header&gt;
+    &lt;div class=&quot;content&quot;&gt;
+      &lt;section&gt;&lt;h2&gt;Effects&lt;/h2&gt;&lt;p class=&quot;help&quot;&gt;Tune visual features independently.&lt;/p&gt;&lt;label&gt;&lt;input type=&quot;checkbox&quot; checked&gt;Dynamic shadows&lt;/label&gt;&lt;label&gt;&lt;input type=&quot;checkbox&quot; checked&gt;Bloom&lt;/label&gt;&lt;label class=&quot;switch&quot;&gt;&lt;input type=&quot;checkbox&quot; role=&quot;switch&quot; checked&gt;Vertical sync&lt;/label&gt;&lt;label&gt;&lt;input type=&quot;checkbox&quot; disabled&gt;Ray tracing · unavailable&lt;/label&gt;&lt;/section&gt;
+      &lt;section&gt;&lt;h2&gt;Window mode&lt;/h2&gt;&lt;p class=&quot;help&quot;&gt;Choose one native radio-group option.&lt;/p&gt;&lt;label&gt;&lt;input type=&quot;radio&quot; name=&quot;window-mode&quot;&gt;Windowed&lt;/label&gt;&lt;label&gt;&lt;input type=&quot;radio&quot; name=&quot;window-mode&quot; checked&gt;Borderless&lt;/label&gt;&lt;label&gt;&lt;input type=&quot;radio&quot; name=&quot;window-mode&quot;&gt;Exclusive fullscreen&lt;/label&gt;&lt;/section&gt;
+    &lt;/div&gt;
+    &lt;footer&gt;&lt;span class=&quot;hint&quot;&gt;Tab to move focus · Space or controller accept to toggle&lt;/span&gt;&lt;button type=&quot;button&quot;&gt;Apply settings&lt;/button&gt;&lt;/footer&gt;
+  &lt;/main&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+"></iframe>
+          </div>
+        </section>
+        <section class="render-column">
+          <div class="render-label"><span>GodotCascade</span><small>Captured from the native Godot scene</small></div>
+          <div class="render-frame godot-render" data-viewport-width="960" data-viewport-height="540" style="--viewport-width:960px; --viewport-height:540px; aspect-ratio:960/540"><img src="assets/settings-menu-godot.png" alt="GodotCascade render of Settings menu"></div>
+        </section>
+      </div>
+
+      <section class="mapping">
+        <div>
+          <p class="eyebrow">Translation contract</p>
+          <h3>Same intent, native target</h3>
+          <p>The mapping is semantic rather than a promise of browser compatibility. Each supported declaration resolves into a typed CascadeStyle or layout value.</p>
+        </div>
+        <table>
+          <thead><tr><th>HTML/CSS</th><th>GodotCascade source</th><th>Runtime</th></tr></thead>
+          <tbody><tr><td><code>input[type=checkbox]</code></td><td><code>Checkbox</code></td><td><code>CascadeCheckbox (BaseButton toggle)</code></td></tr><tr><td><code>input[role=switch]</code></td><td><code>Switch</code></td><td><code>CascadeSwitch track/thumb drawing</code></td></tr><tr><td><code>input[type=radio] name</code></td><td><code>RadioButton group</code></td><td><code>CascadeRadioButton + ButtonGroup</code></td></tr><tr><td><code>checked / disabled</code></td><td><code>checked / disabled</code></td><td><code>Native button state</code></td></tr><tr><td><code>:checked / :hover</code></td><td><code>:checked / :hover</code></td><td><code>Shared state adapter</code></td></tr><tr><td><code>aria-label</code></td><td><code>accessible-label</code></td><td><code>Native accessibility name</code></td></tr><tr><td><code>fieldset-like cards</code></td><td><code>Panel + Column</code></td><td><code>CascadePanel flex layout</code></td></tr></tbody>
+        </table>
+      </section>
+
+      <section class="sources">
+
+      <details class="source-panel">
+        <summary><span>HTML reference</span><code>examples/showcase/settings_menu/reference.html</code></summary>
+        <pre><code class="language-html">&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;utf-8&quot;&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+  &lt;title&gt;GodotCascade — Settings menu HTML reference&lt;/title&gt;
+  &lt;style&gt;
+    :root { color-scheme:dark; font-family:Inter,ui-sans-serif,system-ui,sans-serif; background:#0a0f19; color:#f1f5ff; }
+    * { box-sizing:border-box; }
+    html,body { margin:0; min-height:100%; }
+    body { min-height:540px; background:#0a0f19; }
+    main { min-height:540px; padding:34px 52px; display:flex; flex-direction:column; gap:22px; }
+    header { display:flex; flex-direction:column; gap:6px; }
+    .eyebrow { margin:0; color:#7dbfff; font-size:12px; letter-spacing:.11em; }
+    h1 { margin:0; font-size:32px; font-weight:500; }
+    .subtitle { margin:0; color:#8d9bb5; font-size:15px; }
+    .content { display:flex; flex:1; gap:18px; }
+    section { flex:1; padding:22px; display:flex; flex-direction:column; gap:12px; background:#131b2a; border:1px solid #2b3b57; border-radius:14px; }
+    h2 { margin:0; font-size:20px; font-weight:500; }
+    .help { margin:0 0 5px; color:#7f91af; font-size:13px; }
+    label { min-height:35px; padding:4px; display:flex; align-items:center; gap:10px; color:#c9d5e9; border:2px solid transparent; border-radius:7px; }
+    label:hover { background:#1d2939; }
+    label:has(input:checked) { color:#fff; background:#16233a; }
+    label:has(input:disabled) { color:#667085; background:#111827; }
+    input { width:18px; height:18px; margin:0; accent-color:#528bff; }
+    .switch input { width:38px; height:20px; position:relative; appearance:none; border:1px solid #667085; border-radius:99px; background:#344054; }
+    .switch input::after { content:&quot;&quot;; position:absolute; top:2px; left:2px; width:14px; height:14px; border-radius:50%; background:#fff; transition:left .1s ease; }
+    .switch input:checked { background:#528bff; }
+    .switch input:checked::after { left:20px; }
+    footer { display:flex; align-items:center; gap:16px; }
+    .hint { flex:1; color:#6f7f9b; font-size:13px; }
+    button { min-width:148px; min-height:42px; padding:9px 14px; color:#f2f4f7; font:inherit; background:#1c64d1; border:1px solid #5aa7ff; border-radius:8px; }
+  &lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;main&gt;
+    &lt;header&gt;&lt;p class=&quot;eyebrow&quot;&gt;GAME SETTINGS&lt;/p&gt;&lt;h1&gt;Graphics &amp;amp; display&lt;/h1&gt;&lt;p class=&quot;subtitle&quot;&gt;Native focus, toggle, and radio-group behavior with Cascade-owned drawing.&lt;/p&gt;&lt;/header&gt;
+    &lt;div class=&quot;content&quot;&gt;
+      &lt;section&gt;&lt;h2&gt;Effects&lt;/h2&gt;&lt;p class=&quot;help&quot;&gt;Tune visual features independently.&lt;/p&gt;&lt;label&gt;&lt;input type=&quot;checkbox&quot; checked&gt;Dynamic shadows&lt;/label&gt;&lt;label&gt;&lt;input type=&quot;checkbox&quot; checked&gt;Bloom&lt;/label&gt;&lt;label class=&quot;switch&quot;&gt;&lt;input type=&quot;checkbox&quot; role=&quot;switch&quot; checked&gt;Vertical sync&lt;/label&gt;&lt;label&gt;&lt;input type=&quot;checkbox&quot; disabled&gt;Ray tracing · unavailable&lt;/label&gt;&lt;/section&gt;
+      &lt;section&gt;&lt;h2&gt;Window mode&lt;/h2&gt;&lt;p class=&quot;help&quot;&gt;Choose one native radio-group option.&lt;/p&gt;&lt;label&gt;&lt;input type=&quot;radio&quot; name=&quot;window-mode&quot;&gt;Windowed&lt;/label&gt;&lt;label&gt;&lt;input type=&quot;radio&quot; name=&quot;window-mode&quot; checked&gt;Borderless&lt;/label&gt;&lt;label&gt;&lt;input type=&quot;radio&quot; name=&quot;window-mode&quot;&gt;Exclusive fullscreen&lt;/label&gt;&lt;/section&gt;
+    &lt;/div&gt;
+    &lt;footer&gt;&lt;span class=&quot;hint&quot;&gt;Tab to move focus · Space or controller accept to toggle&lt;/span&gt;&lt;button type=&quot;button&quot;&gt;Apply settings&lt;/button&gt;&lt;/footer&gt;
+  &lt;/main&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+      </details>
+
+      <details class="source-panel">
+        <summary><span>GodotCascade markup</span><code>examples/showcase/settings_menu/interface.gxml</code></summary>
+        <pre><code class="language-xml">&lt;!-- Executable settings-menu slice using owned native toggle controls. --&gt;
+&lt;Page class=&quot;settings-page&quot;&gt;
+    &lt;Column class=&quot;heading&quot;&gt;
+        &lt;Label class=&quot;eyebrow&quot;&gt;GAME SETTINGS&lt;/Label&gt;
+        &lt;Label class=&quot;title&quot;&gt;Graphics &amp;amp; display&lt;/Label&gt;
+        &lt;Label class=&quot;subtitle&quot;&gt;Native focus, toggle, and radio-group behavior with Cascade-owned drawing.&lt;/Label&gt;
+    &lt;/Column&gt;
+
+    &lt;Row class=&quot;settings-content&quot;&gt;
+        &lt;Panel class=&quot;settings-card&quot;&gt;
+            &lt;Label class=&quot;section-title&quot;&gt;Effects&lt;/Label&gt;
+            &lt;Label class=&quot;section-help&quot;&gt;Tune visual features independently.&lt;/Label&gt;
+            &lt;Checkbox id=&quot;shadows&quot; class=&quot;setting-option&quot; checked=&quot;true&quot; accessible-label=&quot;Enable dynamic shadows&quot;&gt;Dynamic shadows&lt;/Checkbox&gt;
+            &lt;Checkbox id=&quot;bloom&quot; class=&quot;setting-option&quot; checked=&quot;true&quot; accessible-label=&quot;Enable bloom&quot;&gt;Bloom&lt;/Checkbox&gt;
+            &lt;Switch id=&quot;vsync&quot; class=&quot;setting-option&quot; checked=&quot;true&quot; accessible-label=&quot;Enable vertical sync&quot;&gt;Vertical sync&lt;/Switch&gt;
+            &lt;Checkbox id=&quot;ray-tracing&quot; class=&quot;setting-option&quot; disabled=&quot;true&quot; accessible-label=&quot;Ray tracing unavailable&quot;&gt;Ray tracing · unavailable&lt;/Checkbox&gt;
+        &lt;/Panel&gt;
+
+        &lt;Panel class=&quot;settings-card&quot;&gt;
+            &lt;Label class=&quot;section-title&quot;&gt;Window mode&lt;/Label&gt;
+            &lt;Label class=&quot;section-help&quot;&gt;Choose one native ButtonGroup option.&lt;/Label&gt;
+            &lt;RadioButton id=&quot;windowed&quot; class=&quot;setting-option&quot; group=&quot;window-mode&quot;&gt;Windowed&lt;/RadioButton&gt;
+            &lt;RadioButton id=&quot;borderless&quot; class=&quot;setting-option&quot; group=&quot;window-mode&quot; checked=&quot;true&quot;&gt;Borderless&lt;/RadioButton&gt;
+            &lt;RadioButton id=&quot;fullscreen&quot; class=&quot;setting-option&quot; group=&quot;window-mode&quot;&gt;Exclusive fullscreen&lt;/RadioButton&gt;
+        &lt;/Panel&gt;
+    &lt;/Row&gt;
+
+    &lt;Row class=&quot;settings-footer&quot;&gt;
+        &lt;Label class=&quot;hint&quot;&gt;Tab to move focus · Space or controller accept to toggle&lt;/Label&gt;
+        &lt;Button id=&quot;apply&quot;&gt;Apply settings&lt;/Button&gt;
+    &lt;/Row&gt;
+&lt;/Page&gt;
+</code></pre>
+      </details>
+
+      <details class="source-panel">
+        <summary><span>GodotCascade stylesheet</span><code>examples/showcase/settings_menu/styles.gcss</code></summary>
+        <pre><code class="language-css">/* Source-native settings menu matching reference.html. */
+.settings-page {
+    min-height: 540px;
+    padding: 34px 52px;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    background: #0a0f19;
+}
+
+.heading { display: flex; flex-direction: column; gap: 6px; }
+.eyebrow { color: #7dbfff; font-size: 12px; }
+.title { color: #f1f5ff; font-size: 32px; }
+.subtitle { color: #8d9bb5; font-size: 15px; }
+
+.settings-content { display: flex; flex-direction: row; gap: 18px; flex-grow: 1; }
+.settings-card {
+    padding: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    flex-grow: 1;
+    background: #131b2a;
+    border: 1px solid #2b3b57;
+    border-radius: 14px;
+}
+.section-title { color: #f1f5ff; font-size: 20px; }
+.section-help { color: #7f91af; font-size: 13px; margin-bottom: 5px; }
+.setting-option { min-height: 35px; color: #c9d5e9; font-size: 15px; border-radius: 7px; }
+.setting-option:hover { background: #1d2939; }
+.setting-option:pressed { background: #253b61; }
+.setting-option:checked { background: #16233a; color: #ffffff; }
+.setting-option:focused { border-color: #84adff; border-width: 2px; }
+.setting-option:disabled { background: #111827; color: #667085; }
+
+.settings-footer { display: flex; flex-direction: row; align-items: center; gap: 16px; }
+.hint { color: #6f7f9b; font-size: 13px; flex-grow: 1; }
+#apply { min-width: 148px; min-height: 42px; background: #1c64d1; border: 1px solid #5aa7ff; border-radius: 8px; }
+#apply:hover { background: #2878e5; }
+#apply:pressed { background: #174fa5; }
+</code></pre>
+      </details>
+      </section>
     </article></main>
   <footer class="site-footer">Generated from <code>examples/showcase/manifest.json</code>. Do not edit this file directly.</footer>
   <script>

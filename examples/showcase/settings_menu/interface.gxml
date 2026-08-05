@@ -1,0 +1,32 @@
+<!-- Executable settings-menu slice using owned native toggle controls. -->
+<Page class="settings-page">
+    <Column class="heading">
+        <Label class="eyebrow">GAME SETTINGS</Label>
+        <Label class="title">Graphics &amp; display</Label>
+        <Label class="subtitle">Native focus, toggle, and radio-group behavior with Cascade-owned drawing.</Label>
+    </Column>
+
+    <Row class="settings-content">
+        <Panel class="settings-card">
+            <Label class="section-title">Effects</Label>
+            <Label class="section-help">Tune visual features independently.</Label>
+            <Checkbox id="shadows" class="setting-option" checked="true" accessible-label="Enable dynamic shadows">Dynamic shadows</Checkbox>
+            <Checkbox id="bloom" class="setting-option" checked="true" accessible-label="Enable bloom">Bloom</Checkbox>
+            <Switch id="vsync" class="setting-option" checked="true" accessible-label="Enable vertical sync">Vertical sync</Switch>
+            <Checkbox id="ray-tracing" class="setting-option" disabled="true" accessible-label="Ray tracing unavailable">Ray tracing · unavailable</Checkbox>
+        </Panel>
+
+        <Panel class="settings-card">
+            <Label class="section-title">Window mode</Label>
+            <Label class="section-help">Choose one native ButtonGroup option.</Label>
+            <RadioButton id="windowed" class="setting-option" group="window-mode">Windowed</RadioButton>
+            <RadioButton id="borderless" class="setting-option" group="window-mode" checked="true">Borderless</RadioButton>
+            <RadioButton id="fullscreen" class="setting-option" group="window-mode">Exclusive fullscreen</RadioButton>
+        </Panel>
+    </Row>
+
+    <Row class="settings-footer">
+        <Label class="hint">Tab to move focus · Space or controller accept to toggle</Label>
+        <Button id="apply">Apply settings</Button>
+    </Row>
+</Page>

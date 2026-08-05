@@ -24,7 +24,7 @@ class Element:
 
 
 	func classes() -> PackedStringArray:
-		var value := str(attributes.get("class", "")).strip_edges()
+		var value := str(attributes.get("class", "")).replace("\t", " ").replace("\r", " ").replace("\n", " ").strip_edges()
 		return PackedStringArray() if value.is_empty() else value.split(" ", false)
 
 

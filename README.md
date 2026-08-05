@@ -128,7 +128,7 @@ Assigning a new context refreshes automatically. The current focused slice suppo
 
 ## Components and interactive states
 
-The executable GXML elements are `Page`, `Row`, `Column`, `Panel`, `Label`, `Button`, and `Progress`. GodotCascade owns the measurement and drawing of its core components while retaining useful native behavior underneath.
+The executable GXML elements are `Page`, `Row`, `Column`, `Panel`, `Label`, `Button`, `Checkbox`, `RadioButton`/`Radio`, `Switch`, and `Progress`. GodotCascade owns the measurement and drawing of its core components while retaining useful native behavior underneath.
 
 Button state selectors respond dynamically to Godot's native interaction state:
 
@@ -137,9 +137,10 @@ Button:hover { background: #475467; }
 Button:pressed { background: #1d2939; }
 Button:focused { border-color: #84adff; border-width: 2px; }
 Button:disabled { background: #1f2937; color: #98a2b3; }
+Checkbox:checked { background: #1d2939; color: #ffffff; }
 ```
 
-This is a focused subset, not browser-wide pseudo-class support. State styling is currently limited to `CascadeButton`; `:checked`, `:open`, generalized `:selected`, transitions, and hover on arbitrary controls are roadmap work. See the [current support reference](docs/current-support.md) for the exact element, selector, property, and state matrices.
+This is a focused subset, not browser-wide pseudo-class support. Owned interactive controls share native state precedence and styling; `:open`, transitions, and hover on arbitrary controls are roadmap work. See the [current support reference](docs/current-support.md) for the exact element, selector, property, and state matrices.
 
 Run the current headless smoke test with:
 

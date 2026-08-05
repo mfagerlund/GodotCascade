@@ -6,16 +6,26 @@ const CascadeBox := preload("res://addons/godot_cascade/layout/cascade_box.gd")
 const CascadePanel := preload("res://addons/godot_cascade/components/cascade_panel.gd")
 const CascadeLabel := preload("res://addons/godot_cascade/components/cascade_label.gd")
 const CascadeButton := preload("res://addons/godot_cascade/components/cascade_button.gd")
+const CascadeCheckbox := preload("res://addons/godot_cascade/components/cascade_checkbox.gd")
+const CascadeRadioButton := preload("res://addons/godot_cascade/components/cascade_radio_button.gd")
+const CascadeSwitch := preload("res://addons/godot_cascade/components/cascade_switch.gd")
 const CascadeProgress := preload("res://addons/godot_cascade/components/cascade_progress.gd")
 
 
 static func build(root_element, rules: Array) -> Dictionary:
 	var diagnostics: Array[Dictionary] = []
-	var root_control := _build_element(root_element, rules, diagnostics, "0")
+	var button_groups: Dictionary = {}
+	var root_control := _build_element(root_element, rules, diagnostics, "0", button_groups)
 	return {"root": root_control, "diagnostics": diagnostics}
 
 
-static func _build_element(element, rules: Array, diagnostics: Array[Dictionary], key_path: String) -> Control:
+static func _build_element(
+	element,
+	rules: Array,
+	diagnostics: Array[Dictionary],
+	key_path: String,
+	button_groups: Dictionary
+) -> Control:
 	var control := _create_control(element.tag_name, diagnostics)
 	if control == null:
 		return null
@@ -27,7 +37,7 @@ static func _build_element(element, rules: Array, diagnostics: Array[Dictionary]
 	control.set_meta("cascade_key", "#" + element.element_id() if not element.element_id().is_empty() else key_path)
 	control.set_meta("cascade_bindings", {})
 
-	_apply_attributes(control, element.attributes, element.text, diagnostics)
+	_apply_attributes(control, element.attributes, element.text, diagnostics, button_groups)
 	if element.tag_name.to_lower() == "row":
 		control.direction = CascadeBox.FlowDirection.ROW
 
@@ -37,7 +47,7 @@ static func _build_element(element, rules: Array, diagnostics: Array[Dictionary]
 	for index in element.children.size():
 		var child_element = element.children[index]
 		var child_key := "%s/%s:%s" % [key_path, index, child_element.tag_name]
-		var child_control := _build_element(child_element, rules, diagnostics, child_key)
+		var child_control := _build_element(child_element, rules, diagnostics, child_key, button_groups)
 		if child_control != null:
 			control.add_child(child_control)
 	return control
@@ -53,6 +63,12 @@ static func _create_control(tag_name: String, diagnostics: Array[Dictionary]) ->
 			return CascadeLabel.new()
 		"button":
 			return CascadeButton.new()
+		"checkbox":
+			return CascadeCheckbox.new()
+		"radiobutton", "radio":
+			return CascadeRadioButton.new()
+		"switch":
+			return CascadeSwitch.new()
 		"progress":
 			return CascadeProgress.new()
 		_:
@@ -71,18 +87,52 @@ static func _compute_declarations(element, rules: Array) -> Dictionary:
 		var state: String = rule.pseudo_state
 		if not winners.has(state):
 			winners[state] = {}
-		for property_name in rule.declarations:
+		var declarations := _expand_shorthands(rule.declarations)
+		for property_name in declarations:
 			var existing: Dictionary = winners[state].get(property_name, {})
 			if existing.is_empty() or rule.specificity > existing["specificity"] or (
 				rule.specificity == existing["specificity"] and rule.order >= existing["order"]
 			):
 				winners[state][property_name] = {
-					"value": rule.declarations[property_name],
+					"value": declarations[property_name],
 					"specificity": rule.specificity,
 					"order": rule.order,
 					"line": rule.line,
 				}
 	return winners
+
+
+static func _expand_shorthands(declarations: Dictionary) -> Dictionary:
+	var expanded := {}
+	for property_name in declarations:
+		var value: String = str(declarations[property_name])
+		if property_name in ["padding", "margin"]:
+			var tokens := _split_whitespace(value)
+			var valid_lengths := tokens.size() >= 1 and tokens.size() <= 4
+			for token in tokens:
+				var parsed := _parse_length(token)
+				valid_lengths = valid_lengths and not is_nan(parsed) and parsed >= 0.0
+			if not valid_lengths:
+				expanded[property_name] = value
+				continue
+			var top := tokens[0]
+			var right := tokens[0] if tokens.size() == 1 else tokens[1]
+			var bottom := tokens[0] if tokens.size() < 3 else tokens[2]
+			var left := right if tokens.size() < 4 else tokens[3]
+			expanded["%s-top" % property_name] = top
+			expanded["%s-right" % property_name] = right
+			expanded["%s-bottom" % property_name] = bottom
+			expanded["%s-left" % property_name] = left
+		elif property_name == "border":
+			var tokens := _split_whitespace(value)
+			if tokens.size() == 3 and tokens[1].to_lower() == "solid":
+				expanded["border-width"] = tokens[0]
+				expanded["border-color"] = tokens[2]
+			else:
+				expanded[property_name] = value
+		else:
+			expanded[property_name] = value
+	return expanded
 
 
 static func _apply_declarations(control: Control, computed: Dictionary, diagnostics: Array[Dictionary]) -> void:
@@ -115,21 +165,23 @@ static func _apply_declaration(
 	match property_name:
 		"display":
 			if value.to_lower() != "flex":
-				_diagnostic_unsupported(diagnostics, line, property_name, value)
+				_diagnostic_bad_value(diagnostics, line, property_name, value)
 		"flex-direction":
 			if not _has_property(control, "direction"):
-				_diagnostic_unsupported(diagnostics, line, property_name, value)
+				_diagnostic_not_applicable(diagnostics, line, property_name, control)
 			elif value.to_lower() == "row":
 				control.set("direction", CascadeBox.FlowDirection.ROW)
 			elif value.to_lower() == "column":
 				control.set("direction", CascadeBox.FlowDirection.COLUMN)
 			else:
-				_diagnostic_unsupported(diagnostics, line, property_name, value)
+				_diagnostic_bad_value(diagnostics, line, property_name, value)
 		"flex-wrap":
-			if _has_property(control, "wrap"):
+			if not _has_property(control, "wrap"):
+				_diagnostic_not_applicable(diagnostics, line, property_name, control)
+			elif value.to_lower() in ["wrap", "nowrap"]:
 				control.set("wrap", value.to_lower() == "wrap")
 			else:
-				_diagnostic_unsupported(diagnostics, line, property_name, value)
+				_diagnostic_bad_value(diagnostics, line, property_name, value)
 		"justify-content":
 			_apply_enum(control, "justify_content", value, {
 				"start": CascadeBox.MainAlignment.START,
@@ -196,14 +248,14 @@ static func _apply_declaration(
 			if _has_property(control, "text_color"):
 				control.set("text_color", _parse_color(value, line, diagnostics))
 			else:
-				_diagnostic_unsupported(diagnostics, line, property_name, value)
+				_diagnostic_not_applicable(diagnostics, line, property_name, control)
 		"font-size":
 			_set_length_property(control, "font_size", value, line, diagnostics)
 		"fill-color":
 			if control is CascadeProgress:
 				control.fill_color = _parse_color(value, line, diagnostics)
 			else:
-				_diagnostic_unsupported(diagnostics, line, property_name, value)
+				_diagnostic_not_applicable(diagnostics, line, property_name, control)
 		_:
 			diagnostics.append(_diagnostic("warning", "Line %s: unsupported property '%s'." % [line, property_name]))
 
@@ -216,32 +268,49 @@ static func _apply_state_declaration(
 	line: int,
 	diagnostics: Array[Dictionary]
 ) -> void:
-	if not control is CascadeButton:
-		diagnostics.append(_diagnostic("warning", "Line %s: :%s styles currently require CascadeButton." % [line, state]))
+	if not control is BaseButton:
+		diagnostics.append(_diagnostic("warning", "Line %s: :%s styles require an interactive control." % [line, state]))
 		return
 
-	match [state, property_name]:
-		["hover", "background"], ["hover", "background-color"]:
-			control.hover_background_color = _parse_color(value, line, diagnostics)
-		["pressed", "background"], ["pressed", "background-color"]:
-			control.pressed_background_color = _parse_color(value, line, diagnostics)
-		["disabled", "background"], ["disabled", "background-color"]:
-			control.disabled_background_color = _parse_color(value, line, diagnostics)
-		["disabled", "color"]:
-			control.disabled_text_color = _parse_color(value, line, diagnostics)
-		["focused", "border-color"]:
-			control.focus_ring_color = _parse_color(value, line, diagnostics)
-		["focused", "border-width"]:
-			_set_length_property(control, "focus_ring_width", value, line, diagnostics)
-		_:
-			diagnostics.append(_diagnostic("warning", "Line %s: unsupported :%s property '%s'." % [line, state, property_name]))
+	var normalized_state := "checked" if state == "selected" else state
+	if property_name in ["background", "background-color"]:
+		var background_property := "%s_background_color" % normalized_state
+		if _has_property(control, background_property):
+			control.set(background_property, _parse_color(value, line, diagnostics))
+		else:
+			_diagnostic_unsupported_state(diagnostics, line, state, property_name)
+	elif property_name == "color":
+		var color_property := "%s_text_color" % normalized_state
+		if _has_property(control, color_property):
+			control.set(color_property, _parse_color(value, line, diagnostics))
+		else:
+			_diagnostic_unsupported_state(diagnostics, line, state, property_name)
+	elif state == "focused" and property_name == "border-color":
+		control.focus_ring_color = _parse_color(value, line, diagnostics)
+	elif state == "focused" and property_name == "border-width":
+		_set_length_property(control, "focus_ring_width", value, line, diagnostics)
+	else:
+		_diagnostic_unsupported_state(diagnostics, line, state, property_name)
 
 
-static func _apply_attributes(control: Control, attributes: Dictionary, element_text: String, diagnostics: Array[Dictionary]) -> void:
+static func _apply_attributes(
+	control: Control,
+	attributes: Dictionary,
+	element_text: String,
+	diagnostics: Array[Dictionary],
+	button_groups: Dictionary
+) -> void:
 	if control is CascadeLabel or control is CascadeButton:
 		var raw_text := str(attributes.get("text", element_text))
 		if not _record_binding(control, "text", raw_text):
 			control.set("text", raw_text)
+	if attributes.has("accessible-label"):
+		if _has_property(control, "accessibility_name"):
+			control.set("accessibility_name", str(attributes["accessible-label"]))
+		else:
+			control.set_meta("cascade_accessible_label", str(attributes["accessible-label"]))
+	if control is BaseButton:
+		_apply_button_attributes(control, attributes, diagnostics, button_groups)
 	if not control is CascadeProgress:
 		return
 	for attribute_name in ["min", "max", "value"]:
@@ -255,6 +324,49 @@ static func _apply_attributes(control: Control, attributes: Dictionary, element_
 			diagnostics.append(_diagnostic("error", "Progress attribute '%s' requires a number, got '%s'." % [attribute_name, raw_value]))
 			continue
 		control.set(property_name, raw_value.to_float())
+
+
+static func _apply_button_attributes(
+	control: BaseButton,
+	attributes: Dictionary,
+	diagnostics: Array[Dictionary],
+	button_groups: Dictionary
+) -> void:
+	for attribute_name in ["disabled", "checked"]:
+		if not attributes.has(attribute_name):
+			continue
+		var parsed: Variant = _parse_bool_attribute(attribute_name, str(attributes[attribute_name]), diagnostics)
+		if parsed == null:
+			continue
+		if attribute_name == "disabled":
+			control.disabled = parsed
+		elif not control.toggle_mode:
+			diagnostics.append(_diagnostic("error", "Attribute 'checked' requires a toggle control."))
+		else:
+			control.button_pressed = parsed
+
+	if not control is CascadeRadioButton:
+		return
+	var group_name := str(attributes.get("group", "default")).strip_edges()
+	if group_name.is_empty():
+		diagnostics.append(_diagnostic("error", "RadioButton attribute 'group' cannot be empty."))
+		return
+	if not button_groups.has(group_name):
+		button_groups[group_name] = ButtonGroup.new()
+	control.button_group = button_groups[group_name]
+
+
+static func _parse_bool_attribute(attribute_name: String, value: String, diagnostics: Array[Dictionary]) -> Variant:
+	var normalized := value.strip_edges().to_lower()
+	if normalized in ["true", "1", "yes", "on", attribute_name]:
+		return true
+	if normalized in ["false", "0", "no", "off"]:
+		return false
+	diagnostics.append(_diagnostic(
+		"error",
+		"Attribute '%s' requires a boolean, got '%s'." % [attribute_name, value]
+	))
+	return null
 
 
 static func _record_binding(control: Control, property_name: String, raw_value: String) -> bool:
@@ -277,15 +389,15 @@ static func _apply_edges(
 	line: int,
 	diagnostics: Array[Dictionary]
 ) -> void:
-	var tokens := value.split(" ", false)
+	var tokens := _split_whitespace(value)
 	if tokens.size() < 1 or tokens.size() > 4:
-		_diagnostic_unsupported(diagnostics, line, prefix, value)
+		_diagnostic_bad_value(diagnostics, line, prefix, value)
 		return
 	var values: Array[float] = []
 	for token in tokens:
 		var parsed := _parse_length(token)
-		if is_nan(parsed):
-			_diagnostic_unsupported(diagnostics, line, prefix, value)
+		if is_nan(parsed) or parsed < 0.0:
+			_diagnostic_bad_value(diagnostics, line, prefix, value)
 			return
 		values.append(parsed)
 
@@ -300,13 +412,13 @@ static func _apply_edges(
 
 
 static func _apply_border(style: CascadeStyle, value: String, line: int, diagnostics: Array[Dictionary]) -> void:
-	var tokens := value.split(" ", false)
+	var tokens := _split_whitespace(value)
 	if tokens.size() != 3 or tokens[1].to_lower() != "solid":
-		_diagnostic_unsupported(diagnostics, line, "border", value)
+		_diagnostic_bad_value(diagnostics, line, "border", value)
 		return
 	var width := _parse_length(tokens[0])
-	if is_nan(width):
-		_diagnostic_unsupported(diagnostics, line, "border", value)
+	if is_nan(width) or width < 0.0:
+		_diagnostic_bad_value(diagnostics, line, "border", value)
 		return
 	style.border_width = width
 	style.border_color = _parse_color(tokens[2], line, diagnostics)
@@ -314,23 +426,32 @@ static func _apply_border(style: CascadeStyle, value: String, line: int, diagnos
 
 static func _apply_enum(target: Object, property_name: String, value: String, values: Dictionary, line: int, diagnostics: Array[Dictionary]) -> void:
 	var normalized := value.to_lower()
-	if not values.has(normalized) or not _has_property(target, property_name):
-		_diagnostic_unsupported(diagnostics, line, property_name.replace("_", "-"), value)
+	if not _has_property(target, property_name):
+		_diagnostic_not_applicable(diagnostics, line, property_name.replace("_", "-"), target)
+		return
+	if not values.has(normalized):
+		_diagnostic_bad_value(diagnostics, line, property_name.replace("_", "-"), value)
 		return
 	target.set(property_name, values[normalized])
 
 
 static func _set_length_property(target: Object, property_name: String, value: String, line: int, diagnostics: Array[Dictionary]) -> void:
 	var parsed := _parse_length(value)
-	if is_nan(parsed) or not _has_property(target, property_name):
-		_diagnostic_unsupported(diagnostics, line, property_name.replace("_", "-"), value)
+	if is_nan(parsed) or parsed < 0.0:
+		_diagnostic_bad_value(diagnostics, line, property_name.replace("_", "-"), value)
+		return
+	if not _has_property(target, property_name):
+		_diagnostic_not_applicable(diagnostics, line, property_name.replace("_", "-"), target)
 		return
 	target.set(property_name, parsed)
 
 
 static func _set_number_property(target: Object, property_name: String, value: String, line: int, diagnostics: Array[Dictionary]) -> void:
-	if not value.is_valid_float() or not _has_property(target, property_name):
-		_diagnostic_unsupported(diagnostics, line, property_name.replace("_", "-"), value)
+	if not value.is_valid_float():
+		_diagnostic_bad_value(diagnostics, line, property_name.replace("_", "-"), value)
+		return
+	if not _has_property(target, property_name):
+		_diagnostic_not_applicable(diagnostics, line, property_name.replace("_", "-"), target)
 		return
 	target.set(property_name, value.to_float())
 
@@ -346,10 +467,16 @@ static func _parse_length(value: String) -> float:
 
 static func _parse_color(value: String, line: int, diagnostics: Array[Dictionary]) -> Color:
 	var normalized := value.strip_edges()
-	var parsed := Color.from_string(normalized, Color(1.0, 0.0, 1.0, 1.0))
-	if parsed == Color(1.0, 0.0, 1.0, 1.0) and normalized.to_lower() not in ["magenta", "#ff00ff", "#ff00ffff"]:
+	var black_probe := Color.from_string(normalized, Color.BLACK)
+	var white_probe := Color.from_string(normalized, Color.WHITE)
+	if black_probe != white_probe:
 		diagnostics.append(_diagnostic("error", "Line %s: invalid color '%s'." % [line, value]))
-	return parsed
+		return Color.TRANSPARENT
+	return black_probe
+
+
+static func _split_whitespace(value: String) -> PackedStringArray:
+	return value.replace("\t", " ").replace("\r", " ").replace("\n", " ").split(" ", false)
 
 
 static func _has_property(target: Object, property_name: String) -> bool:
@@ -359,8 +486,32 @@ static func _has_property(target: Object, property_name: String) -> bool:
 	return false
 
 
-static func _diagnostic_unsupported(diagnostics: Array[Dictionary], line: int, property_name: String, value: String) -> void:
+static func _diagnostic_bad_value(diagnostics: Array[Dictionary], line: int, property_name: String, value: String) -> void:
 	diagnostics.append(_diagnostic("error", "Line %s: unsupported %s value '%s'." % [line, property_name, value]))
+
+
+static func _diagnostic_not_applicable(
+	diagnostics: Array[Dictionary],
+	line: int,
+	property_name: String,
+	target: Object
+) -> void:
+	var target_name := target.get_class()
+	if target.has_meta("cascade_element_type"):
+		target_name = "<%s>" % target.get_meta("cascade_element_type")
+	diagnostics.append(_diagnostic(
+		"warning",
+		"Line %s: '%s' is not supported on %s." % [line, property_name, target_name]
+	))
+
+
+static func _diagnostic_unsupported_state(
+	diagnostics: Array[Dictionary],
+	line: int,
+	state: String,
+	property_name: String
+) -> void:
+	diagnostics.append(_diagnostic("warning", "Line %s: unsupported :%s property '%s'." % [line, state, property_name]))
 
 
 static func _diagnostic(severity: String, message: String) -> Dictionary:

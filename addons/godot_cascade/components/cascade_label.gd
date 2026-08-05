@@ -88,15 +88,28 @@ func _get_minimum_size() -> Vector2:
 				font_size
 			)
 	if autowrap_mode != TextServer.AUTOWRAP_OFF:
-		# Wrapped text accepts the containing block's width instead of forcing its
-		# unwrapped line width into the parent's intrinsic minimum.
-		content_minimum.x = 0.0
+		content_minimum.x = _min_content_width()
 	var outer := BoxPainter.outer_minimum_size(
 		content_minimum,
 		cascade_style.padding(),
 		cascade_style.border_width
 	)
 	return cascade_style.constrain_minimum(outer)
+
+
+func _min_content_width() -> float:
+	var resolved_font := _resolved_font()
+	if resolved_font == null or text.is_empty():
+		return 0.0
+	var widest := 0.0
+	for word in text.replace("\t", " ").replace("\r", " ").replace("\n", " ").split(" ", false):
+		widest = maxf(widest, resolved_font.get_string_size(
+			word,
+			HORIZONTAL_ALIGNMENT_LEFT,
+			-1.0,
+			font_size
+		).x)
+	return widest
 
 
 func _draw() -> void:

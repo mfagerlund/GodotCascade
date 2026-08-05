@@ -116,7 +116,7 @@ static func _parse_rule(
 	if colon >= 0:
 		rule.pseudo_state = selector.substr(colon + 1).strip_edges().to_lower()
 		selector_without_pseudo = selector.substr(0, colon).strip_edges()
-		if rule.pseudo_state not in ["hover", "pressed", "focused", "disabled", "selected"]:
+		if rule.pseudo_state not in ["hover", "pressed", "checked", "focused", "disabled", "selected"]:
 			diagnostics.append(_diagnostic(source, offset + colon, "Unsupported pseudo state :%s." % rule.pseudo_state))
 			return null
 

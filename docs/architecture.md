@@ -41,9 +41,9 @@ Type, class, ID, combined-compound, and descendant selectors work today. Selecto
 
 ### Interactive state
 
-Pseudo-state selectors are parsed separately from base declarations. The current builder resolves button state declarations into explicit `CascadeButton` appearance properties. The component then selects those colors from native `BaseButton` hover, pressed, focus, and disabled state during drawing; it does not rematch the stylesheet on every pointer event.
+Pseudo-state selectors are parsed separately from base declarations. The builder resolves interactive state declarations into explicit appearance properties. Owned `BaseButton` components then use a shared adapter to normalize native disabled, pressed, checked/selected, hover, and focus state during drawing; they do not rematch the stylesheet on every pointer event.
 
-This adapter is deliberately component-specific today. The next form-controls slice will define shared state precedence and adapters for `:checked`, generalized `:selected`, and `:open` before checkbox, radio-button, and select components depend on them.
+The shared precedence is disabled, pressed, checked/selected, hover, focus, then base. Focus-ring drawing is layered independently so keyboard focus remains visible while another state wins. `:open` and select-option state remain part of the upcoming composite-select slice.
 
 ### Layout engine
 

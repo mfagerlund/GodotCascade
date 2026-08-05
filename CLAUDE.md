@@ -142,8 +142,9 @@ no inheritance. `border` must be exactly `<width> solid <color>`. Lengths accept
 One trailing pseudo state per selector, from `hover|pressed|focused|disabled|selected`, and pseudo states
 currently only apply to `CascadeButton`. Check `ROADMAP.md` before "fixing" a gap — several are scheduled.
 
-The next planned vertical slice is the settings-menu/form-control milestone in `ROADMAP.md`: generalize
-state adapters first, then implement checkbox and radio-button behavior, tests, and a parity showcase.
+The settings-menu/form-control milestone in `ROADMAP.md` is in progress: shared state adapters,
+checkbox, radio-button, switch behavior, the native input-state matrix, and a parity showcase are
+implemented. Select/dropdown behavior is next.
 
 ### GDScript style in this repo
 

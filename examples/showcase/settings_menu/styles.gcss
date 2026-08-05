@@ -1,0 +1,40 @@
+/* Source-native settings menu matching reference.html. */
+.settings-page {
+    min-height: 540px;
+    padding: 34px 52px;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    background: #0a0f19;
+}
+
+.heading { display: flex; flex-direction: column; gap: 6px; }
+.eyebrow { color: #7dbfff; font-size: 12px; }
+.title { color: #f1f5ff; font-size: 32px; }
+.subtitle { color: #8d9bb5; font-size: 15px; }
+
+.settings-content { display: flex; flex-direction: row; gap: 18px; flex-grow: 1; }
+.settings-card {
+    padding: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    flex-grow: 1;
+    background: #131b2a;
+    border: 1px solid #2b3b57;
+    border-radius: 14px;
+}
+.section-title { color: #f1f5ff; font-size: 20px; }
+.section-help { color: #7f91af; font-size: 13px; margin-bottom: 5px; }
+.setting-option { min-height: 35px; color: #c9d5e9; font-size: 15px; border-radius: 7px; }
+.setting-option:hover { background: #1d2939; }
+.setting-option:pressed { background: #253b61; }
+.setting-option:checked { background: #16233a; color: #ffffff; }
+.setting-option:focused { border-color: #84adff; border-width: 2px; }
+.setting-option:disabled { background: #111827; color: #667085; }
+
+.settings-footer { display: flex; flex-direction: row; align-items: center; gap: 16px; }
+.hint { color: #6f7f9b; font-size: 13px; flex-grow: 1; }
+#apply { min-width: 148px; min-height: 42px; background: #1c64d1; border: 1px solid #5aa7ff; border-radius: 8px; }
+#apply:hover { background: #2878e5; }
+#apply:pressed { background: #174fa5; }

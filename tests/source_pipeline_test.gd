@@ -2,6 +2,7 @@ extends SceneTree
 
 const GENERATED_SCENE := preload("res://examples/generated_showcase.tscn")
 const SYSTEM_STATUS_SCENE := preload("res://examples/system_status_showcase.tscn")
+const SETTINGS_MENU_SCENE := preload("res://examples/settings_menu_showcase.tscn")
 const GxmlParser := preload("res://addons/godot_cascade/markup/gxml_parser.gd")
 const GcssParser := preload("res://addons/godot_cascade/style/gcss_parser.gd")
 const CascadeBuilder := preload("res://addons/godot_cascade/runtime/cascade_builder.gd")
@@ -18,6 +19,8 @@ func _initialize() -> void:
 func _run() -> void:
 	_test_gxml_parser()
 	_test_gcss_specificity()
+	_test_form_controls_pipeline()
+	_test_review_regressions()
 	_test_parser_recovery()
 	_test_binding_resolver()
 	_test_identity_preserving_reload()
@@ -102,6 +105,25 @@ func _run() -> void:
 		_expect_true("descendant progress fill green", system_progress[1].get("fill_color") == Color("65d6a7"))
 		_expect_true("descendant progress fill orange", system_progress[2].get("fill_color") == Color("ffb665"))
 
+	var settings_document := SETTINGS_MENU_SCENE.instantiate()
+	root.add_child(settings_document)
+	await process_frame
+	await process_frame
+	await process_frame
+	_expect_true("settings menu document has no errors", not _has_error_diagnostics(settings_document.diagnostics))
+	var settings_root: Control = settings_document.generated_root()
+	var shadows_controls := _find_by_id(settings_root, "shadows")
+	var borderless_controls := _find_by_id(settings_root, "borderless")
+	var fullscreen_controls := _find_by_id(settings_root, "fullscreen")
+	_expect_int("settings menu has shadows checkbox", shadows_controls.size(), 1)
+	_expect_int("settings menu has selected radio", borderless_controls.size(), 1)
+	if shadows_controls.size() == 1:
+		_expect_true("settings menu checkbox starts checked", shadows_controls[0].get("button_pressed"))
+	if borderless_controls.size() == 1 and fullscreen_controls.size() == 1:
+		_expect_true("settings menu radio starts checked", borderless_controls[0].get("button_pressed"))
+		fullscreen_controls[0].set("button_pressed", true)
+		_expect_true("settings menu radio group is exclusive", not borderless_controls[0].get("button_pressed"))
+
 	if _failures.is_empty():
 		print("GodotCascade source pipeline tests passed.")
 		quit(0)
@@ -132,6 +154,95 @@ func _test_gcss_specificity() -> void:
 		_expect_true("ID selector wins specificity", label.get("text_color") == Color("3366ff"))
 	if built_root != null:
 		built_root.free()
+
+
+func _test_form_controls_pipeline() -> void:
+	var markup := GxmlParser.parse("""<Page>
+		<Checkbox id="shadows" checked="true" accessible-label="Enable shadows">Shadows</Checkbox>
+		<Checkbox id="locked" disabled="true">Locked</Checkbox>
+		<Switch id="vsync" checked="true">Vertical sync</Switch>
+		<RadioButton id="windowed" group="display" checked="true">Windowed</RadioButton>
+		<RadioButton id="fullscreen" group="display">Fullscreen</RadioButton>
+	</Page>""")
+	var stylesheet := GcssParser.parse("""Checkbox:checked { background: #123456; color: #abcdef; }
+		Checkbox:disabled { background: #222222; color: #777777; }
+		RadioButton:hover { background: #333333; }
+		RadioButton:focused { border-color: #88aaff; border-width: 3px; }""")
+	var build := CascadeBuilder.build(markup["root"], stylesheet["rules"])
+	_expect_int("form-control markup diagnostics", markup["diagnostics"].size(), 0)
+	_expect_int("form-control stylesheet diagnostics", stylesheet["diagnostics"].size(), 0)
+	_expect_int("form-control builder diagnostics", build["diagnostics"].size(), 0)
+	var built_root: Control = build["root"]
+	if built_root == null:
+		return
+	var shadows: BaseButton = _find_by_id(built_root, "shadows")[0]
+	var locked: BaseButton = _find_by_id(built_root, "locked")[0]
+	var vsync: BaseButton = _find_by_id(built_root, "vsync")[0]
+	var windowed: BaseButton = _find_by_id(built_root, "windowed")[0]
+	var fullscreen: BaseButton = _find_by_id(built_root, "fullscreen")[0]
+	_expect_true("checked attribute reaches native toggle state", shadows.button_pressed)
+	_expect_true("disabled attribute reaches native state", locked.disabled)
+	_expect_true("switch element keeps toggle semantics", vsync.toggle_mode and vsync.button_pressed)
+	_expect_true("accessible label reaches native metadata", shadows.accessibility_name == "Enable shadows")
+	_expect_true("checked pseudo background applies", shadows.get("checked_background_color") == Color("123456"))
+	_expect_true("checked pseudo text applies", shadows.get("checked_text_color") == Color("abcdef"))
+	_expect_true("disabled pseudo background applies", locked.get("disabled_background_color") == Color("222222"))
+	_expect_true("radio group shares native ButtonGroup", windowed.button_group == fullscreen.button_group)
+	_expect_true("radio checked attribute selects native group member", windowed.button_pressed)
+	_expect_true("generalized hover style applies to radio", fullscreen.get("hover_background_color") == Color("333333"))
+	_expect_float("generalized focus width applies to radio", fullscreen.get("focus_ring_width"), 3.0)
+	fullscreen.button_pressed = true
+	_expect_true("native radio selection unchecks peer", not windowed.button_pressed)
+	built_root.free()
+
+
+func _test_review_regressions() -> void:
+	var magenta_markup := GxmlParser.parse("<Label id=\"color\">Magenta</Label>")
+	var magenta_stylesheet := GcssParser.parse("#color { color: #f0f; }")
+	var magenta_build := CascadeBuilder.build(magenta_markup["root"], magenta_stylesheet["rules"])
+	_expect_int("shorthand magenta builder diagnostics", magenta_build["diagnostics"].size(), 0)
+	if magenta_build["root"] != null:
+		_expect_true("shorthand magenta color parses", magenta_build["root"].get("text_color") == Color("f0f"))
+		magenta_build["root"].free()
+
+	var panel_markup := GxmlParser.parse("<Panel />")
+	var panel_stylesheet := GcssParser.parse("Panel { color: #ffffff; }")
+	var panel_build := CascadeBuilder.build(panel_markup["root"], panel_stylesheet["rules"])
+	_expect_int("not-applicable property emits one diagnostic", panel_build["diagnostics"].size(), 1)
+	if panel_build["diagnostics"].size() == 1:
+		_expect_true("not-applicable property is warning", panel_build["diagnostics"][0]["severity"] == "warning")
+		_expect_true("not-applicable diagnostic names target", str(panel_build["diagnostics"][0]["message"]).contains("<Panel>"))
+	if panel_build["root"] != null:
+		panel_build["root"].free()
+
+	var whitespace_markup := GxmlParser.parse("<Label class=\"alpha&#x9;beta\">Words</Label>")
+	var whitespace_stylesheet := GcssParser.parse(".beta { padding: 3px\t7px; }")
+	var whitespace_build := CascadeBuilder.build(whitespace_markup["root"], whitespace_stylesheet["rules"])
+	_expect_int("whitespace-normalized builder diagnostics", whitespace_build["diagnostics"].size(), 0)
+	if whitespace_build["root"] != null:
+		var whitespace_style: CascadeStyle = whitespace_build["root"].get("cascade_style")
+		_expect_float("tab-separated padding horizontal", whitespace_style.padding_left, 7.0)
+		_expect_float("tab-separated padding vertical", whitespace_style.padding_top, 3.0)
+		whitespace_build["root"].free()
+
+	var negative_stylesheet := GcssParser.parse("Label { margin-left: -8px; }")
+	var negative_build := CascadeBuilder.build(magenta_markup["root"], negative_stylesheet["rules"])
+	_expect_true("negative length is diagnosed as an error", _has_error_diagnostics(negative_build["diagnostics"]))
+	if negative_build["root"] != null:
+		negative_build["root"].free()
+
+	for source in [
+		"#card { padding: 20px; } .card { padding-left: 4px; }",
+		".card { padding-left: 4px; } #card { padding: 20px; }",
+	]:
+		var cascade_markup := GxmlParser.parse("<Panel id=\"card\" class=\"card\" />")
+		var cascade_stylesheet := GcssParser.parse(source)
+		var cascade_build := CascadeBuilder.build(cascade_markup["root"], cascade_stylesheet["rules"])
+		_expect_int("shorthand cascade builder diagnostics", cascade_build["diagnostics"].size(), 0)
+		if cascade_build["root"] != null:
+			var cascade_style: CascadeStyle = cascade_build["root"].get("cascade_style")
+			_expect_float("shorthand honors specificity in either source order", cascade_style.padding_left, 20.0)
+			cascade_build["root"].free()
 
 
 func _test_parser_recovery() -> void:

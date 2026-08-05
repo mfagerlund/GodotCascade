@@ -6,8 +6,12 @@ const COPIED_PROPERTIES: PackedStringArray = [
 	"direction", "wrap", "gap", "line_gap", "justify_content", "align_items", "pixel_snap",
 	"text", "font", "font_size", "text_color", "horizontal_alignment", "vertical_alignment",
 	"autowrap_mode", "text_overrun_behavior", "max_lines_visible", "text_alignment",
-	"hover_background_color", "pressed_background_color", "disabled_background_color",
-	"disabled_text_color", "focus_ring_color", "focus_ring_width", "disabled", "toggle_mode",
+	"hover_background_color", "pressed_background_color", "checked_background_color", "disabled_background_color",
+	"checked_text_color", "disabled_text_color", "focus_ring_color", "focus_ring_width", "disabled", "toggle_mode",
+	"button_group", "action_mode", "accessibility_name", "indicator_size", "indicator_gap",
+	"indicator_background_color", "indicator_border_color", "checked_indicator_color",
+	"checkmark_color", "disabled_indicator_color", "track_width", "track_height", "track_color",
+	"checked_track_color", "thumb_color",
 	"min_value", "max_value", "value", "fill_color", "fill_border_radius",
 ]
 

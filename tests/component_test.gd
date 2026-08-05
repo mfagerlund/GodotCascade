@@ -3,6 +3,10 @@ extends SceneTree
 const BoxPainter := preload("res://addons/godot_cascade/components/box_painter.gd")
 const CascadeBox := preload("res://addons/godot_cascade/layout/cascade_box.gd")
 const CascadeButton := preload("res://addons/godot_cascade/components/cascade_button.gd")
+const CascadeCheckbox := preload("res://addons/godot_cascade/components/cascade_checkbox.gd")
+const CascadeRadioButton := preload("res://addons/godot_cascade/components/cascade_radio_button.gd")
+const CascadeSwitch := preload("res://addons/godot_cascade/components/cascade_switch.gd")
+const InteractiveStateAdapter := preload("res://addons/godot_cascade/components/interactive_state_adapter.gd")
 const CascadeLabel := preload("res://addons/godot_cascade/components/cascade_label.gd")
 const CascadePanel := preload("res://addons/godot_cascade/components/cascade_panel.gd")
 const CascadeProgress := preload("res://addons/godot_cascade/components/cascade_progress.gd")
@@ -21,8 +25,14 @@ func _run() -> void:
 	await _test_shared_style_invalidation()
 	await _test_overflow_and_align_self()
 	await _test_owned_label_box()
+	await _test_wrapped_label_row_minimum()
 	await _test_panel_layout()
 	await _test_owned_progress()
+	_test_interactive_state_precedence()
+	await _test_owned_checkbox()
+	await _test_native_radio_group()
+	await _test_owned_switch()
+	await _test_native_input_matrix()
 
 	if _failures.is_empty():
 		print("GodotCascade component tests passed.")
@@ -161,6 +171,21 @@ func _test_owned_label_box() -> void:
 	label.queue_free()
 
 
+func _test_wrapped_label_row_minimum() -> void:
+	var box := CascadeBox.new()
+	box.direction = CascadeBox.FlowDirection.ROW
+	box.size = Vector2(400.0, 100.0)
+	root.add_child(box)
+	var label := CascadeLabel.new()
+	label.text = "A visible wrapped label"
+	box.add_child(label)
+	await process_frame
+	await process_frame
+	_expect_true("wrapped label keeps non-zero row width", label.size.x > 0.0)
+	_expect_true("wrapped label fits row cross axis", label.size.y <= box.size.y)
+	box.queue_free()
+
+
 func _test_panel_layout() -> void:
 	var panel := CascadePanel.new()
 	panel.size = Vector2(100.0, 50.0)
@@ -193,6 +218,149 @@ func _test_owned_progress() -> void:
 	progress.value = 200.0
 	_expect_float("CascadeProgress clamps value", progress.value, 120.0)
 	progress.queue_free()
+
+
+func _test_interactive_state_precedence() -> void:
+	_expect_true("base interactive state", InteractiveStateAdapter.resolve(false, false, false, false, false).is_empty())
+	_expect_true("focus interactive state", InteractiveStateAdapter.resolve(false, false, false, false, true) == "focused")
+	_expect_true("hover wins over focus", InteractiveStateAdapter.resolve(false, false, false, true, true) == "hover")
+	_expect_true("checked wins over hover", InteractiveStateAdapter.resolve(false, false, true, true, true) == "checked")
+	_expect_true("pressed wins over checked", InteractiveStateAdapter.resolve(false, true, true, true, true) == "pressed")
+	_expect_true("disabled wins over pressed", InteractiveStateAdapter.resolve(true, true, true, true, true) == "disabled")
+
+
+func _test_owned_checkbox() -> void:
+	var checkbox := CascadeCheckbox.new()
+	checkbox.text = "Enable shadows"
+	root.add_child(checkbox)
+	await process_frame
+	_expect_true("CascadeCheckbox keeps BaseButton behavior", checkbox is BaseButton)
+	_expect_true("CascadeCheckbox enables toggle mode", checkbox.toggle_mode)
+	_expect_true("CascadeCheckbox includes indicator in minimum size", checkbox.get_combined_minimum_size().x > checkbox.indicator_size)
+	checkbox.button_pressed = true
+	await process_frame
+	_expect_true("CascadeCheckbox reports checked native state", checkbox.cascade_visual_state() == "checked")
+	checkbox.disabled = true
+	await process_frame
+	_expect_true("CascadeCheckbox disabled state has precedence", checkbox.cascade_visual_state() == "disabled")
+	checkbox.queue_free()
+
+
+func _test_native_radio_group() -> void:
+	var group := ButtonGroup.new()
+	var first := CascadeRadioButton.new()
+	var second := CascadeRadioButton.new()
+	first.button_group = group
+	second.button_group = group
+	root.add_child(first)
+	root.add_child(second)
+	await process_frame
+	first.button_pressed = true
+	second.button_pressed = true
+	_expect_true("native radio group selects latest button", second.button_pressed)
+	_expect_true("native radio group unchecks previous button", not first.button_pressed)
+	first.queue_free()
+	second.queue_free()
+
+
+func _test_owned_switch() -> void:
+	var toggle := CascadeSwitch.new()
+	toggle.text = "Vertical sync"
+	root.add_child(toggle)
+	await process_frame
+	_expect_true("CascadeSwitch keeps checkbox semantics", toggle.toggle_mode)
+	_expect_true("CascadeSwitch uses wide track geometry", toggle.track_width > toggle.track_height)
+	_expect_true("CascadeSwitch minimum includes track", toggle.get_combined_minimum_size().x > toggle.track_width)
+	toggle.button_pressed = true
+	await process_frame
+	_expect_true("CascadeSwitch reports checked state", toggle.cascade_visual_state() == "checked")
+	toggle.queue_free()
+
+
+func _test_native_input_matrix() -> void:
+	root.size = Vector2i(480, 240)
+	var checkbox := CascadeCheckbox.new()
+	checkbox.position = Vector2(40.0, 40.0)
+	checkbox.size = Vector2(180.0, 44.0)
+	root.add_child(checkbox)
+	await process_frame
+
+	checkbox.grab_focus()
+	await process_frame
+	_expect_true("checkbox accepts native focus", checkbox.has_focus())
+	_expect_true("focused checkbox reports focus state", checkbox.cascade_visual_state() == "focused")
+
+	_send_action("ui_accept", true)
+	await process_frame
+	_expect_true("keyboard press reports pressed state", checkbox.cascade_visual_state() == "pressed")
+	_send_action("ui_accept", false)
+	await process_frame
+	_expect_true("keyboard release toggles checkbox", checkbox.button_pressed)
+
+	checkbox.button_pressed = false
+	var joypad_mapping := InputEventJoypadButton.new()
+	joypad_mapping.button_index = JOY_BUTTON_A
+	InputMap.action_add_event("ui_accept", joypad_mapping)
+	_send_joypad_accept(true)
+	await process_frame
+	_expect_true("controller press reports pressed state", checkbox.cascade_visual_state() == "pressed")
+	_send_joypad_accept(false)
+	await process_frame
+	_expect_true("controller release toggles checkbox", checkbox.button_pressed)
+
+	checkbox.button_pressed = false
+	checkbox.release_focus()
+	_send_mouse_motion(Vector2(80.0, 60.0))
+	await process_frame
+	_expect_true("pointer motion enters checkbox", checkbox.is_hovered())
+	_expect_true("hovered checkbox reports hover state", checkbox.cascade_visual_state() == "hover")
+	_send_mouse_button(Vector2(80.0, 60.0), true)
+	await process_frame
+	_expect_true("pointer down reports pressed state", checkbox.cascade_visual_state() == "pressed")
+	_send_mouse_button(Vector2(80.0, 60.0), false)
+	await process_frame
+	_expect_true("pointer release toggles checkbox", checkbox.button_pressed)
+
+	checkbox.disabled = true
+	_send_action("ui_accept", true)
+	_send_action("ui_accept", false)
+	await process_frame
+	_expect_true("disabled checkbox keeps disabled state", checkbox.cascade_visual_state() == "disabled")
+	_expect_true("disabled checkbox ignores activation", checkbox.button_pressed)
+	InputMap.action_erase_event("ui_accept", joypad_mapping)
+	checkbox.queue_free()
+
+
+func _send_action(action: StringName, pressed: bool) -> void:
+	var event := InputEventAction.new()
+	event.action = action
+	event.pressed = pressed
+	event.strength = 1.0 if pressed else 0.0
+	root.push_input(event, true)
+
+
+func _send_joypad_accept(pressed: bool) -> void:
+	var event := InputEventJoypadButton.new()
+	event.button_index = JOY_BUTTON_A
+	event.pressed = pressed
+	event.pressure = 1.0 if pressed else 0.0
+	root.push_input(event, true)
+
+
+func _send_mouse_motion(position: Vector2) -> void:
+	var event := InputEventMouseMotion.new()
+	event.position = position
+	event.global_position = position
+	root.push_input(event, true)
+
+
+func _send_mouse_button(position: Vector2, pressed: bool) -> void:
+	var event := InputEventMouseButton.new()
+	event.position = position
+	event.global_position = position
+	event.button_index = MOUSE_BUTTON_LEFT
+	event.pressed = pressed
+	root.push_input(event, true)
 
 
 func _expect_true(label: String, actual: bool) -> void:

@@ -31,7 +31,7 @@ The form-control roadmap follows the same rule:
 | --- | --- | --- |
 | `CascadeCheckbox` | `BaseButton` toggle behavior | indicator, label layout, box model, and checked-state drawing |
 | `CascadeRadioButton` | `BaseButton` plus `ButtonGroup` | indicator, group-facing attributes, label layout, and state drawing |
-| `CascadeSwitch` | Checkbox/toggle semantics | switch track, thumb, and state drawing |
+| `CascadeSwitch` (implemented) | Checkbox/toggle semantics | switch track, thumb, and state drawing |
 | `CascadeSelect` | Composite native button, popup, and option list behavior | closed control, popup styling, option layout, and open/selected states |
 | `CascadeSlider` | Native range semantics | track, fill, thumb geometry, and pointer/focus states |
 
@@ -54,4 +54,4 @@ Unsupported or inexact declarations should produce a diagnostic in development b
 - The project owns more drawing, text layout, theme interoperability, and tests.
 - Theme adapters become optional integration paths rather than the foundation of styling.
 - `CascadeButton`, `CascadeLabel`, `CascadePanel`, and `CascadeProgress` now validate the decision across interactive, textual, container, and value-display controls.
-- Checkbox and radio-button work should generalize pseudo-state adapters before select/dropdown introduces popup, option-selection, and keyboard-navigation complexity.
+- Checkbox and radio-button work now shares one pseudo-state adapter; select/dropdown can build on it when popup, option-selection, and keyboard-navigation behavior is introduced.

@@ -41,6 +41,26 @@
         ["nested flex panels", "Row / Column / Panel", "CascadeBox native layout"],
         ["<button>", "<Button>", "CascadeButton (BaseButton)"]
       ]
+    },
+    {
+      "id": "settings-menu",
+      "title": "Settings menu",
+      "summary": "A source-generated settings surface exercising owned checkboxes, switches, grouped radio buttons, native focus/toggle state, disabled semantics, and shared pseudo-state precedence.",
+      "viewport": [960, 540],
+      "html": "examples/showcase/settings_menu/reference.html",
+      "gxml": "examples/showcase/settings_menu/interface.gxml",
+      "gcss": "examples/showcase/settings_menu/styles.gcss",
+      "godot_scene": "examples/settings_menu_showcase.tscn",
+      "godot_screenshot": "docs/showcase/assets/settings-menu-godot.png",
+      "mappings": [
+        ["input[type=checkbox]", "Checkbox", "CascadeCheckbox (BaseButton toggle)"],
+        ["input[role=switch]", "Switch", "CascadeSwitch track/thumb drawing"],
+        ["input[type=radio] name", "RadioButton group", "CascadeRadioButton + ButtonGroup"],
+        ["checked / disabled", "checked / disabled", "Native button state"],
+        [":checked / :hover", ":checked / :hover", "Shared state adapter"],
+        ["aria-label", "accessible-label", "Native accessibility name"],
+        ["fieldset-like cards", "Panel + Column", "CascadePanel flex layout"]
+      ]
     }
   ]
 }

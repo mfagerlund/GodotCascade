@@ -12,11 +12,14 @@ This page documents the executable subset on `main`. GodotCascade borrows produc
 | `Panel` | `CascadePanel` | Semantic styled `CascadeBox` |
 | `Label` | `CascadeLabel` | Owned outer box with an internal native `Label` |
 | `Button` | `CascadeButton` | Owned drawing on `BaseButton` behavior |
+| `Checkbox` | `CascadeCheckbox` | Owned indicator and label on native toggle behavior |
+| `RadioButton` / `Radio` | `CascadeRadioButton` | Owned indicator and label with native `ButtonGroup` exclusivity |
+| `Switch` | `CascadeSwitch` | Checkbox semantics with owned track and thumb drawing |
 | `Progress` | `CascadeProgress` | Owned horizontal track, fill, range, and box model |
 
-Every element accepts `id` and `class`. `Label` and `Button` accept text as element content or through a `text` attribute. `Progress` accepts numeric `min`, `max`, and `value` attributes.
+Every element accepts `id`, `class`, and `accessible-label`. `Label`, `Button`, `Checkbox`, `RadioButton`, and `Switch` accept text as element content or through a `text` attribute. Interactive controls accept boolean `disabled`; toggle controls accept boolean `checked`; radio buttons use `group` to share a native `ButtonGroup`. `Progress` accepts numeric `min`, `max`, and `value` attributes.
 
-Unknown elements are build errors. `Window`, `Grid`, `Stack`, `Checkbox`, `RadioButton`, `Select`, `TextInput`, `Slider`, `Image`, repeated elements, and custom components are not implemented yet.
+Unknown elements are build errors. `Window`, `Grid`, `Stack`, `Select`, `TextInput`, `Slider`, `Image`, repeated elements, and custom components are not implemented yet.
 
 ## Bindings
 
@@ -52,19 +55,23 @@ Type, class, ID, combined compounds, and descendant matching participate in spec
 
 ## Pseudo states
 
-The parser recognizes `:hover`, `:pressed`, `:focused`, `:disabled`, and `:selected`. Runtime state styling is currently implemented only for `CascadeButton`:
+The parser recognizes `:hover`, `:pressed`, `:checked`, `:focused`, `:disabled`, and `:selected`. Runtime state styling is implemented for the owned `BaseButton` controls:
 
 | Selector | Supported declarations | Runtime source |
 | --- | --- | --- |
-| `Button:hover` | `background`, `background-color` | Native pointer hover |
-| `Button:pressed` | `background`, `background-color` | Native pressed/toggled state |
-| `Button:focused` | `border-color`, `border-width` | Native focus state |
-| `Button:disabled` | `background`, `background-color`, `color` | Native disabled state |
-| `:selected` | None yet | Parsed for future adapters; declarations warn |
+| `:hover` | `background`, `background-color` | Native pointer hover |
+| `:pressed` | `background`, `background-color` | Native activation press |
+| `:checked` / `:selected` | `background`, `background-color`, `color` | Native toggle selection; `:selected` is the style alias |
+| `:focused` | `border-color`, `border-width` | Native focus state |
+| `:disabled` | `background`, `background-color`, `color` | Native disabled state |
 
-Unlike a browser, state rules are resolved into typed component state properties during the build. Native Godot state changes then select the appropriate drawing dynamically. `:pressed` is the GodotCascade equivalent of HTML `:active`.
+Unlike a browser, state rules are resolved into typed component state properties during the build. Native Godot state changes then select the appropriate drawing dynamically. State precedence is `disabled` → `pressed` → `checked`/`selected` → `hover` → `focus` → base; focus-ring drawing remains visible alongside other states. `:pressed` is the GodotCascade equivalent of HTML `:active`.
 
-There is no general `Panel:hover`, `:checked`, `:open`, `:focus-visible`, transition, or animation support yet. A button can enter disabled state through its native `disabled` property; a GXML `disabled` attribute is not yet wired.
+There is no general `Panel:hover`, `:open`, `:focus-visible`, transition, or animation support yet. Pseudo-state declarations on non-interactive controls warn.
+
+### Input behavior
+
+Owned interactive controls retain native `BaseButton` input behavior. Pointer press/release and the focused `ui_accept` action activate buttons and toggles; this covers keyboard acceptance and mapped controller buttons. Checkbox and switch activation toggles their checked state, radio buttons update their native group selection, and disabled controls ignore activation. Focus traversal and controller directional navigation use Godot's native `Control` focus-neighbor behavior.
 
 ## GCSS properties
 
@@ -94,7 +101,7 @@ Unsupported properties produce warnings; unsupported values for known properties
 
 ## Component support
 
-Implemented exact components are `CascadeBox`, `CascadePanel`, `CascadeLabel`, `CascadeButton`, and `CascadeProgress`. Exact means GodotCascade owns the supported measurement and visual semantics.
+Implemented exact components are `CascadeBox`, `CascadePanel`, `CascadeLabel`, `CascadeButton`, `CascadeCheckbox`, `CascadeRadioButton`, `CascadeSwitch`, and `CascadeProgress`. Exact means GodotCascade owns the supported measurement and visual semantics.
 
 Ordinary Godot `Control` children can participate in Cascade layout through compatibility metadata, but the exact/adapted/layout-only diagnostic system is not implemented yet. See [ADR 0001](decisions/0001-owned-core-controls.md).
 
@@ -112,6 +119,9 @@ The migration target is semantic, not source-compatible:
 | --- | --- |
 | Flex row or column | `Row`/`Column` plus focused flex declarations |
 | `button` | `Button` → `CascadeButton` |
+| checkbox | `Checkbox` → `CascadeCheckbox` |
+| grouped radio input | `RadioButton group="…"` → `CascadeRadioButton` + `ButtonGroup` |
+| switch input | `Switch` → `CascadeSwitch` |
 | `progress` | `Progress` → `CascadeProgress` |
 | Application data | Exact `{path.to.value}` attributes |
 | `:hover`/`:active` button appearance | `:hover`/`:pressed` |
