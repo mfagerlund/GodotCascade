@@ -8,6 +8,10 @@ const GcssParser := preload("res://addons/godot_cascade/style/gcss_parser.gd")
 const CascadeBuilder := preload("res://addons/godot_cascade/runtime/cascade_builder.gd")
 const CascadeDocument := preload("res://addons/godot_cascade/runtime/cascade_document.gd")
 const BindingResolver := preload("res://addons/godot_cascade/runtime/binding_resolver.gd")
+const GcssTokenizer := preload("res://addons/godot_cascade/style/gcss_tokenizer.gd")
+const GcssValue := preload("res://addons/godot_cascade/style/gcss_value.gd")
+const ComputedStyleCache := preload("res://addons/godot_cascade/style/computed_style_cache.gd")
+const ThemeAdapter := preload("res://addons/godot_cascade/style/theme_adapter.gd")
 
 var _failures: Array[String] = []
 
@@ -19,6 +23,7 @@ func _initialize() -> void:
 func _run() -> void:
 	_test_gxml_parser()
 	_test_gcss_specificity()
+	_test_style_foundations()
 	_test_form_controls_pipeline()
 	_test_select_pipeline()
 	_test_slider_pipeline()
@@ -161,6 +166,75 @@ func _test_gcss_specificity() -> void:
 		_expect_true("ID selector wins specificity", label.get("text_color") == Color("3366ff"))
 	if built_root != null:
 		built_root.free()
+
+
+func _test_style_foundations() -> void:
+	var tokenized := GcssTokenizer.tokenize("Button > .label { transition-duration: 150ms; @bad: 1; }")
+	_expect_true("GCSS tokenizer emits source tokens", tokenized["tokens"].size() > 8)
+	_expect_int("GCSS tokenizer recovers after an unexpected character", tokenized["diagnostics"].size(), 1)
+	_expect_int("first GCSS token starts on line one", tokenized["tokens"][0]["line"], 1)
+	_expect_int("first GCSS token starts in column one", tokenized["tokens"][0]["column"], 1)
+	_expect_true("GCSS tokens carry exclusive end spans", tokenized["tokens"][0]["end"] > tokenized["tokens"][0]["start"])
+
+	var milliseconds = GcssValue.parse("150ms")
+	var seconds = GcssValue.parse("0.25s")
+	var length = GcssValue.parse("12px")
+	var color = GcssValue.parse("#4da3ff")
+	_expect_int("typed milliseconds value", milliseconds.kind, GcssValue.Kind.TIME)
+	_expect_float("milliseconds normalize directly", milliseconds.milliseconds(), 150.0)
+	_expect_float("seconds normalize to milliseconds", seconds.milliseconds(), 250.0)
+	_expect_int("typed length value", length.kind, GcssValue.Kind.LENGTH)
+	_expect_int("typed color value", color.kind, GcssValue.Kind.COLOR)
+
+	var markup := GxmlParser.parse("<Page class=\"theme\"><Label id=\"direct\" class=\"title\">Direct</Label><Panel><Label id=\"nested\">Nested</Label></Panel></Page>")
+	var stylesheet := GcssParser.parse("Label { color: #222222; } Page { color: #55aaff; font-size: 19px; } Page > Label { color: #ff8844; } .theme > Panel Label { font-size: inherit; }")
+	ComputedStyleCache.clear()
+	var first_build := CascadeBuilder.build(markup["root"], stylesheet["rules"])
+	_expect_true("inherited container declarations are recoverable warnings only", not _has_error_diagnostics(first_build["diagnostics"]))
+	var first_root: Control = first_build["root"]
+	if first_root != null:
+		var direct: Control = _find_by_id(first_root, "direct")[0]
+		var nested: Control = _find_by_id(first_root, "nested")[0]
+		_expect_true("direct-child combinator matches immediate child", direct.get("text_color") == Color("ff8844"))
+		_expect_true("direct-child combinator excludes deeper descendant", nested.get("text_color") == Color("222222"))
+		_expect_int("font size inherits through a non-text container", int(nested.get("font_size")), 19)
+		first_root.free()
+	var after_first := ComputedStyleCache.stats()
+	var second_build := CascadeBuilder.build(markup["root"], stylesheet["rules"])
+	var after_second := ComputedStyleCache.stats()
+	_expect_true("equivalent builds hit computed-style cache", int(after_second["hits"]) > int(after_first["hits"]))
+	if second_build["root"] != null:
+		second_build["root"].free()
+	var invalidated := ComputedStyleCache.invalidate_class("title")
+	_expect_true("class invalidation targets dependent computed styles", invalidated > 0)
+
+	var gap_markup := GxmlParser.parse("<Page><Row id=\"row\"/><Column id=\"column\"/></Page>")
+	var gap_styles := GcssParser.parse("#row { gap: 7px 13px; column-gap: 20px; } #column { gap: 7px 13px; }")
+	var gap_build := CascadeBuilder.build(gap_markup["root"], gap_styles["rules"])
+	_expect_int("gap shorthand build diagnostics", gap_build["diagnostics"].size(), 0)
+	if gap_build["root"] != null:
+		var row: Control = _find_by_id(gap_build["root"], "row")[0]
+		var column: Control = _find_by_id(gap_build["root"], "column")[0]
+		_expect_float("row main gap uses winning column-gap", row.get("gap"), 20.0)
+		_expect_float("row line gap uses row-gap", row.get("line_gap"), 7.0)
+		_expect_float("column main gap uses row-gap", column.get("gap"), 7.0)
+		_expect_float("column line gap uses column-gap", column.get("line_gap"), 13.0)
+		gap_build["root"].free()
+
+	var adapted_style := CascadeStyle.new()
+	adapted_style.background_color = Color("123456")
+	adapted_style.border_color = Color("abcdef")
+	adapted_style.border_width = 2.0
+	adapted_style.border_radius = 6.0
+	adapted_style.padding_left = 8.0
+	var native := Button.new()
+	ThemeAdapter.apply_style_box(native, adapted_style, &"normal")
+	ThemeAdapter.apply_text(native, Color("f0f0f0"), 18)
+	var native_box := native.get_theme_stylebox(&"normal") as StyleBoxFlat
+	_expect_true("theme adapter maps box colors", native_box != null and native_box.bg_color == Color("123456"))
+	_expect_float("theme adapter maps content margins", native_box.content_margin_left, 8.0)
+	_expect_true("theme adapter declares adapted tier", native.get_meta("cascade_compatibility_tier") == "adapted")
+	native.free()
 
 
 func _test_form_controls_pipeline() -> void:

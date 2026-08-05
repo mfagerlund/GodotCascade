@@ -81,7 +81,7 @@ The repository currently contains several working vertical slices:
 - `CascadeProgress`, an owned range display with exact track, fill, padding, border, and radius drawing;
 - `CascadeImage`, an owned texture control with deterministic contain, cover, fill, and crop geometry;
 - a recoverable `.gxml` parser and native control registry;
-- a focused `.gcss` subset with type/class/ID/descendant selectors, specificity, source order, box values, flex values, and button pseudo states;
+- a focused `.gcss` subset with type/class/ID, descendant/direct-child selectors, specificity, inheritance, source order, typed values, layout values, and native pseudo states;
 - `CascadeDocument`, which builds the running native UI directly from paired source files;
 - content-based source watching with automatic runtime reloads;
 - stable ID and structural keys that reconcile edits into the existing native tree;
@@ -89,7 +89,7 @@ The repository currently contains several working vertical slices:
 - focused `{dot.separated.path}` one-way bindings for text and progress values;
 - two source-generated parity scenes covering layout, components, and bound telemetry data.
 
-Reactive binding adapters, broad property coverage, direct-child selectors, importers, and editor preview tooling remain roadmap work.
+Reactive binding adapters, broad property coverage, importers, and editor preview tooling remain roadmap work.
 
 ## Trying the prototype
 

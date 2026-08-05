@@ -55,9 +55,12 @@ Button { }
 #save { }
 .dialog Button { }
 Panel.card .title { }
+Panel.card > .title { }
 ```
 
-Type, class, ID, combined compounds, and descendant matching participate in specificity and source order. Selector lists, the direct-child combinator (`>`), sibling combinators, attribute selectors, `:not()`, and other functional selectors are not supported.
+Type, class, ID, combined compounds, descendant matching, and the direct-child combinator (`>`) participate in specificity and source order. Selector lists, sibling combinators, attribute selectors, `:not()`, and other functional selectors are not supported.
+
+`color` and `font-size` inherit through the authored element tree. Authors may use the explicit `inherit` keyword; a root-level `inherit` falls back to the component default.
 
 ## Pseudo states
 
@@ -90,7 +93,7 @@ When a select popup is open, `ui_up` and `ui_down` move through enabled options,
 | Flow | `display: flex`, `flex-direction: row\|column`, `flex-wrap: wrap\|nowrap` |
 | Distribution | `justify-content: start\|center\|end\|space-between\|space-around\|space-evenly` |
 | Alignment | `align-items: start\|center\|end\|stretch`, `align-self: auto\|start\|center\|end\|stretch` |
-| Spacing | `gap`, `padding`, `margin`, and individual padding/margin edges |
+| Spacing | one- or two-value `gap`, one-to-four-value `padding`/`margin`, and individual gap/padding/margin edges |
 | Grid | `grid-template-columns`, `grid-template-rows`, `column-gap`, `row-gap`, `grid-column`, `grid-row` |
 | Position | `position: relative\|absolute`, `left`, `top`, `right`, `bottom` within `Stack` |
 | Size | `width`, `height`, `min-width`, `min-height`, `max-width`, `max-height`, `flex-grow` |
@@ -99,7 +102,7 @@ When a select popup is open, `ui_up` and `ui_down` move through enabled options,
 | Range display/input | `fill-color` on `Progress` and `Slider` |
 | Image | `object-fit: contain\|cover\|fill\|none` |
 
-Lengths accept bare numbers or `px`. Percentages, viewport units, `em`/`rem`, `calc()`, variables, and automatic values are not implemented. `padding` and `margin` accept the familiar one-to-four-value form. `border` must be `<width> solid <color>`.
+Lengths accept bare numbers or `px`. The typed value layer also recognizes seconds and milliseconds for transition work. Percentages, viewport units, `em`/`rem`, `calc()`, variables, and automatic values are not implemented. `padding` and `margin` accept the familiar one-to-four-value form; `gap` accepts row and optional column values. `border` must be `<width> solid <color>`. Shorthands expand before cascade winner selection.
 
 Unsupported properties produce warnings; unsupported values for known properties generally produce errors and prevent a document swap.
 

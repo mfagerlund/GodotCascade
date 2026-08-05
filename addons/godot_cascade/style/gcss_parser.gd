@@ -2,12 +2,15 @@ extends RefCounted
 
 ## Small, recoverable stylesheet parser for the first GodotCascade vertical slice.
 
+const GcssTokenizer := preload("res://addons/godot_cascade/style/gcss_tokenizer.gd")
+
 
 class Rule:
 	extends RefCounted
 
 	var selector := ""
 	var compounds: PackedStringArray = []
+	var combinators: PackedStringArray = []
 	var pseudo_state := ""
 	var declarations: Dictionary = {}
 	var declaration_locations: Dictionary = {}
@@ -26,9 +29,14 @@ class Rule:
 		index -= 1
 
 		while index >= 0:
+			var relation := combinators[index]
 			current = current.parent_element()
-			while current != null and not _compound_matches(compounds[index], current):
-				current = current.parent_element()
+			if relation == ">":
+				if current == null or not _compound_matches(compounds[index], current):
+					return false
+			else:
+				while current != null and not _compound_matches(compounds[index], current):
+					current = current.parent_element()
 			if current == null:
 				return false
 			index -= 1
@@ -62,6 +70,8 @@ class Rule:
 static func parse(source: String) -> Dictionary:
 	var diagnostics: Array[Dictionary] = []
 	var rules: Array[Rule] = []
+	var tokenized := GcssTokenizer.tokenize(source)
+	diagnostics.append_array(tokenized["diagnostics"])
 	var cleaned := _strip_comments(source)
 	var cursor := 0
 
@@ -98,7 +108,7 @@ static func parse(source: String) -> Dictionary:
 				rules.append(rule)
 		cursor = close_brace + 1
 
-	return {"rules": rules, "diagnostics": diagnostics}
+	return {"rules": rules, "diagnostics": diagnostics, "tokens": tokenized["tokens"]}
 
 
 static func _parse_rule(
@@ -123,11 +133,13 @@ static func _parse_rule(
 			diagnostics.append(_diagnostic(source, offset + colon, "Unsupported pseudo state :%s; declarations apply to the base selector." % rule.pseudo_state, "warning"))
 			rule.pseudo_state = ""
 
-	rule.compounds = selector_without_pseudo.split(" ", false)
+	var parsed_selector := _parse_selector(selector_without_pseudo, source, offset, diagnostics)
+	rule.compounds = parsed_selector["compounds"]
+	rule.combinators = parsed_selector["combinators"]
 	if rule.compounds.is_empty():
 		diagnostics.append(_diagnostic(source, offset, "Selector contains no matchable compound."))
 		return null
-	rule.specificity = _specificity(selector_without_pseudo, rule.pseudo_state)
+	rule.specificity = _specificity(rule.compounds, rule.pseudo_state)
 
 	var body_cursor := 0
 	for raw_declaration in body.split(";"):
@@ -156,14 +168,49 @@ static func _parse_rule(
 	return rule
 
 
-static func _specificity(selector: String, pseudo_state: String) -> int:
+static func _specificity(compounds: PackedStringArray, pseudo_state: String) -> int:
+	var selector := " ".join(compounds)
 	var ids := selector.count("#")
 	var classes := selector.count(".") + (0 if pseudo_state.is_empty() else 1)
 	var types := 0
-	for compound in selector.split(" ", false):
+	for compound in compounds:
 		if not compound.begins_with(".") and not compound.begins_with("#"):
 			types += 1
 	return ids * 100 + classes * 10 + types
+
+
+static func _parse_selector(selector: String, source: String, offset: int, diagnostics: Array[Dictionary]) -> Dictionary:
+	var compounds := PackedStringArray()
+	var combinators := PackedStringArray()
+	var current := ""
+	var pending_descendant := false
+	for index in selector.length():
+		var character := selector[index]
+		if character in [" ", "\t", "\r", "\n"]:
+			if not current.is_empty():
+				compounds.append(current)
+				current = ""
+			pending_descendant = not compounds.is_empty()
+		elif character == ">":
+			if not current.is_empty():
+				compounds.append(current)
+				current = ""
+			if compounds.is_empty() or combinators.size() >= compounds.size():
+				diagnostics.append(_diagnostic(source, offset + index, "Direct-child combinator requires a selector on its left."))
+				return {"compounds": PackedStringArray(), "combinators": PackedStringArray()}
+			combinators.append(">")
+			pending_descendant = false
+		else:
+			if pending_descendant and compounds.size() > combinators.size():
+				combinators.append(" ")
+			pending_descendant = false
+			current += character
+	if not current.is_empty():
+		compounds.append(current)
+	if compounds.size() > 0 and combinators.size() != compounds.size() - 1:
+		diagnostics.append(_diagnostic(source, offset, "Selector ends with a combinator."))
+		return {"compounds": PackedStringArray(), "combinators": PackedStringArray()}
+	return {"compounds": compounds, "combinators": combinators}
 
 
 static func _strip_comments(source: String) -> String:

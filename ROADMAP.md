@@ -88,21 +88,21 @@ The reproduced findings in the [2026-08-05 code review](docs/artifacts/review.md
 - [x] `CascadeSlider` on native range semantics with owned track, fill, and thumb drawing
 - [x] Adapted `CascadeTextInput` plan covering selection, IME, clipboard, bidi, and accessibility
 
-## Phase 2 — Styles
+## Phase 2 — Styles — complete
 
-- [ ] Tokenizer with source spans and recovery
+- [x] Tokenizer with source spans and recovery
 - [x] Initial length, color, keyword, and number value subset
-- [ ] Complete typed value model including time values
-- [ ] Shorthand expansion for margin, padding, border, and gap
+- [x] Complete typed value model including time values
+- [x] Shorthand expansion for margin, padding, border, and gap
 - [x] Type, class, and ID selectors
 - [x] Descendant combinator
-- [ ] Direct-child combinator
+- [x] Direct-child combinator
 - [x] Specificity and source ordering
-- [ ] Style inheritance
+- [x] Style inheritance
 - [x] Button `:hover`, `:pressed`, `:focused`, and `:disabled`
 - [x] Generalized `:checked`, `:selected`, `:open`, and pseudo-state adapters
-- [ ] Computed-style caching and targeted invalidation
-- [ ] Godot theme and `StyleBox` adapters
+- [x] Computed-style caching and targeted invalidation
+- [x] Godot theme and `StyleBox` adapters
 
 ## Phase 3 — Markup and state
 

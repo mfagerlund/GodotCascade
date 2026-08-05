@@ -16,6 +16,9 @@ const CascadeProgress := preload("res://addons/godot_cascade/components/cascade_
 const CascadeSlider := preload("res://addons/godot_cascade/components/cascade_slider.gd")
 const CascadeImage := preload("res://addons/godot_cascade/components/cascade_image.gd")
 const PropertyCache := preload("res://addons/godot_cascade/runtime/property_cache.gd")
+const ComputedStyleCache := preload("res://addons/godot_cascade/style/computed_style_cache.gd")
+
+const INHERITED_PROPERTIES: PackedStringArray = ["color", "font-size"]
 
 
 static func build(root_element, rules: Array) -> Dictionary:
@@ -102,6 +105,16 @@ static func _create_control(tag_name: String, diagnostics: Array[Dictionary]) ->
 
 
 static func _compute_declarations(element, rule_index: Dictionary) -> Dictionary:
+	var cache_key := "%s|%s" % [rule_index.get("revision", 0), _element_signature(element)]
+	if ComputedStyleCache.has(cache_key):
+		return ComputedStyleCache.retrieve(cache_key)
+	var winners := _compute_declarations_uncached(element, rule_index)
+	_inherit_declarations(element, rule_index, winners)
+	ComputedStyleCache.put(cache_key, winners, _element_dependencies(element))
+	return winners
+
+
+static func _compute_declarations_uncached(element, rule_index: Dictionary) -> Dictionary:
 	var winners := {}
 	for rule in _candidate_rules(element, rule_index):
 		if not rule.matches(element):
@@ -129,8 +142,57 @@ static func _compute_declarations(element, rule_index: Dictionary) -> Dictionary
 	return winners
 
 
+static func _inherit_declarations(element, rule_index: Dictionary, winners: Dictionary) -> void:
+	var parent = element.parent_element()
+	if not winners.has(""):
+		winners[""] = {}
+	if parent == null:
+		for property_name in INHERITED_PROPERTIES:
+			if winners[""].has(property_name) and str(winners[""][property_name]["value"]).to_lower() == "inherit":
+				winners[""].erase(property_name)
+		return
+	var parent_computed := _compute_declarations(parent, rule_index)
+	var parent_base: Dictionary = parent_computed.get("", {})
+	for property_name in INHERITED_PROPERTIES:
+		var own: Dictionary = winners[""].get(property_name, {})
+		var requests_inherit := not own.is_empty() and str(own["value"]).to_lower() == "inherit"
+		if (own.is_empty() or requests_inherit) and parent_base.has(property_name):
+			var inherited: Dictionary = parent_base[property_name].duplicate(true)
+			inherited["inherited"] = true
+			winners[""][property_name] = inherited
+
+
+static func _element_signature(element) -> String:
+	var parts := PackedStringArray()
+	var current = element
+	while current != null:
+		parts.append("%s#%s.%s" % [current.tag_name.to_lower(), current.element_id(), ".".join(current.classes())])
+		current = current.parent_element()
+	parts.reverse()
+	return ">".join(parts)
+
+
+static func _element_dependencies(element) -> PackedStringArray:
+	var result := PackedStringArray()
+	var current = element
+	while current != null:
+		var type_dependency := "type:%s" % current.tag_name.to_lower()
+		if type_dependency not in result:
+			result.append(type_dependency)
+		if not current.element_id().is_empty():
+			var id_dependency := "id:%s" % current.element_id()
+			if id_dependency not in result:
+				result.append(id_dependency)
+		for class_value in current.classes():
+			var class_dependency := "class:%s" % class_value
+			if class_dependency not in result:
+				result.append(class_dependency)
+		current = current.parent_element()
+	return result
+
+
 static func _index_rules(rules: Array) -> Dictionary:
-	var index := {"universal": [], "types": {}, "classes": {}, "ids": {}}
+	var index := {"universal": [], "types": {}, "classes": {}, "ids": {}, "revision": _rules_revision(rules)}
 	for rule in rules:
 		var compound := str(rule.compounds[-1])
 		var rule_id := _compound_token(compound, "#")
@@ -149,6 +211,13 @@ static func _index_rules(rules: Array) -> Dictionary:
 		else:
 			index["universal"].append(rule)
 	return index
+
+
+static func _rules_revision(rules: Array) -> int:
+	var parts := PackedStringArray()
+	for rule in rules:
+		parts.append("%s|%s|%s|%s|%s" % [rule.selector, rule.pseudo_state, rule.declarations, rule.declaration_locations, rule.order])
+	return hash("\n".join(parts))
 
 
 static func _candidate_rules(element, index: Dictionary) -> Array:
@@ -224,6 +293,20 @@ static func _expand_shorthands(declarations: Dictionary) -> Dictionary:
 			else:
 				expanded[property_name] = value
 				origins[property_name] = property_name
+		elif property_name == "gap":
+			var tokens := _split_whitespace(value)
+			var valid_gaps := tokens.size() >= 1 and tokens.size() <= 2
+			for token in tokens:
+				var parsed := _parse_length(token)
+				valid_gaps = valid_gaps and not is_nan(parsed) and parsed >= 0.0
+			if valid_gaps:
+				expanded["row-gap"] = tokens[0]
+				expanded["column-gap"] = tokens[0] if tokens.size() == 1 else tokens[1]
+				origins["row-gap"] = property_name
+				origins["column-gap"] = property_name
+			else:
+				expanded[property_name] = value
+				origins[property_name] = property_name
 		else:
 			expanded[property_name] = value
 			origins[property_name] = property_name
@@ -244,6 +327,8 @@ static func _apply_declarations(control: Control, computed: Dictionary, diagnost
 				diagnostics
 			)
 			_stamp_diagnostics(diagnostics, diagnostic_start, int(declaration["line"]), int(declaration.get("column", 1)))
+	if control is CascadeBox:
+		_resolve_flex_gaps(control)
 
 
 static func _apply_declaration(
@@ -306,7 +391,14 @@ static func _apply_declaration(
 			else:
 				_set_length_property(control, "gap", value, line, diagnostics)
 		"column-gap", "row-gap":
-			_set_length_property(control, property_name.replace("-", "_"), value, line, diagnostics)
+			if control is CascadeBox:
+				var parsed_gap := _parse_length(value)
+				if is_nan(parsed_gap) or parsed_gap < 0.0:
+					_diagnostic_bad_value(diagnostics, line, property_name, value)
+				else:
+					control.set_meta("cascade_%s" % property_name.replace("-", "_"), parsed_gap)
+			else:
+				_set_length_property(control, property_name.replace("-", "_"), value, line, diagnostics)
 		"grid-template-columns", "grid-template-rows":
 			var tracks := _parse_grid_tracks(value, line, diagnostics)
 			if not tracks.is_empty():
@@ -699,6 +791,17 @@ static func _parse_length(value: String) -> float:
 	if not normalized.is_valid_float():
 		return NAN
 	return normalized.to_float()
+
+
+static func _resolve_flex_gaps(control: Control) -> void:
+	var row_gap := float(control.get_meta("cascade_row_gap", 0.0))
+	var column_gap := float(control.get_meta("cascade_column_gap", 0.0))
+	if int(control.get("direction")) == CascadeBox.FlowDirection.ROW:
+		control.set("gap", column_gap)
+		control.set("line_gap", row_gap)
+	else:
+		control.set("gap", row_gap)
+		control.set("line_gap", column_gap)
 
 
 static func _parse_grid_tracks(value: String, line: int, diagnostics: Array[Dictionary]) -> Array[Dictionary]:
