@@ -98,6 +98,7 @@ Run the current headless smoke test with:
 
 ```shell
 godot --headless --path . --script res://tests/layout_smoke_test.gd
+godot --headless --path . --script res://tests/flex_layout_engine_test.gd
 ```
 
 ## Using `CascadeBox`
@@ -125,6 +126,8 @@ cascade_max_width        cascade_max_height
 ```
 
 The metadata bridge is an early compatibility mechanism. Later phases will apply these values through the style engine, so standard controls will not need wrappers or manual metadata.
+
+GodotCascade will own the visual implementation of its core components so supported CSS settings have exact, shared semantics. Those components still derive from useful native primitives—for example, `CascadeButton` will derive from `BaseButton` to retain focus, activation, toggle, shortcut, accessibility, and signal behavior. Ordinary Godot controls remain usable through documented compatibility tiers. See [ADR 0001](docs/decisions/0001-owned-core-controls.md) for the decision and tradeoffs.
 
 ## Architecture
 

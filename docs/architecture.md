@@ -56,6 +56,8 @@ The reconciler compares the previous logical tree with the next one, then applie
 
 The adapter owns control factories, property conversion, theme integration, input-state observation, and intrinsic measurement. Godot-specific behavior should terminate here instead of leaking into parsers or rule matching.
 
+Core components use Godot's lowest useful behavioral primitive while owning their box model and drawing. For example, `CascadeButton` derives from `BaseButton` rather than adapting Godot's themed `Button`. Ordinary native controls remain supported through explicit exact, adapted, or layout-only compatibility tiers. See [ADR 0001](decisions/0001-owned-core-controls.md).
+
 ## Invalidation model
 
 Changes have different costs and should not all rebuild the interface:

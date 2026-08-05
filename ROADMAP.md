@@ -21,9 +21,9 @@ The roadmap favors end-to-end slices over isolated subsystems. Each milestone sh
 
 ### 1.2 Layout model extraction
 
-- [ ] Introduce engine-only box and constraint value types
-- [ ] Separate measurement from arrangement
-- [ ] Add deterministic unit tests for row, column, wrap, and constraints
+- [x] Introduce engine-only box and constraint value types
+- [x] Separate measurement from arrangement
+- [x] Add deterministic unit tests for row, column, wrap, and constraints
 - [ ] Add dirty flags for measure and arrange invalidation
 - [ ] Define pixel rounding rules
 
@@ -34,6 +34,15 @@ The roadmap favors end-to-end slices over isolated subsystems. Each milestone sh
 - [ ] Explicit and automatic placement
 - [ ] Stack/overlay layout
 - [ ] Absolute positioning escape hatch
+
+### 1.4 Core components
+
+- [ ] Shared box-painting and content-box primitive
+- [ ] `CascadeButton` based on `BaseButton`
+- [ ] `CascadeLabel` with wrapping and overflow rules
+- [ ] `CascadePanel`, `CascadeProgress`, and `CascadeImage`
+- [ ] Exact/adapted/layout-only compatibility diagnostics
+- [ ] State matrix tests for hover, pressed, focused, and disabled controls
 
 ## Phase 2 — Styles
 
