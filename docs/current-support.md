@@ -134,6 +134,10 @@ Ordinary Godot `Control` children are layout-only by default. Integrations can d
 
 Use an `id` when an element must retain identity after sibling reordering. Unkeyed elements use their structural path and are intended for stable local structure.
 
+## Editor tooling
+
+The editor plugin imports `.gxml`/`.gcss` sources into diagnostic resources and adds the **Cascade Preview** dock. The dock provides a watched native preview, error/warning status, hierarchy/style/layout rows, and GXML source navigation. Generated controls expose element metadata and resolved rectangles through a custom Inspector summary. See the [editor tooling guide](editor-tooling.md).
+
 ## HTML migration expectations
 
 The migration target is semantic, not source-compatible:

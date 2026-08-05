@@ -94,6 +94,7 @@ func reload_document() -> bool:
 		return false
 
 	var desired_root: Control = build_result["root"]
+	_stamp_source_path(desired_root)
 	if _generated_root == null:
 		_generated_root = desired_root
 		add_child(_generated_root)
@@ -338,6 +339,13 @@ func _contains_element(node: Node, element_type: String) -> bool:
 		if _contains_element(child, element_type):
 			return true
 	return false
+
+
+func _stamp_source_path(node: Node) -> void:
+	if node is Control:
+		node.set_meta("cascade_source_path", markup_path)
+	for child in node.get_children():
+		_stamp_source_path(child)
 
 
 func _capture_source_signatures() -> void:

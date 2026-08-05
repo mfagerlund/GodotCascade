@@ -11,6 +11,7 @@ GodotCascade is a prototype. Documentation distinguishes between behavior that r
 - [Native control compatibility tiers](compatibility-tiers.md) — exact, adapted, and layout-only classification and diagnostics
 - [Style system](style-system.md) — token spans, typed values, selectors, inheritance, computed caching, and theme adapters
 - [Markup and state](markup-and-state.md) — keyed repeats, scoped bindings, event methods, and custom component lifecycle
+- [Editor tooling](editor-tooling.md) — importers, live preview, generated-control Inspector, debugger, and source navigation
 - [Public preview stability policy](api-stability.md) — current guarantees, unstable surfaces, and change process
 - [Roadmap](../ROADMAP.md) — completed work, next form controls, and later milestones
 - [HTML parity showcase](showcase/index.html) — live HTML references beside captured native Godot output

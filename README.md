@@ -84,13 +84,14 @@ The repository currently contains several working vertical slices:
 - a focused `.gcss` subset with type/class/ID, descendant/direct-child selectors, specificity, inheritance, source order, typed values, layout values, and native pseudo states;
 - `CascadeDocument`, which builds the running native UI directly from paired source files;
 - content-based source watching with automatic runtime reloads;
+- `.gxml`/`.gcss` import resources plus a docked live preview, Inspector summary, layout debugger, and source navigation;
 - stable ID and structural keys that reconcile edits into the existing native tree;
 - last-valid rendering when an in-progress edit has parser or builder errors;
 - focused `{dot.separated.path}` one-way bindings for text and progress values;
 - keyed `Repeat` collections, `on-*` event methods, and registered custom-component lifecycle hooks;
 - three source-generated parity scenes covering layout, media, components, form controls, and bound telemetry data.
 
-Two-way binding adapters, broad property coverage, importers, and editor preview tooling remain roadmap work. Focused one-way properties, keyed repeats, and event-to-method bindings are implemented.
+Two-way binding adapters and broader property coverage remain roadmap work. Focused one-way properties, keyed repeats, event-to-method bindings, source importers, and editor preview/debug tooling are implemented.
 
 ## Trying the prototype
 
@@ -231,7 +232,7 @@ The major boundaries are intentionally separate:
 - **Style engine:** matches the focused selector/property subset and applies typed values.
 - **Layout engine:** translates box/flex and grid rules into control rectangles; stack overlays provide a constrained absolute-inset escape hatch.
 - **Reconciler:** updates existing Godot nodes while preserving runtime state and signal connections.
-- **Tooling:** watches source files and generates the HTML/native parity report; editor inspection remains planned.
+- **Tooling:** imports source diagnostics, hosts the watched native preview, exposes Inspector/debug snapshots and GXML source navigation, and generates the HTML/native parity report.
 
 See the [documentation index](docs/README.md), [architecture](docs/architecture.md), [current support reference](docs/current-support.md), and [roadmap](ROADMAP.md).
 

@@ -14,6 +14,7 @@ const ComputedStyleCache := preload("res://addons/godot_cascade/style/computed_s
 const ThemeAdapter := preload("res://addons/godot_cascade/style/theme_adapter.gd")
 const ComponentRegistry := preload("res://addons/godot_cascade/runtime/component_registry.gd")
 const CascadePanel := preload("res://addons/godot_cascade/components/cascade_panel.gd")
+const DebugSnapshot := preload("res://addons/godot_cascade/editor/debug_snapshot.gd")
 
 var _failures: Array[String] = []
 var _custom_mounts := 0
@@ -52,6 +53,11 @@ func _run() -> void:
 	var generated_root: Control = document.generated_root()
 	_expect_true("source document generated a root", generated_root != null)
 	if generated_root != null:
+		_expect_true("generated root retains GXML source path", generated_root.get_meta("cascade_source_path") == "res://examples/showcase/layout_foundation/interface.gxml")
+		_expect_true("generated root retains GXML source line", int(generated_root.get_meta("cascade_source_line")) > 0)
+		var debug_snapshot := DebugSnapshot.capture(generated_root)
+		_expect_true("layout debugger captures generated hierarchy", debug_snapshot.size() > 5)
+		_expect_true("layout debugger includes resolved style", not debug_snapshot[0]["style"].is_empty())
 		var card_grids := _find_by_class(generated_root, "cards")
 		_expect_int("one cards grid", card_grids.size(), 1)
 		if card_grids.size() == 1:

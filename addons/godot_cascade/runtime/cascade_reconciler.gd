@@ -90,7 +90,7 @@ static func _reconcile_children(existing: Control, desired: Control, stats: Dict
 static func _copy_properties(existing: Control, desired: Control) -> void:
 	existing.name = desired.name
 	existing.visible = desired.visible
-	for metadata_name in ["cascade_element_type", "cascade_id", "cascade_classes", "cascade_key", "cascade_bindings", "cascade_events", "cascade_binding_scope", "cascade_explicit_accessible_label", "cascade_compatibility_tier"]:
+	for metadata_name in ["cascade_element_type", "cascade_id", "cascade_classes", "cascade_key", "cascade_bindings", "cascade_events", "cascade_binding_scope", "cascade_source_path", "cascade_source_line", "cascade_source_column", "cascade_explicit_accessible_label", "cascade_compatibility_tier"]:
 		existing.set_meta(metadata_name, desired.get_meta(metadata_name))
 	for metadata_name in ["cascade_position", "cascade_left", "cascade_top", "cascade_right", "cascade_bottom"]:
 		if desired.has_meta(metadata_name):

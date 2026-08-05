@@ -10,6 +10,9 @@ class Element:
 	var attributes: Dictionary = {}
 	var text := ""
 	var children: Array[Element] = []
+	var source_offset := 0
+	var source_line := 1
+	var source_column := 1
 	var _parent_ref: WeakRef
 
 
@@ -50,6 +53,10 @@ static func parse(source: String) -> Dictionary:
 			XMLParser.NODE_ELEMENT:
 				var parent: Element = stack.back() if not stack.is_empty() else null
 				var element := Element.new(xml.get_node_name(), parent)
+				element.source_offset = xml.get_node_offset()
+				var location := _diagnostic(source, element.source_offset, "")
+				element.source_line = location["line"]
+				element.source_column = location["column"]
 				for index in xml.get_attribute_count():
 					element.attributes[xml.get_attribute_name(index)] = xml.get_attribute_value(index)
 

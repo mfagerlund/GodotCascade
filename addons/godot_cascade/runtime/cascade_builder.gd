@@ -54,6 +54,8 @@ static func _build_element(
 	control.set_meta("cascade_bindings", {})
 	control.set_meta("cascade_events", {})
 	control.set_meta("cascade_binding_scope", binding_scope)
+	control.set_meta("cascade_source_line", element.source_line)
+	control.set_meta("cascade_source_column", element.source_column)
 	control.set_meta("cascade_explicit_accessible_label", false)
 	control.set_meta("cascade_compatibility_tier", "layout-only" if ComponentRegistry.has(element.tag_name) else "exact")
 

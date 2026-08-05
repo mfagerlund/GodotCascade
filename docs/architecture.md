@@ -66,6 +66,8 @@ The reconciler compares the previous logical tree with the next one, then applie
 
 The runtime watcher compares source-content signatures rather than filesystem timestamps, avoiding timestamp-resolution and editor atomic-save differences. It polls on a configurable interval and uses the same transactional reload path as explicit reloads.
 
+The editor plugin reuses those runtime boundaries. Import plugins serialize source text and parser summaries into diagnostic resources; the preview dock hosts a `CascadeDocument` in a `SubViewport`; `DebugSnapshot` projects the generated tree into read-only element, rectangle, style, and source-location rows. The custom Inspector reads the same metadata, so editor tooling does not need a second style or layout implementation.
+
 ### Godot adapter
 
 The adapter owns control factories, property conversion, theme integration, input-state observation, and intrinsic measurement. Godot-specific behavior should terminate here instead of leaking into parsers or rule matching.

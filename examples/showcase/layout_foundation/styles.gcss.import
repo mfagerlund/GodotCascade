@@ -1,0 +1,14 @@
+[remap]
+
+importer="godot_cascade.gcss"
+type="CascadeStylesheetResource"
+uid="uid://cbvmnopbipmew"
+path="res://.godot/imported/styles.gcss-5237f1e49652b04031fb01add55c85a8.res"
+
+[deps]
+
+source_file="res://examples/showcase/layout_foundation/styles.gcss"
+dest_files=["res://.godot/imported/styles.gcss-5237f1e49652b04031fb01add55c85a8.res"]
+
+[params]
+

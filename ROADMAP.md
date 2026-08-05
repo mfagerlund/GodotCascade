@@ -116,14 +116,14 @@ The reproduced findings in the [2026-08-05 code review](docs/artifacts/review.md
 - [x] Repeated elements and keyed collection updates
 - [x] Event-to-method binding
 
-## Phase 4 — Tooling
+## Phase 4 — Tooling — complete
 
-- [ ] Importers for `.gxml` and stylesheet resources
+- [x] Importers for `.gxml` and stylesheet resources
 - [x] Runtime file watching and hot reload with last-valid fallback
-- [ ] Dockable live preview
-- [ ] Inspector support for classes, IDs, and resolved values
-- [ ] Style and layout debugger
-- [ ] Source navigation from generated controls
+- [x] Dockable live preview
+- [x] Inspector support for classes, IDs, and resolved values
+- [x] Style and layout debugger
+- [x] Source navigation from generated controls
 
 ## Phase 5 — Production readiness
 
