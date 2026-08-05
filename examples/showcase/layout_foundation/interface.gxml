@@ -22,6 +22,7 @@
         </Panel>
 
         <Panel class="card godot-native">
+            <Image class="card-image" src="res://examples/showcase/assets/cascade-orbit.svg" accessible-label="Stylized blue orbital landscape" />
             <Label class="card-title">Godot native</Label>
             <Label class="card-body">
                 Every element remains a real Control with Godot rendering, input, themes, and signals.

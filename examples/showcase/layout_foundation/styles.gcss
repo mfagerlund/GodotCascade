@@ -55,6 +55,13 @@
 
 .card-title { font-size: 20px; }
 .card-body { color: #b8c4db; font-size: 15px; flex-grow: 1; }
+.card-image {
+    width: 180px;
+    height: 56px;
+    object-fit: cover;
+    border: 1px solid #315a89;
+    border-radius: 6px;
+}
 .box-model .card-title { color: #7dbfff; }
 .flex-flow .card-title { color: #a8e08c; }
 .godot-native .card-title { color: #ffb064; }

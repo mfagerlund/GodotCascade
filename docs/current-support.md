@@ -21,10 +21,11 @@ This page documents the executable subset on `main`. GodotCascade borrows produc
 | `Option` | Select option data | Valid only as a direct authored child of `Select` |
 | `Slider` | `CascadeSlider` | Native range semantics with owned track, fill, thumb, and pointer/keyboard input |
 | `Progress` | `CascadeProgress` | Owned horizontal track, fill, range, and box model |
+| `Image` | `CascadeImage` | Texture resource rendering with contain, cover, fill, or intrinsic crop geometry |
 
-Every element accepts `id`, `class`, `accessible-label`, and `accessible-description`. Text-bearing controls use their visible text as the native accessibility name when no explicit label is authored. `Label`, `Button`, `Checkbox`, `RadioButton`, and `Switch` accept text as element content or through a `text` attribute. Interactive controls accept boolean `disabled`; toggle controls accept boolean `checked`; radio buttons use `group` to share a native `ButtonGroup`. `Select` accepts `selected` as an option value or zero-based index; `Option` accepts `value` and boolean `disabled`. `Progress` and `Slider` accept numeric `min`, `max`, and `value`; `Slider` also accepts a positive `step`.
+Every element accepts `id`, `class`, `accessible-label`, and `accessible-description`. Text-bearing controls use their visible text as the native accessibility name when no explicit label is authored. `Label`, `Button`, `Checkbox`, `RadioButton`, and `Switch` accept text as element content or through a `text` attribute. Interactive controls accept boolean `disabled`; toggle controls accept boolean `checked`; radio buttons use `group` to share a native `ButtonGroup`. `Select` accepts `selected` as an option value or zero-based index; `Option` accepts `value` and boolean `disabled`. `Progress` and `Slider` accept numeric `min`, `max`, and `value`; `Slider` also accepts a positive `step`. `Image` requires a `src` path that loads a Godot `Texture2D` resource.
 
-Unknown elements are build errors. `Window`, `TextInput`, `Image`, repeated elements, and custom components are not implemented yet.
+Unknown elements are build errors. `Window`, `TextInput`, repeated elements, and custom components are not implemented yet.
 
 ## Bindings
 
@@ -96,6 +97,7 @@ When a select popup is open, `ui_up` and `ui_down` move through enabled options,
 | Box | `background`, `background-color`, `border`, `border-color`, `border-width`, `border-radius`, `overflow` |
 | Text | `color`, `font-size` on controls exposing the corresponding property |
 | Range display/input | `fill-color` on `Progress` and `Slider` |
+| Image | `object-fit: contain\|cover\|fill\|none` |
 
 Lengths accept bare numbers or `px`. Percentages, viewport units, `em`/`rem`, `calc()`, variables, and automatic values are not implemented. `padding` and `margin` accept the familiar one-to-four-value form. `border` must be `<width> solid <color>`.
 
@@ -114,9 +116,9 @@ Unsupported properties produce warnings; unsupported values for known properties
 
 ## Component support
 
-Implemented exact components are `CascadeBox`, `CascadeGrid`, `CascadeStack`, `CascadePanel`, `CascadeLabel`, `CascadeButton`, `CascadeCheckbox`, `CascadeRadioButton`, `CascadeSwitch`, `CascadeSelect`, `CascadeSlider`, and `CascadeProgress`. Exact means GodotCascade owns the supported measurement and visual semantics.
+Implemented exact components are `CascadeBox`, `CascadeGrid`, `CascadeStack`, `CascadePanel`, `CascadeLabel`, `CascadeImage`, `CascadeButton`, `CascadeCheckbox`, `CascadeRadioButton`, `CascadeSwitch`, `CascadeSelect`, `CascadeSlider`, and `CascadeProgress`. Exact means GodotCascade owns the supported measurement and visual semantics.
 
-Ordinary Godot `Control` children can participate in Cascade layout through compatibility metadata, but the exact/adapted/layout-only diagnostic system is not implemented yet. See [ADR 0001](decisions/0001-owned-core-controls.md).
+Ordinary Godot `Control` children are layout-only by default. Integrations can declare an adapted property surface; `CompatibilityRegistry` reports warnings for inexact or unsupported visual mappings while permitting layout properties. See the [compatibility tier reference](compatibility-tiers.md) and [ADR 0001](decisions/0001-owned-core-controls.md).
 
 ## Hot reload
 

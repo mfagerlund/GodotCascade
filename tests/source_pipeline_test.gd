@@ -22,6 +22,7 @@ func _run() -> void:
 	_test_form_controls_pipeline()
 	_test_select_pipeline()
 	_test_slider_pipeline()
+	_test_image_pipeline()
 	_test_stack_pipeline()
 	_test_grid_pipeline()
 	_test_review_regressions()
@@ -276,6 +277,26 @@ func _test_grid_pipeline() -> void:
 		_expect_int("grid authored column", int(featured.get_meta("cascade_grid_column")), 1)
 		_expect_int("grid authored column span", int(featured.get_meta("cascade_grid_column_span")), 2)
 		grid.free()
+
+
+func _test_image_pipeline() -> void:
+	var markup := GxmlParser.parse("<Image src=\"res://docs/showcase/assets/layout-foundation-godot.png\" accessible-label=\"Layout preview\"/>")
+	var stylesheet := GcssParser.parse("Image { width: 160px; height: 90px; object-fit: cover; border-radius: 8px; }")
+	var build := CascadeBuilder.build(markup["root"], stylesheet["rules"])
+	_expect_int("image builder diagnostics", build["diagnostics"].size(), 0)
+	var image: Control = build["root"]
+	if image != null:
+		_expect_true("image resource loads as texture", image.get("texture") is Texture2D)
+		_expect_int("image cover fit is authored", int(image.get("fit")), 1)
+		_expect_true("image accessibility label is retained", image.get("accessibility_name") == "Layout preview")
+		_expect_true("image is marked exact", image.get_meta("cascade_compatibility_tier") == "exact")
+		image.free()
+
+	var missing_markup := GxmlParser.parse("<Image src=\"res://missing-texture.png\"/>")
+	var missing_build := CascadeBuilder.build(missing_markup["root"], [])
+	_expect_true("missing image resource is an error", _has_error_diagnostics(missing_build["diagnostics"]))
+	if missing_build["root"] != null:
+		missing_build["root"].free()
 
 
 func _test_review_regressions() -> void:

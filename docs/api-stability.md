@@ -12,7 +12,7 @@ GodotCascade is a prototype approaching its first public preview. The executable
 ## Unstable surfaces
 
 - File extensions, custom component lifecycle, event binding, collection repetition, import resources, and editor tooling remain provisional.
-- Ordinary Godot controls do not yet receive final exact/adapted/layout-only compatibility classifications.
+- Compatibility tiers and their current diagnostic contract are documented, but the set of adapted controls may expand before a stable release.
 - Serialized scenes should reference the registered component types or `CascadeDocument`; internal helper scripts and metadata keys are not public API.
 - The focused GCSS grammar is not a promise of general CSS compatibility.
 

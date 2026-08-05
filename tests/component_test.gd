@@ -15,6 +15,8 @@ const InteractiveStateAdapter := preload("res://addons/godot_cascade/components/
 const CascadeLabel := preload("res://addons/godot_cascade/components/cascade_label.gd")
 const CascadePanel := preload("res://addons/godot_cascade/components/cascade_panel.gd")
 const CascadeProgress := preload("res://addons/godot_cascade/components/cascade_progress.gd")
+const CascadeImage := preload("res://addons/godot_cascade/components/cascade_image.gd")
+const CompatibilityRegistry := preload("res://addons/godot_cascade/runtime/compatibility_registry.gd")
 
 var _failures: Array[String] = []
 
@@ -36,6 +38,8 @@ func _run() -> void:
 	await _test_wrapped_label_row_minimum()
 	await _test_panel_layout()
 	await _test_owned_progress()
+	_test_owned_image_geometry()
+	_test_compatibility_diagnostics()
 	_test_interactive_state_precedence()
 	await _test_owned_checkbox()
 	await _test_native_radio_group()
@@ -320,6 +324,50 @@ func _test_owned_progress() -> void:
 	_expect_float("CascadeProgress atomic maximum", progress.max_value, 200.0)
 	_expect_float("CascadeProgress atomic value", progress.value, 175.0)
 	progress.queue_free()
+
+
+func _test_owned_image_geometry() -> void:
+	var pixels := Image.create(100, 50, false, Image.FORMAT_RGBA8)
+	pixels.fill(Color("4da3ff"))
+	var image := CascadeImage.new()
+	image.texture = ImageTexture.create_from_image(pixels)
+	image.size = Vector2(100.0, 100.0)
+	image.fit = CascadeImage.FitMode.CONTAIN
+	var contain: Dictionary = image.image_geometry()
+	_expect_rect("contained image preserves aspect", contain["destination"], Rect2(0.0, 25.0, 100.0, 50.0))
+	_expect_rect("contained image uses full source", contain["source"], Rect2(0.0, 0.0, 100.0, 50.0))
+
+	image.fit = CascadeImage.FitMode.COVER
+	var cover: Dictionary = image.image_geometry()
+	_expect_rect("covered image fills destination", cover["destination"], Rect2(0.0, 0.0, 100.0, 100.0))
+	_expect_rect("covered image crops source centrally", cover["source"], Rect2(25.0, 0.0, 50.0, 50.0))
+
+	image.fit = CascadeImage.FitMode.FILL
+	var fill: Dictionary = image.image_geometry()
+	_expect_rect("filled image stretches to content", fill["destination"], Rect2(0.0, 0.0, 100.0, 100.0))
+	image.free()
+
+
+func _test_compatibility_diagnostics() -> void:
+	var exact := CascadeImage.new()
+	_expect_true("owned image has exact compatibility", CompatibilityRegistry.tier_name(exact) == "exact")
+	_expect_true("exact property has no compatibility warning", CompatibilityRegistry.diagnose_property(exact, "background").is_empty())
+	exact.free()
+
+	var native_button := Button.new()
+	_expect_true("ordinary native control is layout-only", CompatibilityRegistry.tier_name(native_button) == "layout-only")
+	_expect_true("layout property is valid on layout-only control", CompatibilityRegistry.diagnose_property(native_button, "width").is_empty())
+	var layout_warning := CompatibilityRegistry.diagnose_property(native_button, "background")
+	_expect_true("visual property warns on layout-only control", layout_warning.get("severity") == "warning" and str(layout_warning.get("message")).contains("native appearance is unchanged"))
+	native_button.free()
+
+	var adapted := LineEdit.new()
+	adapted.set_meta("cascade_compatibility_tier", "adapted")
+	adapted.set_meta("cascade_adapted_properties", PackedStringArray(["color"]))
+	_expect_true("declared native adapter is classified", CompatibilityRegistry.tier_name(adapted) == "adapted")
+	_expect_true("adapted property reports inexact mapping", str(CompatibilityRegistry.diagnose_property(adapted, "color").get("message")).contains("adapted native mapping"))
+	_expect_true("unsupported adapted property is explicit", str(CompatibilityRegistry.diagnose_property(adapted, "background").get("message")).contains("not supported"))
+	adapted.free()
 
 
 func _test_interactive_state_precedence() -> void:

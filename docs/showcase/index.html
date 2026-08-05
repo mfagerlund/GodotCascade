@@ -187,6 +187,40 @@
       line-height: 1.45;
     }
 
+    .card-image {
+      position: relative;
+      width: 100%;
+      height: 56px;
+      flex: none;
+      overflow: hidden;
+      border: 1px solid #315a89;
+      border-radius: 6px;
+      background: linear-gradient(145deg, #193a64, #111827 65%);
+    }
+
+    .card-image::before {
+      content: &quot;&quot;;
+      position: absolute;
+      right: 38px;
+      top: 8px;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #78c8ff;
+      box-shadow: 0 0 14px #4da3ff;
+    }
+
+    .card-image::after {
+      content: &quot;&quot;;
+      position: absolute;
+      left: -10%;
+      right: -10%;
+      bottom: -28px;
+      height: 54px;
+      border-radius: 50%;
+      background: #1d5b5a;
+    }
+
     .card:nth-child(1) h2 { color: #7dbfff; }
     .card:nth-child(2) h2 { color: #a8e08c; }
     .card:nth-child(3) h2 { color: #ffb064; }
@@ -238,6 +272,7 @@
         &lt;p&gt;Rows and columns support growth, alignment, distribution, and wrapping.&lt;/p&gt;
       &lt;/article&gt;
       &lt;article class=&quot;card&quot;&gt;
+        &lt;div class=&quot;card-image&quot; role=&quot;img&quot; aria-label=&quot;Stylized blue orbital landscape&quot;&gt;&lt;/div&gt;
         &lt;h2&gt;Godot native&lt;/h2&gt;
         &lt;p&gt;Every element remains a real Control with Godot rendering, input, themes, and signals.&lt;/p&gt;
       &lt;/article&gt;
@@ -267,7 +302,7 @@
         </div>
         <table>
           <thead><tr><th>HTML/CSS</th><th>GodotCascade source</th><th>Runtime</th></tr></thead>
-          <tbody><tr><td><code>&lt;main&gt;</code></td><td><code>&lt;Page&gt;</code></td><td><code>CascadeBox (column)</code></td></tr><tr><td><code>display: grid</code></td><td><code>&lt;Grid&gt;</code></td><td><code>CascadeGrid track layout</code></td></tr><tr><td><code>1fr 1fr 1fr</code></td><td><code>grid-template-columns</code></td><td><code>Fractional track resolution</code></td></tr><tr><td><code>position: absolute</code></td><td><code>&lt;Stack&gt; + right/top</code></td><td><code>Overlay inset placement</code></td></tr><tr><td><code>padding / gap</code></td><td><code>padding / column-gap</code></td><td><code>CascadeStyle + layout request</code></td></tr><tr><td><code>&lt;button&gt;</code></td><td><code>&lt;Button&gt;</code></td><td><code>CascadeButton (BaseButton)</code></td></tr><tr><td><code>:hover / :active</code></td><td><code>:hover / :pressed</code></td><td><code>Native button state drawing</code></td></tr></tbody>
+          <tbody><tr><td><code>&lt;main&gt;</code></td><td><code>&lt;Page&gt;</code></td><td><code>CascadeBox (column)</code></td></tr><tr><td><code>display: grid</code></td><td><code>&lt;Grid&gt;</code></td><td><code>CascadeGrid track layout</code></td></tr><tr><td><code>1fr 1fr 1fr</code></td><td><code>grid-template-columns</code></td><td><code>Fractional track resolution</code></td></tr><tr><td><code>position: absolute</code></td><td><code>&lt;Stack&gt; + right/top</code></td><td><code>Overlay inset placement</code></td></tr><tr><td><code>visual media</code></td><td><code>&lt;Image src=&quot;res://…&quot;&gt;</code></td><td><code>CascadeImage cover crop</code></td></tr><tr><td><code>padding / gap</code></td><td><code>padding / column-gap</code></td><td><code>CascadeStyle + layout request</code></td></tr><tr><td><code>&lt;button&gt;</code></td><td><code>&lt;Button&gt;</code></td><td><code>CascadeButton (BaseButton)</code></td></tr><tr><td><code>:hover / :active</code></td><td><code>:hover / :pressed</code></td><td><code>Native button state drawing</code></td></tr></tbody>
         </table>
       </section>
 
@@ -375,6 +410,40 @@
       line-height: 1.45;
     }
 
+    .card-image {
+      position: relative;
+      width: 100%;
+      height: 56px;
+      flex: none;
+      overflow: hidden;
+      border: 1px solid #315a89;
+      border-radius: 6px;
+      background: linear-gradient(145deg, #193a64, #111827 65%);
+    }
+
+    .card-image::before {
+      content: &quot;&quot;;
+      position: absolute;
+      right: 38px;
+      top: 8px;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #78c8ff;
+      box-shadow: 0 0 14px #4da3ff;
+    }
+
+    .card-image::after {
+      content: &quot;&quot;;
+      position: absolute;
+      left: -10%;
+      right: -10%;
+      bottom: -28px;
+      height: 54px;
+      border-radius: 50%;
+      background: #1d5b5a;
+    }
+
     .card:nth-child(1) h2 { color: #7dbfff; }
     .card:nth-child(2) h2 { color: #a8e08c; }
     .card:nth-child(3) h2 { color: #ffb064; }
@@ -426,6 +495,7 @@
         &lt;p&gt;Rows and columns support growth, alignment, distribution, and wrapping.&lt;/p&gt;
       &lt;/article&gt;
       &lt;article class=&quot;card&quot;&gt;
+        &lt;div class=&quot;card-image&quot; role=&quot;img&quot; aria-label=&quot;Stylized blue orbital landscape&quot;&gt;&lt;/div&gt;
         &lt;h2&gt;Godot native&lt;/h2&gt;
         &lt;p&gt;Every element remains a real Control with Godot rendering, input, themes, and signals.&lt;/p&gt;
       &lt;/article&gt;
@@ -467,6 +537,7 @@
         &lt;/Panel&gt;
 
         &lt;Panel class=&quot;card godot-native&quot;&gt;
+            &lt;Image class=&quot;card-image&quot; src=&quot;res://examples/showcase/assets/cascade-orbit.svg&quot; accessible-label=&quot;Stylized blue orbital landscape&quot; /&gt;
             &lt;Label class=&quot;card-title&quot;&gt;Godot native&lt;/Label&gt;
             &lt;Label class=&quot;card-body&quot;&gt;
                 Every element remains a real Control with Godot rendering, input, themes, and signals.
@@ -541,6 +612,13 @@
 
 .card-title { font-size: 20px; }
 .card-body { color: #b8c4db; font-size: 15px; flex-grow: 1; }
+.card-image {
+    width: 180px;
+    height: 56px;
+    object-fit: cover;
+    border: 1px solid #315a89;
+    border-radius: 6px;
+}
 .box-model .card-title { color: #7dbfff; }
 .flex-flow .card-title { color: #a8e08c; }
 .godot-native .card-title { color: #ffb064; }

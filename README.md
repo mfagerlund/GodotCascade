@@ -79,6 +79,7 @@ The repository currently contains several working vertical slices:
 - `CascadeLabel`, with a GodotCascade box around native text shaping and wrapping;
 - `CascadePanel`, the semantic styled-container component;
 - `CascadeProgress`, an owned range display with exact track, fill, padding, border, and radius drawing;
+- `CascadeImage`, an owned texture control with deterministic contain, cover, fill, and crop geometry;
 - a recoverable `.gxml` parser and native control registry;
 - a focused `.gcss` subset with type/class/ID/descendant selectors, specificity, source order, box values, flex values, and button pseudo states;
 - `CascadeDocument`, which builds the running native UI directly from paired source files;
@@ -180,7 +181,7 @@ The metadata bridge is an early compatibility mechanism. Later phases will apply
 
 Final layout rectangles are pixel-snapped by rounding their leading and trailing edges independently, preserving shared boundaries while avoiding fractional rendering blur. Set `pixel_snap` to `false` on `CascadeBox` when subpixel geometry is intentional. `CascadeStyle.overflow` explicitly selects visible or clipped content, and `align_self` overrides a parent's cross-axis alignment for one item.
 
-GodotCascade owns the visual implementation of its core components so supported CSS settings have exact, shared semantics. Those components still derive from useful native primitives—for example, `CascadeButton` derives from `BaseButton` to retain focus, activation, toggle, shortcut, accessibility, and signal behavior. Ordinary Godot controls remain usable through documented compatibility tiers. See [ADR 0001](docs/decisions/0001-owned-core-controls.md) for the decision and tradeoffs.
+GodotCascade owns the visual implementation of its core components so supported CSS settings have exact, shared semantics. Those components still derive from useful native primitives—for example, `CascadeButton` derives from `BaseButton` to retain focus, activation, toggle, shortcut, accessibility, and signal behavior. Ordinary Godot controls remain usable through [documented compatibility tiers](docs/compatibility-tiers.md). See [ADR 0001](docs/decisions/0001-owned-core-controls.md) for the decision and tradeoffs.
 
 ### Using `CascadeButton`
 

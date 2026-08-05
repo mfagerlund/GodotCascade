@@ -14,6 +14,7 @@ const CascadeSwitch := preload("res://addons/godot_cascade/components/cascade_sw
 const CascadeSelect := preload("res://addons/godot_cascade/components/cascade_select.gd")
 const CascadeProgress := preload("res://addons/godot_cascade/components/cascade_progress.gd")
 const CascadeSlider := preload("res://addons/godot_cascade/components/cascade_slider.gd")
+const CascadeImage := preload("res://addons/godot_cascade/components/cascade_image.gd")
 const PropertyCache := preload("res://addons/godot_cascade/runtime/property_cache.gd")
 
 
@@ -43,6 +44,7 @@ static func _build_element(
 	control.set_meta("cascade_key", "#" + element.element_id() if not element.element_id().is_empty() else key_path)
 	control.set_meta("cascade_bindings", {})
 	control.set_meta("cascade_explicit_accessible_label", false)
+	control.set_meta("cascade_compatibility_tier", "exact")
 
 	_apply_attributes(control, element.attributes, element.text, diagnostics, button_groups)
 	if element.tag_name.to_lower() == "row":
@@ -89,6 +91,8 @@ static func _create_control(tag_name: String, diagnostics: Array[Dictionary]) ->
 			return CascadeProgress.new()
 		"slider":
 			return CascadeSlider.new()
+		"image":
+			return CascadeImage.new()
 		_:
 			diagnostics.append(_diagnostic(
 				"error",
@@ -343,6 +347,13 @@ static func _apply_declaration(
 				"clip": CascadeStyle.Overflow.CLIP,
 				"hidden": CascadeStyle.Overflow.CLIP,
 			}, line, diagnostics)
+		"object-fit":
+			_apply_enum(control, "fit", value, {
+				"contain": CascadeImage.FitMode.CONTAIN,
+				"cover": CascadeImage.FitMode.COVER,
+				"fill": CascadeImage.FitMode.FILL,
+				"none": CascadeImage.FitMode.NONE,
+			}, line, diagnostics)
 		"position":
 			if value.to_lower() in ["relative", "absolute"]:
 				control.set_meta("cascade_position", value.to_lower())
@@ -436,6 +447,8 @@ static func _apply_attributes(
 		control.set("accessibility_description", str(attributes["accessible-description"]))
 	if control is BaseButton:
 		_apply_button_attributes(control, attributes, diagnostics, button_groups)
+	if control is CascadeImage:
+		_apply_image_attributes(control, attributes, diagnostics)
 	if not (control is CascadeProgress or control is CascadeSlider):
 		return
 	var range_values := {
@@ -461,6 +474,21 @@ static func _apply_attributes(
 		else:
 			diagnostics.append(_diagnostic("error", "Slider attribute 'step' requires a positive number, got '%s'." % raw_step))
 	control.set_range_values(range_values["min_value"], range_values["max_value"], range_values["value"])
+
+
+static func _apply_image_attributes(control: Control, attributes: Dictionary, diagnostics: Array[Dictionary]) -> void:
+	var source := str(attributes.get("src", "")).strip_edges()
+	if source.is_empty():
+		diagnostics.append(_diagnostic("error", "Image requires a non-empty 'src' resource path."))
+		return
+	if not ResourceLoader.exists(source):
+		diagnostics.append(_diagnostic("error", "Image resource does not exist: '%s'." % source))
+		return
+	var resource := ResourceLoader.load(source)
+	if not resource is Texture2D:
+		diagnostics.append(_diagnostic("error", "Image 'src' must load a Texture2D, got '%s'." % source))
+		return
+	control.set("texture", resource)
 
 
 static func _apply_button_attributes(

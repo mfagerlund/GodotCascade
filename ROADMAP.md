@@ -62,15 +62,15 @@ The reproduced findings in the [2026-08-05 code review](docs/artifacts/review.md
 - [x] Stack/overlay layout
 - [x] Absolute positioning escape hatch
 
-### 1.4 Core components
+### 1.4 Core components — complete
 
 - [x] Shared box-painting and content-box primitive
 - [x] `CascadeButton` based on `BaseButton`
 - [x] `CascadeLabel` with wrapping and overflow rules
 - [x] `CascadePanel` semantic styled container
 - [x] `CascadeProgress` owned range display
-- [ ] `CascadeImage` with fit and crop behavior
-- [ ] Exact/adapted/layout-only compatibility diagnostics
+- [x] `CascadeImage` with fit and crop behavior
+- [x] Exact/adapted/layout-only compatibility diagnostics
 - [x] State matrix tests for hover, pressed, focused, and disabled controls
 
 ### 1.5 Form controls and settings showcase — in progress

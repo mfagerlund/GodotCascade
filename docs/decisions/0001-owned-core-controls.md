@@ -23,7 +23,7 @@ Examples:
 | `CascadeLabel` | Implemented | `Control` with internal `Label` | shaping, wrapping, bidi, localization, accessibility hooks | outer box model, clipping, and sizing contract |
 | `CascadeProgress` | Implemented | `Control` | native scene and drawing lifecycle | clamped range values, track/fill layout, drawing, and box model |
 | `CascadePanel` | Implemented | `CascadeBox` / `Container` | container lifecycle and child layout notifications | semantic component identity plus shared box/flex behavior |
-| `CascadeImage` | Proposed | `Control` | native texture resources | fit, position, clipping, and drawing |
+| `CascadeImage` | Implemented | `Control` | native texture resources | contain/cover/fill/intrinsic crop geometry, clipping, drawing, and box model |
 
 The form-control roadmap follows the same rule:
 
@@ -45,7 +45,7 @@ Ordinary Godot controls remain valid children of Cascade layouts. The style syst
 - **Adapted:** a native control maps supported properties through a dedicated adapter; limitations are documented.
 - **Layout-only:** the control participates in sizing, margin, flex, grid, and positioning, while appearance remains Godot-owned.
 
-Unsupported or inexact declarations should produce a diagnostic in development builds rather than failing silently.
+Unsupported or inexact declarations produce a compatibility diagnostic through `CompatibilityRegistry` rather than failing silently.
 
 ## Consequences
 
@@ -53,5 +53,5 @@ Unsupported or inexact declarations should produce a diagnostic in development b
 - Components remain native Godot nodes and retain relevant engine behavior.
 - The project owns more drawing, text layout, theme interoperability, and tests.
 - Theme adapters become optional integration paths rather than the foundation of styling.
-- `CascadeButton`, `CascadeLabel`, `CascadePanel`, and `CascadeProgress` now validate the decision across interactive, textual, container, and value-display controls.
+- `CascadeButton`, `CascadeLabel`, `CascadePanel`, `CascadeProgress`, and `CascadeImage` validate the decision across interactive, textual, container, value-display, and media controls.
 - Checkbox and radio-button work now shares one pseudo-state adapter; select/dropdown can build on it when popup, option-selection, and keyboard-navigation behavior is introduced.

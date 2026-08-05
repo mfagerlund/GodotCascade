@@ -19,6 +19,7 @@ const COPIED_PROPERTIES: PackedStringArray = [
 	"option_selected_background_color", "option_text_color", "option_selected_text_color", "option_height",
 	"min_value", "max_value", "value", "fill_color", "fill_border_radius",
 	"step", "track_height", "thumb_size", "thumb_color", "disabled_thumb_color",
+	"texture", "fit",
 ]
 
 
@@ -82,7 +83,7 @@ static func _reconcile_children(existing: Control, desired: Control, stats: Dict
 static func _copy_properties(existing: Control, desired: Control) -> void:
 	existing.name = desired.name
 	existing.visible = desired.visible
-	for metadata_name in ["cascade_element_type", "cascade_id", "cascade_classes", "cascade_key", "cascade_bindings", "cascade_explicit_accessible_label"]:
+	for metadata_name in ["cascade_element_type", "cascade_id", "cascade_classes", "cascade_key", "cascade_bindings", "cascade_explicit_accessible_label", "cascade_compatibility_tier"]:
 		existing.set_meta(metadata_name, desired.get_meta(metadata_name))
 	for metadata_name in ["cascade_position", "cascade_left", "cascade_top", "cascade_right", "cascade_bottom"]:
 		if desired.has_meta(metadata_name):

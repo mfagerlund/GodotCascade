@@ -98,6 +98,40 @@
       line-height: 1.45;
     }
 
+    .card-image {
+      position: relative;
+      width: 100%;
+      height: 56px;
+      flex: none;
+      overflow: hidden;
+      border: 1px solid #315a89;
+      border-radius: 6px;
+      background: linear-gradient(145deg, #193a64, #111827 65%);
+    }
+
+    .card-image::before {
+      content: "";
+      position: absolute;
+      right: 38px;
+      top: 8px;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #78c8ff;
+      box-shadow: 0 0 14px #4da3ff;
+    }
+
+    .card-image::after {
+      content: "";
+      position: absolute;
+      left: -10%;
+      right: -10%;
+      bottom: -28px;
+      height: 54px;
+      border-radius: 50%;
+      background: #1d5b5a;
+    }
+
     .card:nth-child(1) h2 { color: #7dbfff; }
     .card:nth-child(2) h2 { color: #a8e08c; }
     .card:nth-child(3) h2 { color: #ffb064; }
@@ -149,6 +183,7 @@
         <p>Rows and columns support growth, alignment, distribution, and wrapping.</p>
       </article>
       <article class="card">
+        <div class="card-image" role="img" aria-label="Stylized blue orbital landscape"></div>
         <h2>Godot native</h2>
         <p>Every element remains a real Control with Godot rendering, input, themes, and signals.</p>
       </article>

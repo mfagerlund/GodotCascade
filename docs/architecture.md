@@ -70,7 +70,7 @@ The runtime watcher compares source-content signatures rather than filesystem ti
 
 The adapter owns control factories, property conversion, theme integration, input-state observation, and intrinsic measurement. Godot-specific behavior should terminate here instead of leaking into parsers or rule matching.
 
-Core components use Godot's lowest useful behavioral primitive while owning their box model and drawing. For example, `CascadeButton` derives from `BaseButton` rather than adapting Godot's themed `Button`. Ordinary native controls already participate in layout through compatibility metadata; explicit exact, adapted, or layout-only diagnostics remain planned. See [ADR 0001](decisions/0001-owned-core-controls.md).
+Core components use Godot's lowest useful behavioral primitive while owning their box model and drawing. For example, `CascadeButton` derives from `BaseButton` rather than adapting Godot's themed `Button`. Ordinary native controls participate in layout through compatibility metadata, while `CompatibilityRegistry` classifies exact, adapted, and layout-only property behavior and emits development warnings for inexact visual mappings. See [ADR 0001](decisions/0001-owned-core-controls.md).
 
 ## Invalidation model
 
