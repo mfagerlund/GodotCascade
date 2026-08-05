@@ -24,77 +24,18 @@ const BoxPainter := preload("res://addons/godot_cascade/components/box_painter.g
 		text_alignment = value
 		queue_redraw()
 
-@export_group("Padding")
-@export_range(0.0, 4096.0, 0.5, "or_greater") var padding_left := 14.0:
+@export_group("Computed Style")
+@export var cascade_style: CascadeStyle = CascadeStyle.new():
 	set(value):
-		padding_left = maxf(value, 0.0)
-		_invalidate_layout()
-@export_range(0.0, 4096.0, 0.5, "or_greater") var padding_top := 9.0:
-	set(value):
-		padding_top = maxf(value, 0.0)
-		_invalidate_layout()
-@export_range(0.0, 4096.0, 0.5, "or_greater") var padding_right := 14.0:
-	set(value):
-		padding_right = maxf(value, 0.0)
-		_invalidate_layout()
-@export_range(0.0, 4096.0, 0.5, "or_greater") var padding_bottom := 9.0:
-	set(value):
-		padding_bottom = maxf(value, 0.0)
-		_invalidate_layout()
-
-@export_group("Margin")
-@export_range(0.0, 4096.0, 0.5, "or_greater") var margin_left := 0.0:
-	set(value):
-		margin_left = maxf(value, 0.0)
-		_notify_parent_layout_changed()
-@export_range(0.0, 4096.0, 0.5, "or_greater") var margin_top := 0.0:
-	set(value):
-		margin_top = maxf(value, 0.0)
-		_notify_parent_layout_changed()
-@export_range(0.0, 4096.0, 0.5, "or_greater") var margin_right := 0.0:
-	set(value):
-		margin_right = maxf(value, 0.0)
-		_notify_parent_layout_changed()
-@export_range(0.0, 4096.0, 0.5, "or_greater") var margin_bottom := 0.0:
-	set(value):
-		margin_bottom = maxf(value, 0.0)
-		_notify_parent_layout_changed()
-
-@export_group("Size")
-@export_range(0.0, 16384.0, 0.5, "or_greater") var preferred_width := 0.0:
-	set(value):
-		preferred_width = maxf(value, 0.0)
-		_invalidate_layout()
-@export_range(0.0, 16384.0, 0.5, "or_greater") var preferred_height := 0.0:
-	set(value):
-		preferred_height = maxf(value, 0.0)
-		_invalidate_layout()
-@export_range(0.0, 16384.0, 0.5, "or_greater") var min_width := 0.0:
-	set(value):
-		min_width = maxf(value, 0.0)
-		_invalidate_layout()
-@export_range(0.0, 16384.0, 0.5, "or_greater") var min_height := 0.0:
-	set(value):
-		min_height = maxf(value, 0.0)
-		_invalidate_layout()
-@export_range(0.0, 16384.0, 0.5, "or_greater") var max_width := 0.0:
-	set(value):
-		max_width = maxf(value, 0.0)
-		_notify_parent_layout_changed()
-@export_range(0.0, 16384.0, 0.5, "or_greater") var max_height := 0.0:
-	set(value):
-		max_height = maxf(value, 0.0)
-		_notify_parent_layout_changed()
-@export_range(0.0, 100.0, 0.05, "or_greater") var flex_grow := 0.0:
-	set(value):
-		flex_grow = maxf(value, 0.0)
-		_notify_parent_layout_changed()
+		var next := value if value != null else CascadeStyle.new()
+		if cascade_style == next:
+			return
+		_disconnect_style()
+		cascade_style = next
+		_connect_style()
+		_on_style_invalidated(CascadeStyle.Invalidation.ALL)
 
 @export_group("Appearance")
-@export var background_color := Color("344054"):
-	set(value):
-		background_color = value
-		queue_redraw()
 @export var hover_background_color := Color("475467"):
 	set(value):
 		hover_background_color = value
@@ -115,19 +56,6 @@ const BoxPainter := preload("res://addons/godot_cascade/components/box_painter.g
 	set(value):
 		disabled_text_color = value
 		queue_redraw()
-@export var border_color := Color("667085"):
-	set(value):
-		border_color = value
-		queue_redraw()
-@export_range(0.0, 128.0, 1.0, "or_greater") var border_width := 1.0:
-	set(value):
-		border_width = maxf(value, 0.0)
-		_invalidate_layout()
-@export_range(0.0, 512.0, 1.0, "or_greater") var border_radius := 7.0:
-	set(value):
-		border_radius = maxf(value, 0.0)
-		queue_redraw()
-
 @export_group("Focus")
 @export var focus_ring_color := Color("84adff"):
 	set(value):
@@ -139,7 +67,19 @@ const BoxPainter := preload("res://addons/godot_cascade/components/box_painter.g
 		queue_redraw()
 
 
+func _init() -> void:
+	cascade_style.padding_left = 14.0
+	cascade_style.padding_top = 9.0
+	cascade_style.padding_right = 14.0
+	cascade_style.padding_bottom = 9.0
+	cascade_style.background_color = Color("344054")
+	cascade_style.border_color = Color("667085")
+	cascade_style.border_width = 1.0
+	cascade_style.border_radius = 7.0
+
+
 func _ready() -> void:
+	_connect_style()
 	clip_contents = true
 	mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	button_down.connect(_on_visual_state_changed)
@@ -164,10 +104,12 @@ func _get_minimum_size() -> Vector2:
 		)
 		content_size.y = resolved_font.get_height(font_size)
 
-	var result := BoxPainter.outer_minimum_size(content_size, _padding(), border_width)
-	result.x = maxf(maxf(result.x, min_width), preferred_width)
-	result.y = maxf(maxf(result.y, min_height), preferred_height)
-	return result
+	var result := BoxPainter.outer_minimum_size(
+		content_size,
+		cascade_style.padding(),
+		cascade_style.border_width
+	)
+	return cascade_style.constrain_minimum(result)
 
 
 func _draw() -> void:
@@ -176,9 +118,9 @@ func _draw() -> void:
 		self,
 		box_rect,
 		_current_background_color(),
-		border_color,
-		border_width,
-		border_radius
+		cascade_style.border_color,
+		cascade_style.border_width,
+		cascade_style.border_radius
 	)
 
 	if has_focus() and focus_ring_width > 0.0:
@@ -188,10 +130,14 @@ func _draw() -> void:
 			Color.TRANSPARENT,
 			focus_ring_color,
 			focus_ring_width,
-			border_radius
+			cascade_style.border_radius
 		)
 
-	_draw_text(BoxPainter.content_rect(box_rect, _padding(), border_width))
+	_draw_text(BoxPainter.content_rect(
+		box_rect,
+		cascade_style.padding(),
+		cascade_style.border_width
+	))
 
 
 func _draw_text(content: Rect2) -> void:
@@ -220,7 +166,7 @@ func _current_background_color() -> Color:
 		return pressed_background_color
 	if is_hovered():
 		return hover_background_color
-	return background_color
+	return cascade_style.background_color
 
 
 func _resolved_font() -> Font:
@@ -229,16 +175,37 @@ func _resolved_font() -> Font:
 	return get_theme_default_font()
 
 
-func _padding() -> Vector4:
-	return Vector4(padding_left, padding_top, padding_right, padding_bottom)
-
-
 func _invalidate_layout() -> void:
 	queue_redraw()
 	if not is_inside_tree():
 		return
 	update_minimum_size()
 	_notify_parent_layout_changed()
+
+
+func _connect_style() -> void:
+	if cascade_style == null or not is_inside_tree():
+		return
+	if not cascade_style.invalidated.is_connected(_on_style_invalidated):
+		cascade_style.invalidated.connect(_on_style_invalidated)
+
+
+func _disconnect_style() -> void:
+	if cascade_style == null:
+		return
+	if cascade_style.invalidated.is_connected(_on_style_invalidated):
+		cascade_style.invalidated.disconnect(_on_style_invalidated)
+
+
+func _on_style_invalidated(flags: int) -> void:
+	if not is_inside_tree():
+		return
+	if flags & CascadeStyle.Invalidation.DRAW:
+		queue_redraw()
+	if flags & CascadeStyle.Invalidation.MEASURE:
+		update_minimum_size()
+	if flags & CascadeStyle.Invalidation.ARRANGE:
+		_notify_parent_layout_changed()
 
 
 func _notify_parent_layout_changed() -> void:

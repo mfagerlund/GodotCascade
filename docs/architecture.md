@@ -39,6 +39,8 @@ The logical tree represents authored structure and component expansion. Elements
 
 The style engine indexes rules by the rightmost selector, matches only plausible candidates, and produces immutable computed styles. It owns specificity, inheritance, initial values, pseudo states, and custom properties. Resolved style is kept separate from mutable Godot theme resources.
 
+The current prototype exposes the computed box-model shape as a mutable `CascadeStyle` resource. Both `CascadeBox` and owned components consume it and react to draw, measure, and arrange invalidation flags. Stylesheet resolution will eventually produce immutable snapshots of this same property surface; the editable resource is the bridge used before parsing and selector matching exist.
+
 ### Layout engine
 
 Layout has two conceptual passes:

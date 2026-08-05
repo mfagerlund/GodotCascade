@@ -1,0 +1,71 @@
+/* Target GodotCascade stylesheet. Parser implementation is roadmap work. */
+.page {
+    min-height: 540px;
+    padding: 56px 80px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    background: #0e1014;
+}
+
+.heading {
+    color: #dbe8ff;
+    font-size: 30px;
+}
+
+.lede {
+    color: #9eacc7;
+    font-size: 17px;
+}
+
+.cards {
+    min-height: 230px;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    flex-grow: 1;
+    gap: 18px;
+}
+
+.card {
+    width: 250px;
+    min-width: 230px;
+    min-height: 210px;
+    flex-grow: 1;
+    padding: 20px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: #1b1f27;
+    border: 1px solid #364561;
+    border-radius: 10px;
+}
+
+.card-title { font-size: 20px; }
+.card-body { color: #b8c4db; font-size: 15px; flex-grow: 1; }
+.box-model .card-title { color: #7dbfff; }
+.flex-flow .card-title { color: #a8e08c; }
+.godot-native .card-title { color: #ffb064; }
+
+.actions {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+}
+
+.status { color: #7dbfff; flex-grow: 1; }
+
+#inspect {
+    min-width: 150px;
+    min-height: 42px;
+    padding: 9px 14px;
+    background: #344054;
+    color: #f2f4f7;
+    border: 1px solid #667085;
+    border-radius: 7px;
+}
+
+#inspect:hover { background: #475467; }
+#inspect:pressed { background: #1d2939; }
+#inspect:focused { border-color: #84adff; border-width: 2px; }

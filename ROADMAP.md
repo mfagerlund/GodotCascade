@@ -24,6 +24,7 @@ The roadmap favors end-to-end slices over isolated subsystems. Each milestone sh
 - [x] Introduce engine-only box and constraint value types
 - [x] Separate measurement from arrangement
 - [x] Add deterministic unit tests for row, column, wrap, and constraints
+- [x] Shared `CascadeStyle` box-model resource with targeted invalidation
 - [ ] Add dirty flags for measure and arrange invalidation
 - [ ] Define pixel rounding rules
 

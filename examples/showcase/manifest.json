@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "title": "GodotCascade parity showcase",
+  "description": "Reference HTML and native GodotCascade output generated from paired demo sources.",
+  "demos": [
+    {
+      "id": "layout-foundation",
+      "title": "Layout foundation",
+      "summary": "A responsive feature-card layout exercising column flow, wrapping rows, gaps, growth, padding, borders, and the owned button component.",
+      "viewport": [960, 540],
+      "html": "examples/showcase/layout_foundation/reference.html",
+      "gxml": "examples/showcase/layout_foundation/interface.gxml",
+      "gcss": "examples/showcase/layout_foundation/styles.gcss",
+      "godot_scene": "examples/basic_layout.tscn",
+      "godot_screenshot": "docs/showcase/assets/layout-foundation-godot.png",
+      "mappings": [
+        ["<main>", "<Page>", "CascadeBox (column)"],
+        ["display: flex", "display: flex", "CascadeBox flow direction"],
+        ["padding / gap", "padding / gap", "CascadeStyle + layout request"],
+        ["flex: 1 1 230px", "flex-grow + width", "LayoutItem growth and constraints"],
+        ["<button>", "<Button>", "CascadeButton (BaseButton)"],
+        [":hover / :active", ":hover / :pressed", "Native button state drawing"]
+      ]
+    }
+  ]
+}

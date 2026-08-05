@@ -15,6 +15,7 @@ func _run() -> void:
 	_test_box_geometry()
 	await _test_button_measurement()
 	await _test_button_in_flex_layout()
+	await _test_shared_style_invalidation()
 
 	if _failures.is_empty():
 		print("GodotCascade component tests passed.")
@@ -41,17 +42,17 @@ func _test_box_geometry() -> void:
 func _test_button_measurement() -> void:
 	var button := CascadeButton.new()
 	button.text = "Cascade"
-	button.padding_left = 10.0
-	button.padding_right = 10.0
-	button.padding_top = 5.0
-	button.padding_bottom = 5.0
-	button.border_width = 2.0
+	button.cascade_style.padding_left = 10.0
+	button.cascade_style.padding_right = 10.0
+	button.cascade_style.padding_top = 5.0
+	button.cascade_style.padding_bottom = 5.0
+	button.cascade_style.border_width = 2.0
 	root.add_child(button)
 	await process_frame
 
 	_expect_true("CascadeButton keeps BaseButton behavior", button is BaseButton)
 	var initial_minimum := button.get_combined_minimum_size()
-	button.padding_left += 7.0
+	button.cascade_style.padding_left += 7.0
 	await process_frame
 	var expanded_minimum := button.get_combined_minimum_size()
 	_expect_float("button padding affects intrinsic width", expanded_minimum.x - initial_minimum.x, 7.0)
@@ -61,19 +62,19 @@ func _test_button_measurement() -> void:
 func _test_button_in_flex_layout() -> void:
 	var box := CascadeBox.new()
 	box.direction = CascadeBox.FlowDirection.ROW
-	box.padding_left = 10.0
-	box.padding_top = 10.0
-	box.padding_right = 10.0
-	box.padding_bottom = 10.0
+	box.cascade_style.padding_left = 10.0
+	box.cascade_style.padding_top = 10.0
+	box.cascade_style.padding_right = 10.0
+	box.cascade_style.padding_bottom = 10.0
 	box.gap = 5.0
 	box.size = Vector2(200.0, 60.0)
 	root.add_child(box)
 
 	var button := CascadeButton.new()
 	button.text = ""
-	button.preferred_width = 50.0
-	button.preferred_height = 30.0
-	button.flex_grow = 1.0
+	button.cascade_style.preferred_width = 50.0
+	button.cascade_style.preferred_height = 30.0
+	button.cascade_style.flex_grow = 1.0
 	box.add_child(button)
 
 	var fixed := Control.new()
@@ -85,6 +86,30 @@ func _test_button_in_flex_layout() -> void:
 	_expect_rect("owned button flex rectangle", Rect2(button.position, button.size), Rect2(10.0, 10.0, 155.0, 40.0))
 	_expect_rect("owned button sibling rectangle", Rect2(fixed.position, fixed.size), Rect2(170.0, 10.0, 20.0, 40.0))
 	box.queue_free()
+
+
+func _test_shared_style_invalidation() -> void:
+	var shared_style := CascadeStyle.new()
+	shared_style.padding_left = 5.0
+	shared_style.padding_right = 5.0
+	var first := CascadeButton.new()
+	var second := CascadeButton.new()
+	first.text = ""
+	second.text = ""
+	first.cascade_style = shared_style
+	second.cascade_style = shared_style
+	root.add_child(first)
+	root.add_child(second)
+	await process_frame
+	var first_width := first.get_combined_minimum_size().x
+	var second_width := second.get_combined_minimum_size().x
+
+	shared_style.padding_left += 11.0
+	await process_frame
+	_expect_float("shared style invalidates first consumer", first.get_combined_minimum_size().x - first_width, 11.0)
+	_expect_float("shared style invalidates second consumer", second.get_combined_minimum_size().x - second_width, 11.0)
+	first.queue_free()
+	second.queue_free()
 
 
 func _expect_true(label: String, actual: bool) -> void:

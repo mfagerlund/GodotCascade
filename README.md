@@ -81,6 +81,7 @@ The repository currently contains the first Phase 1 vertical slice:
 - start, center, end, stretch, and space distribution;
 - basic flex growth and wrapping;
 - optional background, border, and corner radius drawing;
+- a shared `CascadeStyle` resource consumed by layout and owned components;
 - `CascadeButton`, an owned `BaseButton` implementation with exact box-model sizing;
 - an example scene that exercises the layout container.
 
@@ -105,7 +106,7 @@ godot --headless --path . --script res://tests/component_test.gd
 
 ## Using `CascadeBox`
 
-`CascadeBox` works like any other Godot `Container`. Add child `Control` nodes, choose a direction, and configure padding and gap in the inspector.
+`CascadeBox` works like any other Godot `Container`. Add child `Control` nodes, choose a direction, configure flow and gap on the container, and edit its shared `CascadeStyle` resource for padding, margin, constraints, background, and border.
 
 Cascade-aware children expose their own margin and flex properties. For ordinary Godot controls, the same values can be attached as metadata:
 
@@ -133,7 +134,31 @@ GodotCascade owns the visual implementation of its core components so supported 
 
 ### Using `CascadeButton`
 
-Add a **CascadeButton** from the Create New Node dialog after enabling the addon. Its inspector exposes content, padding, margin, sizing, base/hover/pressed/disabled appearance, and focus-ring settings. Because it derives from `BaseButton`, connect `pressed`, `button_down`, `button_up`, and `toggled` exactly as you would for a native Godot button.
+Add a **CascadeButton** from the Create New Node dialog after enabling the addon. Its inspector exposes content and state appearance directly; shared padding, margin, sizing, background, and border values live in its `CascadeStyle` resource. Because it derives from `BaseButton`, connect `pressed`, `button_down`, `button_up`, and `toggled` exactly as you would for a native Godot button.
+
+## HTML parity showcase
+
+The generated [parity showcase](docs/showcase/index.html) presents each demo as a fixed-viewport HTML reference beside an actual capture of its GodotCascade scene. It also includes the proposed `.gxml` and `.gcss` translation and a semantic mapping table.
+
+Showcases are registered in `examples/showcase/manifest.json`. A demo keeps four artifacts together:
+
+- the original HTML reference;
+- proposed GodotCascade markup and stylesheet;
+- the current native Godot scene;
+- a captured Godot render.
+
+Build the showcase on Windows with:
+
+```powershell
+./tools/showcase/build_showcase.ps1 -GodotPath "C:\path\to\godot.exe"
+```
+
+The capture requires a real graphics display rather than Godot's dummy headless renderer. The generator itself uses only Python's standard library:
+
+```shell
+python tools/showcase/generate_showcase.py
+python tools/showcase/generate_showcase.py --check
+```
 
 ## Architecture
 

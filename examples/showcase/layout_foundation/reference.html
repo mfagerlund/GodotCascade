@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GodotCascade — Layout foundation HTML reference</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #0e1014;
+      color: #dbe8ff;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body { margin: 0; min-height: 100%; }
+
+    body {
+      min-height: 540px;
+      background: #0e1014;
+    }
+
+    .page {
+      width: 100%;
+      min-height: 540px;
+      padding: 56px 80px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    h1 {
+      margin: 0;
+      color: #dbe8ff;
+      font-size: 30px;
+      font-weight: 500;
+      line-height: 1.2;
+    }
+
+    .lede {
+      margin: -10px 0 0;
+      color: #9eacc7;
+      font-size: 17px;
+      line-height: 1.35;
+    }
+
+    .cards {
+      min-height: 230px;
+      display: flex;
+      flex: 1;
+      flex-wrap: wrap;
+      gap: 18px;
+    }
+
+    .card {
+      min-width: 230px;
+      min-height: 210px;
+      flex: 1 1 230px;
+      padding: 20px 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      border: 1px solid #364561;
+      border-radius: 10px;
+      background: #1b1f27;
+    }
+
+    .card h2 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 500;
+    }
+
+    .card p {
+      margin: 0;
+      flex: 1;
+      color: #b8c4db;
+      font-size: 15px;
+      line-height: 1.45;
+    }
+
+    .card:nth-child(1) h2 { color: #7dbfff; }
+    .card:nth-child(2) h2 { color: #a8e08c; }
+    .card:nth-child(3) h2 { color: #ffb064; }
+
+    .actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .status {
+      flex: 1;
+      color: #7dbfff;
+      font-size: 16px;
+    }
+
+    button {
+      min-width: 150px;
+      min-height: 42px;
+      padding: 9px 14px;
+      border: 1px solid #667085;
+      border-radius: 7px;
+      background: #344054;
+      color: #f2f4f7;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    button:hover { background: #475467; }
+    button:active { background: #1d2939; }
+    button:focus-visible { outline: 2px solid #84adff; outline-offset: -2px; }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <h1>GodotCascade</h1>
+    <p class="lede">Native controls. A predictable box model. Far fewer wrappers.</p>
+
+    <section class="cards" aria-label="Features">
+      <article class="card">
+        <h2>Box model</h2>
+        <p>Padding, margins, gaps, borders, and size constraints live in one layout system.</p>
+      </article>
+      <article class="card">
+        <h2>Flex flow</h2>
+        <p>Rows and columns support growth, alignment, distribution, and wrapping.</p>
+      </article>
+      <article class="card">
+        <h2>Godot native</h2>
+        <p>Every element remains a real Control with Godot rendering, input, themes, and signals.</p>
+      </article>
+    </section>
+
+    <footer class="actions">
+      <span class="status">Phase 1 · Layout foundation</span>
+      <button type="button">Inspect layout</button>
+    </footer>
+  </main>
+</body>
+</html>

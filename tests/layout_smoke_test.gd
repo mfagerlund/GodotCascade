@@ -13,10 +13,10 @@ func _initialize() -> void:
 func _run() -> void:
 	var box := CascadeBox.new()
 	box.direction = CascadeBox.FlowDirection.ROW
-	box.padding_left = 10.0
-	box.padding_top = 10.0
-	box.padding_right = 10.0
-	box.padding_bottom = 10.0
+	box.cascade_style.padding_left = 10.0
+	box.cascade_style.padding_top = 10.0
+	box.cascade_style.padding_right = 10.0
+	box.cascade_style.padding_bottom = 10.0
 	box.gap = 5.0
 	box.size = Vector2(100.0, 50.0)
 	root.add_child(box)

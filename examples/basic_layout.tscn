@@ -1,7 +1,58 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://addons/godot_cascade/layout/cascade_box.gd" id="1_box"]
 [ext_resource type="Script" path="res://addons/godot_cascade/components/cascade_button.gd" id="2_button"]
+[ext_resource type="Script" path="res://addons/godot_cascade/style/cascade_style.gd" id="3_style"]
+
+[sub_resource type="Resource" id="Style_page"]
+script = ExtResource("3_style")
+padding_left = 80.0
+padding_top = 56.0
+padding_right = 80.0
+padding_bottom = 56.0
+
+[sub_resource type="Resource" id="Style_cards"]
+script = ExtResource("3_style")
+flex_grow = 1.0
+
+[sub_resource type="Resource" id="Style_blue_card"]
+script = ExtResource("3_style")
+padding_left = 22.0
+padding_top = 20.0
+padding_right = 22.0
+padding_bottom = 20.0
+preferred_width = 250.0
+flex_grow = 1.0
+background_color = Color(0.105, 0.122, 0.153, 1)
+border_color = Color(0.21, 0.27, 0.38, 1)
+border_width = 1.0
+border_radius = 10.0
+
+[sub_resource type="Resource" id="Style_green_card"]
+script = ExtResource("3_style")
+padding_left = 22.0
+padding_top = 20.0
+padding_right = 22.0
+padding_bottom = 20.0
+preferred_width = 250.0
+flex_grow = 1.0
+background_color = Color(0.105, 0.122, 0.153, 1)
+border_color = Color(0.21, 0.27, 0.38, 1)
+border_width = 1.0
+border_radius = 10.0
+
+[sub_resource type="Resource" id="Style_orange_card"]
+script = ExtResource("3_style")
+padding_left = 22.0
+padding_top = 20.0
+padding_right = 22.0
+padding_bottom = 20.0
+preferred_width = 250.0
+flex_grow = 1.0
+background_color = Color(0.105, 0.122, 0.153, 1)
+border_color = Color(0.21, 0.27, 0.38, 1)
+border_width = 1.0
+border_radius = 10.0
 
 [node name="BasicLayout" type="Control"]
 layout_mode = 3
@@ -19,11 +70,8 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_box")
-padding_left = 80.0
-padding_top = 56.0
-padding_right = 80.0
-padding_bottom = 56.0
 gap = 24.0
+cascade_style = SubResource("Style_page")
 
 [node name="Heading" type="Label" parent="Page"]
 layout_mode = 2
@@ -46,23 +94,14 @@ direction = 0
 wrap = true
 gap = 18.0
 line_gap = 18.0
-flex_grow = 1.0
+cascade_style = SubResource("Style_cards")
 
 [node name="BoxModel" type="Container" parent="Page/Cards"]
 custom_minimum_size = Vector2(230, 210)
 layout_mode = 2
 script = ExtResource("1_box")
-padding_left = 22.0
-padding_top = 20.0
-padding_right = 22.0
-padding_bottom = 20.0
 gap = 10.0
-preferred_width = 250.0
-flex_grow = 1.0
-background_color = Color(0.105, 0.122, 0.153, 1)
-border_color = Color(0.21, 0.27, 0.38, 1)
-border_width = 1.0
-border_radius = 10.0
+cascade_style = SubResource("Style_blue_card")
 
 [node name="Title" type="Label" parent="Page/Cards/BoxModel"]
 layout_mode = 2
@@ -82,17 +121,8 @@ metadata/cascade_flex_grow = 1.0
 custom_minimum_size = Vector2(230, 210)
 layout_mode = 2
 script = ExtResource("1_box")
-padding_left = 22.0
-padding_top = 20.0
-padding_right = 22.0
-padding_bottom = 20.0
 gap = 10.0
-preferred_width = 250.0
-flex_grow = 1.0
-background_color = Color(0.105, 0.122, 0.153, 1)
-border_color = Color(0.21, 0.27, 0.38, 1)
-border_width = 1.0
-border_radius = 10.0
+cascade_style = SubResource("Style_green_card")
 
 [node name="Title" type="Label" parent="Page/Cards/FlexFlow"]
 layout_mode = 2
@@ -112,17 +142,8 @@ metadata/cascade_flex_grow = 1.0
 custom_minimum_size = Vector2(230, 210)
 layout_mode = 2
 script = ExtResource("1_box")
-padding_left = 22.0
-padding_top = 20.0
-padding_right = 22.0
-padding_bottom = 20.0
 gap = 10.0
-preferred_width = 250.0
-flex_grow = 1.0
-background_color = Color(0.105, 0.122, 0.153, 1)
-border_color = Color(0.21, 0.27, 0.38, 1)
-border_width = 1.0
-border_radius = 10.0
+cascade_style = SubResource("Style_orange_card")
 
 [node name="Title" type="Label" parent="Page/Cards/NativeControls"]
 layout_mode = 2

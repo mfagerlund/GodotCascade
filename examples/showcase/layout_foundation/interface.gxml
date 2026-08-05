@@ -1,0 +1,33 @@
+<!-- Target GodotCascade authoring format. Parser implementation is roadmap work. -->
+<Page class="page">
+    <Label class="heading">GodotCascade</Label>
+    <Label class="lede">Native controls. A predictable box model. Far fewer wrappers.</Label>
+
+    <Row class="cards">
+        <Panel class="card box-model">
+            <Label class="card-title">Box model</Label>
+            <Label class="card-body">
+                Padding, margins, gaps, borders, and size constraints live in one layout system.
+            </Label>
+        </Panel>
+
+        <Panel class="card flex-flow">
+            <Label class="card-title">Flex flow</Label>
+            <Label class="card-body">
+                Rows and columns support growth, alignment, distribution, and wrapping.
+            </Label>
+        </Panel>
+
+        <Panel class="card godot-native">
+            <Label class="card-title">Godot native</Label>
+            <Label class="card-body">
+                Every element remains a real Control with Godot rendering, input, themes, and signals.
+            </Label>
+        </Panel>
+    </Row>
+
+    <Row class="actions">
+        <Label class="status">Phase 1 · Layout foundation</Label>
+        <Button id="inspect">Inspect layout</Button>
+    </Row>
+</Page>

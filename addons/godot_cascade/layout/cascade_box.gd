@@ -54,92 +54,20 @@ const BoxPainter := preload("res://addons/godot_cascade/components/box_painter.g
 		align_items = value
 		_invalidate_layout()
 
-@export_group("Padding")
-@export_range(0.0, 4096.0, 0.5, "or_greater") var padding_left: float = 0.0:
+@export_group("Computed Style")
+@export var cascade_style: CascadeStyle = CascadeStyle.new():
 	set(value):
-		padding_left = maxf(value, 0.0)
-		_invalidate_layout()
-@export_range(0.0, 4096.0, 0.5, "or_greater") var padding_top: float = 0.0:
-	set(value):
-		padding_top = maxf(value, 0.0)
-		_invalidate_layout()
-@export_range(0.0, 4096.0, 0.5, "or_greater") var padding_right: float = 0.0:
-	set(value):
-		padding_right = maxf(value, 0.0)
-		_invalidate_layout()
-@export_range(0.0, 4096.0, 0.5, "or_greater") var padding_bottom: float = 0.0:
-	set(value):
-		padding_bottom = maxf(value, 0.0)
-		_invalidate_layout()
-
-@export_group("Margin")
-@export_range(0.0, 4096.0, 0.5, "or_greater") var margin_left: float = 0.0:
-	set(value):
-		margin_left = maxf(value, 0.0)
-		_notify_parent_layout_changed()
-@export_range(0.0, 4096.0, 0.5, "or_greater") var margin_top: float = 0.0:
-	set(value):
-		margin_top = maxf(value, 0.0)
-		_notify_parent_layout_changed()
-@export_range(0.0, 4096.0, 0.5, "or_greater") var margin_right: float = 0.0:
-	set(value):
-		margin_right = maxf(value, 0.0)
-		_notify_parent_layout_changed()
-@export_range(0.0, 4096.0, 0.5, "or_greater") var margin_bottom: float = 0.0:
-	set(value):
-		margin_bottom = maxf(value, 0.0)
-		_notify_parent_layout_changed()
-
-@export_group("Size")
-@export_range(0.0, 16384.0, 0.5, "or_greater") var preferred_width: float = 0.0:
-	set(value):
-		preferred_width = maxf(value, 0.0)
-		_invalidate_layout()
-@export_range(0.0, 16384.0, 0.5, "or_greater") var preferred_height: float = 0.0:
-	set(value):
-		preferred_height = maxf(value, 0.0)
-		_invalidate_layout()
-@export_range(0.0, 16384.0, 0.5, "or_greater") var min_width: float = 0.0:
-	set(value):
-		min_width = maxf(value, 0.0)
-		_invalidate_layout()
-@export_range(0.0, 16384.0, 0.5, "or_greater") var min_height: float = 0.0:
-	set(value):
-		min_height = maxf(value, 0.0)
-		_invalidate_layout()
-@export_range(0.0, 16384.0, 0.5, "or_greater") var max_width: float = 0.0:
-	set(value):
-		max_width = maxf(value, 0.0)
-		_invalidate_layout()
-@export_range(0.0, 16384.0, 0.5, "or_greater") var max_height: float = 0.0:
-	set(value):
-		max_height = maxf(value, 0.0)
-		_invalidate_layout()
-@export_range(0.0, 100.0, 0.05, "or_greater") var flex_grow: float = 0.0:
-	set(value):
-		flex_grow = maxf(value, 0.0)
-		_notify_parent_layout_changed()
-
-@export_group("Appearance")
-@export var background_color: Color = Color.TRANSPARENT:
-	set(value):
-		background_color = value
-		queue_redraw()
-@export var border_color: Color = Color.TRANSPARENT:
-	set(value):
-		border_color = value
-		queue_redraw()
-@export_range(0.0, 128.0, 1.0, "or_greater") var border_width: float = 0.0:
-	set(value):
-		border_width = maxf(value, 0.0)
-		queue_redraw()
-@export_range(0.0, 512.0, 1.0, "or_greater") var border_radius: float = 0.0:
-	set(value):
-		border_radius = maxf(value, 0.0)
-		queue_redraw()
+		var next := value if value != null else CascadeStyle.new()
+		if cascade_style == next:
+			return
+		_disconnect_style()
+		cascade_style = next
+		_connect_style()
+		_on_style_invalidated(CascadeStyle.Invalidation.ALL)
 
 
 func _ready() -> void:
+	_connect_style()
 	resized.connect(_on_resized)
 	queue_sort()
 
@@ -155,9 +83,7 @@ func _notification(what: int) -> void:
 func _get_minimum_size() -> Vector2:
 	var children := _layout_children()
 	var content_minimum := FlexLayoutEngine.measure(_layout_items(children), _layout_request())
-	content_minimum.x = maxf(maxf(content_minimum.x, min_width), preferred_width)
-	content_minimum.y = maxf(maxf(content_minimum.y, min_height), preferred_height)
-	return content_minimum
+	return cascade_style.constrain_minimum(content_minimum)
 
 
 func _arrange_children() -> void:
@@ -184,7 +110,7 @@ func _layout_items(children: Array[Control]) -> Array[FlexLayoutEngine.LayoutIte
 func _layout_request() -> FlexLayoutEngine.LayoutRequest:
 	var request := FlexLayoutEngine.LayoutRequest.new()
 	request.size = size
-	request.padding = Vector4(padding_left, padding_top, padding_right, padding_bottom)
+	request.padding = cascade_style.padding()
 	request.gap = gap
 	request.line_gap = line_gap
 	request.direction = direction
@@ -232,6 +158,10 @@ func _child_value(child: Control, property_name: String, fallback: float) -> flo
 		return maxf(float(child.get_meta(metadata_name)), 0.0)
 
 	for property in child.get_property_list():
+		if property.name == "cascade_style":
+			var child_style: CascadeStyle = child.get("cascade_style")
+			if child_style != null:
+				return maxf(float(child_style.get(property_name)), 0.0)
 		if property.name == property_name:
 			return maxf(float(child.get(property_name)), 0.0)
 	return fallback
@@ -253,6 +183,32 @@ func _invalidate_layout() -> void:
 	_notify_parent_layout_changed()
 
 
+func _connect_style() -> void:
+	if cascade_style == null or not is_inside_tree():
+		return
+	if not cascade_style.invalidated.is_connected(_on_style_invalidated):
+		cascade_style.invalidated.connect(_on_style_invalidated)
+
+
+func _disconnect_style() -> void:
+	if cascade_style == null:
+		return
+	if cascade_style.invalidated.is_connected(_on_style_invalidated):
+		cascade_style.invalidated.disconnect(_on_style_invalidated)
+
+
+func _on_style_invalidated(flags: int) -> void:
+	if not is_inside_tree():
+		return
+	if flags & CascadeStyle.Invalidation.DRAW:
+		queue_redraw()
+	if flags & CascadeStyle.Invalidation.MEASURE:
+		update_minimum_size()
+	if flags & CascadeStyle.Invalidation.ARRANGE:
+		queue_sort()
+		_notify_parent_layout_changed()
+
+
 func _notify_parent_layout_changed() -> void:
 	if not is_inside_tree():
 		return
@@ -270,8 +226,8 @@ func _draw_box() -> void:
 	BoxPainter.draw_box(
 		self,
 		Rect2(Vector2.ZERO, size),
-		background_color,
-		border_color,
-		border_width,
-		border_radius
+		cascade_style.background_color,
+		cascade_style.border_color,
+		cascade_style.border_width,
+		cascade_style.border_radius
 	)
