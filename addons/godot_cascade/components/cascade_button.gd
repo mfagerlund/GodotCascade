@@ -76,11 +76,12 @@ func _init() -> void:
 	cascade_style.border_color = Color("667085")
 	cascade_style.border_width = 1.0
 	cascade_style.border_radius = 7.0
+	cascade_style.overflow = CascadeStyle.Overflow.CLIP
 
 
 func _ready() -> void:
 	_connect_style()
-	clip_contents = true
+	_apply_overflow()
 	mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	button_down.connect(_on_visual_state_changed)
 	button_up.connect(_on_visual_state_changed)
@@ -198,14 +199,19 @@ func _disconnect_style() -> void:
 
 
 func _on_style_invalidated(flags: int) -> void:
-	if not is_inside_tree():
-		return
 	if flags & CascadeStyle.Invalidation.DRAW:
-		queue_redraw()
+		_apply_overflow()
+		if is_inside_tree():
+			queue_redraw()
 	if flags & CascadeStyle.Invalidation.MEASURE:
-		update_minimum_size()
+		if is_inside_tree():
+			update_minimum_size()
 	if flags & CascadeStyle.Invalidation.ARRANGE:
 		_notify_parent_layout_changed()
+
+
+func _apply_overflow() -> void:
+	clip_contents = cascade_style.overflow == CascadeStyle.Overflow.CLIP
 
 
 func _notify_parent_layout_changed() -> void:

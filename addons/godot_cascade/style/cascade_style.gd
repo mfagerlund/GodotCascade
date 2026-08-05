@@ -17,6 +17,31 @@ enum Invalidation {
 	ALL = DRAW | MEASURE | ARRANGE,
 }
 
+enum Overflow {
+	VISIBLE,
+	CLIP,
+}
+
+enum SelfAlignment {
+	AUTO,
+	START,
+	CENTER,
+	END,
+	STRETCH,
+}
+
+@export_group("Layout Behavior")
+@export var overflow: Overflow = Overflow.VISIBLE:
+	set(value):
+		if overflow == value: return
+		overflow = value
+		_emit_invalidation(Invalidation.DRAW)
+@export var align_self: SelfAlignment = SelfAlignment.AUTO:
+	set(value):
+		if align_self == value: return
+		align_self = value
+		_emit_invalidation(Invalidation.ARRANGE)
+
 @export_group("Padding")
 @export_range(0.0, 4096.0, 0.5, "or_greater") var padding_left := 0.0:
 	set(value):

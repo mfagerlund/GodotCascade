@@ -28,13 +28,15 @@ class LayoutItem:
 	var margins: Vector4
 	var flex_grow: float
 	var maximum_size: Vector2
+	var align_self: int
 
 
 	func _init(
 		item_minimum_size: Vector2,
 		item_margins := Vector4.ZERO,
 		item_flex_grow := 0.0,
-		item_maximum_size := Vector2(INF, INF)
+		item_maximum_size := Vector2(INF, INF),
+		item_align_self := -1
 	) -> void:
 		minimum_size = item_minimum_size.max(Vector2.ZERO)
 		margins = Vector4(
@@ -48,6 +50,7 @@ class LayoutItem:
 			maxf(item_maximum_size.x, minimum_size.x),
 			maxf(item_maximum_size.y, minimum_size.y)
 		)
+		align_self = clampi(item_align_self, -1, ALIGN_STRETCH)
 
 
 class LayoutRequest:
@@ -61,6 +64,7 @@ class LayoutRequest:
 	var wrap := false
 	var justify_content := JUSTIFY_START
 	var align_items := ALIGN_STRETCH
+	var pixel_snap := true
 
 
 static func measure(items: Array[LayoutItem], request: LayoutRequest) -> Vector2:
@@ -118,6 +122,9 @@ static func arrange(items: Array[LayoutItem], request: LayoutRequest) -> Array[R
 	for line in lines:
 		_arrange_line(line, items, rectangles, request, content_position, content_size, cross_cursor)
 		cross_cursor += float(line["cross_size"]) + request.line_gap
+	if request.pixel_snap:
+		for index in rectangles.size():
+			rectangles[index] = _snap_rect(rectangles[index])
 	return rectangles
 
 
@@ -191,7 +198,8 @@ static func _arrange_line(
 
 		var cross_available := maxf(float(line["cross_size"]) - before_cross - after_cross, 0.0)
 		var cross_offset := before_cross
-		match request.align_items:
+		var item_alignment := item.align_self if item.align_self >= 0 else request.align_items
+		match item_alignment:
 			ALIGN_CENTER:
 				cross_offset += maxf(cross_available - child_cross, 0.0) * 0.5
 			ALIGN_END:
@@ -311,3 +319,9 @@ static func _cross_of(vector: Vector2, direction: int) -> float:
 
 static func _from_axes(main: float, cross: float, direction: int) -> Vector2:
 	return Vector2(main, cross) if direction == DIRECTION_ROW else Vector2(cross, main)
+
+
+static func _snap_rect(rectangle: Rect2) -> Rect2:
+	var snapped_position := rectangle.position.round()
+	var snapped_end := rectangle.end.round()
+	return Rect2(snapped_position, (snapped_end - snapped_position).max(Vector2.ZERO))

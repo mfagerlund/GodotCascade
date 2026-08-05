@@ -4,7 +4,7 @@ The roadmap favors end-to-end slices over isolated subsystems. Each milestone sh
 
 ## Phase 1 — Layout foundation
 
-### 1.1 Box and flex prototype — in progress
+### 1.1 Box and flex prototype — complete
 
 - [x] Godot addon scaffold
 - [x] Native `CascadeBox` container
@@ -15,9 +15,9 @@ The roadmap favors end-to-end slices over isolated subsystems. Each milestone sh
 - [x] Preferred, minimum, and maximum constraints
 - [x] Example scene
 - [x] Headless layout smoke test
-- [ ] Comprehensive automated layout test matrix
-- [ ] Explicit overflow behavior
-- [ ] Per-child alignment override
+- [x] Comprehensive automated layout test matrix
+- [x] Explicit visible/clip overflow behavior
+- [x] Per-child alignment override
 
 ### 1.2 Layout model extraction
 
@@ -25,8 +25,8 @@ The roadmap favors end-to-end slices over isolated subsystems. Each milestone sh
 - [x] Separate measurement from arrangement
 - [x] Add deterministic unit tests for row, column, wrap, and constraints
 - [x] Shared `CascadeStyle` box-model resource with targeted invalidation
-- [ ] Add dirty flags for measure and arrange invalidation
-- [ ] Define pixel rounding rules
+- [x] Add dirty flags for measure and arrange invalidation
+- [x] Define pixel rounding rules
 
 ### 1.3 Grid and stack
 

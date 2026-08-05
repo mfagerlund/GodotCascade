@@ -28,6 +28,10 @@ const META_PREFIX := "cascade_"
 const FlexLayoutEngine := preload("res://addons/godot_cascade/layout/flex_layout_engine.gd")
 const BoxPainter := preload("res://addons/godot_cascade/components/box_painter.gd")
 
+var _cached_minimum_size := Vector2.ZERO
+var _measure_dirty := true
+var _arrange_dirty := true
+
 @export_group("Layout")
 @export var direction: FlowDirection = FlowDirection.COLUMN:
 	set(value):
@@ -53,6 +57,10 @@ const BoxPainter := preload("res://addons/godot_cascade/components/box_painter.g
 	set(value):
 		align_items = value
 		_invalidate_layout()
+@export var pixel_snap := true:
+	set(value):
+		pixel_snap = value
+		_mark_arrange_dirty()
 
 @export_group("Computed Style")
 @export var cascade_style: CascadeStyle = CascadeStyle.new():
@@ -68,31 +76,43 @@ const BoxPainter := preload("res://addons/godot_cascade/components/box_painter.g
 
 func _ready() -> void:
 	_connect_style()
+	_apply_overflow()
 	resized.connect(_on_resized)
+	child_entered_tree.connect(_on_child_entered)
+	child_exiting_tree.connect(_on_child_exiting)
+	for child in get_children():
+		_track_child(child)
 	queue_sort()
 
 
 func _notification(what: int) -> void:
 	match what:
 		NOTIFICATION_SORT_CHILDREN:
-			_arrange_children()
+			if _arrange_dirty:
+				_arrange_children()
 		NOTIFICATION_DRAW:
 			_draw_box()
 
 
 func _get_minimum_size() -> Vector2:
+	if not _measure_dirty:
+		return _cached_minimum_size
 	var children := _layout_children()
 	var content_minimum := FlexLayoutEngine.measure(_layout_items(children), _layout_request())
-	return cascade_style.constrain_minimum(content_minimum)
+	_cached_minimum_size = cascade_style.constrain_minimum(content_minimum)
+	_measure_dirty = false
+	return _cached_minimum_size
 
 
 func _arrange_children() -> void:
 	var children := _layout_children()
 	if children.is_empty():
+		_arrange_dirty = false
 		return
 	var rectangles := FlexLayoutEngine.arrange(_layout_items(children), _layout_request())
 	for index in children.size():
 		fit_child_in_rect(children[index], rectangles[index])
+	_arrange_dirty = false
 
 
 func _layout_items(children: Array[Control]) -> Array[FlexLayoutEngine.LayoutItem]:
@@ -102,7 +122,8 @@ func _layout_items(children: Array[Control]) -> Array[FlexLayoutEngine.LayoutIte
 			_child_constrained_size(child),
 			_child_margins(child),
 			_child_value(child, "flex_grow", 0.0),
-			_child_maximum_size(child)
+			_child_maximum_size(child),
+			int(_child_value(child, "align_self", 0.0)) - 1
 		))
 	return items
 
@@ -117,6 +138,7 @@ func _layout_request() -> FlexLayoutEngine.LayoutRequest:
 	request.wrap = wrap
 	request.justify_content = justify_content
 	request.align_items = align_items
+	request.pixel_snap = pixel_snap
 	return request
 
 
@@ -175,12 +197,29 @@ func _layout_children() -> Array[Control]:
 	return result
 
 func _invalidate_layout() -> void:
-	if not is_inside_tree():
-		return
-	update_minimum_size()
-	queue_sort()
-	queue_redraw()
-	_notify_parent_layout_changed()
+	_measure_dirty = true
+	_arrange_dirty = true
+	if is_inside_tree():
+		update_minimum_size()
+		queue_sort()
+		queue_redraw()
+		_notify_parent_layout_changed()
+
+
+func _mark_arrange_dirty() -> void:
+	_arrange_dirty = true
+	if is_inside_tree():
+		queue_sort()
+		_notify_parent_layout_changed()
+
+
+func _mark_measure_dirty() -> void:
+	_measure_dirty = true
+	_arrange_dirty = true
+	if is_inside_tree():
+		update_minimum_size()
+		queue_sort()
+		_notify_parent_layout_changed()
 
 
 func _connect_style() -> void:
@@ -198,15 +237,14 @@ func _disconnect_style() -> void:
 
 
 func _on_style_invalidated(flags: int) -> void:
-	if not is_inside_tree():
-		return
 	if flags & CascadeStyle.Invalidation.DRAW:
-		queue_redraw()
+		_apply_overflow()
+		if is_inside_tree():
+			queue_redraw()
 	if flags & CascadeStyle.Invalidation.MEASURE:
-		update_minimum_size()
-	if flags & CascadeStyle.Invalidation.ARRANGE:
-		queue_sort()
-		_notify_parent_layout_changed()
+		_mark_measure_dirty()
+	elif flags & CascadeStyle.Invalidation.ARRANGE:
+		_mark_arrange_dirty()
 
 
 func _notify_parent_layout_changed() -> void:
@@ -218,8 +256,50 @@ func _notify_parent_layout_changed() -> void:
 
 
 func _on_resized() -> void:
-	queue_sort()
+	_mark_arrange_dirty()
 	queue_redraw()
+
+
+func _on_child_entered(child: Node) -> void:
+	_track_child(child)
+	_mark_measure_dirty()
+
+
+func _on_child_exiting(child: Node) -> void:
+	_untrack_child(child)
+	_mark_measure_dirty()
+
+
+func _track_child(child: Node) -> void:
+	if not child is Control:
+		return
+	var control := child as Control
+	if not control.minimum_size_changed.is_connected(_on_child_minimum_size_changed):
+		control.minimum_size_changed.connect(_on_child_minimum_size_changed)
+	if not control.visibility_changed.is_connected(_on_child_visibility_changed):
+		control.visibility_changed.connect(_on_child_visibility_changed)
+
+
+func _untrack_child(child: Node) -> void:
+	if not child is Control:
+		return
+	var control := child as Control
+	if control.minimum_size_changed.is_connected(_on_child_minimum_size_changed):
+		control.minimum_size_changed.disconnect(_on_child_minimum_size_changed)
+	if control.visibility_changed.is_connected(_on_child_visibility_changed):
+		control.visibility_changed.disconnect(_on_child_visibility_changed)
+
+
+func _on_child_minimum_size_changed() -> void:
+	_mark_measure_dirty()
+
+
+func _on_child_visibility_changed() -> void:
+	_mark_measure_dirty()
+
+
+func _apply_overflow() -> void:
+	clip_contents = cascade_style.overflow == CascadeStyle.Overflow.CLIP
 
 
 func _draw_box() -> void:

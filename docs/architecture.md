@@ -83,6 +83,8 @@ The exact dependency table will eventually become property metadata in the style
 - Unsupported properties produce diagnostics instead of being silently stored.
 - Native control minimum sizes participate in measurement.
 - Theme resolution remains available to native controls.
+- Arranged rectangles round their leading and trailing edges independently by default, so adjacent boundaries remain stable; containers may opt into subpixel output.
+- Overflow is explicit (`visible` or `clip`) and never inferred from a control type.
 
 ## Threading
 

@@ -123,12 +123,15 @@ Supported child metadata keys are:
 cascade_margin_left      cascade_margin_top
 cascade_margin_right     cascade_margin_bottom
 cascade_flex_grow
+cascade_align_self        # 0 auto, 1 start, 2 center, 3 end, 4 stretch
 cascade_preferred_width  cascade_preferred_height
 cascade_min_width        cascade_min_height
 cascade_max_width        cascade_max_height
 ```
 
 The metadata bridge is an early compatibility mechanism. Later phases will apply these values through the style engine, so standard controls will not need wrappers or manual metadata.
+
+Final layout rectangles are pixel-snapped by rounding their leading and trailing edges independently, preserving shared boundaries while avoiding fractional rendering blur. Set `pixel_snap` to `false` on `CascadeBox` when subpixel geometry is intentional. `CascadeStyle.overflow` explicitly selects visible or clipped content, and `align_self` overrides a parent's cross-axis alignment for one item.
 
 GodotCascade owns the visual implementation of its core components so supported CSS settings have exact, shared semantics. Those components still derive from useful native primitives—for example, `CascadeButton` derives from `BaseButton` to retain focus, activation, toggle, shortcut, accessibility, and signal behavior. Ordinary Godot controls remain usable through documented compatibility tiers. See [ADR 0001](docs/decisions/0001-owned-core-controls.md) for the decision and tradeoffs.
 

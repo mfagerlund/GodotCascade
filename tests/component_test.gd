@@ -16,6 +16,7 @@ func _run() -> void:
 	await _test_button_measurement()
 	await _test_button_in_flex_layout()
 	await _test_shared_style_invalidation()
+	await _test_overflow_and_align_self()
 
 	if _failures.is_empty():
 		print("GodotCascade component tests passed.")
@@ -110,6 +111,27 @@ func _test_shared_style_invalidation() -> void:
 	_expect_float("shared style invalidates second consumer", second.get_combined_minimum_size().x - second_width, 11.0)
 	first.queue_free()
 	second.queue_free()
+
+
+func _test_overflow_and_align_self() -> void:
+	var box := CascadeBox.new()
+	box.size = Vector2(100.0, 40.0)
+	root.add_child(box)
+	box.cascade_style.overflow = CascadeStyle.Overflow.CLIP
+	await process_frame
+	_expect_true("overflow clip reaches native Control", box.clip_contents)
+
+	var button := CascadeButton.new()
+	button.text = ""
+	button.cascade_style.preferred_width = 20.0
+	button.cascade_style.preferred_height = 10.0
+	button.cascade_style.align_self = CascadeStyle.SelfAlignment.CENTER
+	box.direction = CascadeBox.FlowDirection.ROW
+	box.add_child(button)
+	await process_frame
+	await process_frame
+	_expect_rect("CascadeStyle align-self bridge", Rect2(button.position, button.size), Rect2(0.0, 10.0, 30.0, 20.0))
+	box.queue_free()
 
 
 func _expect_true(label: String, actual: bool) -> void:
