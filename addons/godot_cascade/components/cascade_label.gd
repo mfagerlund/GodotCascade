@@ -36,7 +36,7 @@ const BoxPainter := preload("res://addons/godot_cascade/components/box_painter.g
 	set(value):
 		vertical_alignment = value
 		_sync_label()
-@export var autowrap_mode: TextServer.AutowrapMode = TextServer.AUTOWRAP_OFF:
+@export var autowrap_mode: TextServer.AutowrapMode = TextServer.AUTOWRAP_WORD_SMART:
 	set(value):
 		autowrap_mode = value
 		_sync_label()
@@ -87,6 +87,10 @@ func _get_minimum_size() -> Vector2:
 				-1.0,
 				font_size
 			)
+	if autowrap_mode != TextServer.AUTOWRAP_OFF:
+		# Wrapped text accepts the containing block's width instead of forcing its
+		# unwrapped line width into the parent's intrinsic minimum.
+		content_minimum.x = 0.0
 	var outer := BoxPainter.outer_minimum_size(
 		content_minimum,
 		cascade_style.padding(),

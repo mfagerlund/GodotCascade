@@ -49,19 +49,24 @@ The roadmap favors end-to-end slices over isolated subsystems. Each milestone sh
 ## Phase 2 — Styles
 
 - [ ] Tokenizer with source spans and recovery
-- [ ] Length, color, keyword, number, and time values
+- [x] Initial length, color, keyword, and number value subset
+- [ ] Complete typed value model including time values
 - [ ] Shorthand expansion for margin, padding, border, and gap
-- [ ] Type, class, and ID selectors
-- [ ] Descendant and direct-child combinators
-- [ ] Specificity, source ordering, and inheritance
-- [ ] `:hover`, `:pressed`, `:focused`, `:disabled`, and `:selected`
+- [x] Type, class, and ID selectors
+- [x] Descendant combinator
+- [ ] Direct-child combinator
+- [x] Specificity and source ordering
+- [ ] Style inheritance
+- [x] Button `:hover`, `:pressed`, `:focused`, and `:disabled`
+- [ ] Generalized `:selected` and pseudo-state adapters
 - [ ] Computed-style caching and targeted invalidation
 - [ ] Godot theme and `StyleBox` adapters
 
 ## Phase 3 — Markup and state
 
-- [ ] `.gxml` parser with source-aware diagnostics
-- [ ] Element registry and native control factories
+- [x] `.gxml` parser with source-aware diagnostics and nesting recovery
+- [x] Element registry and native control factories
+- [x] `CascadeDocument` GXML/GCSS-to-native vertical slice
 - [ ] Stable identity and keyed reconciliation
 - [ ] Preserve focus, selection, scroll, and signal connections
 - [ ] Custom component lifecycle

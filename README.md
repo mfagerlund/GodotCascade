@@ -5,7 +5,7 @@ GodotCascade is an experimental retained-mode UI framework for Godot 4. It bring
 The goal is to make game UI faster to build and easier to maintain without embedding a browser or replacing Godot's renderer. A GodotCascade interface remains a tree of native controls, so it can continue to use Godot's signals, themes, input, rendering, and editor tooling.
 
 > [!IMPORTANT]
-> GodotCascade is at the prototype stage. The first layout primitive is usable, but the markup and stylesheet examples below describe the target API and are not implemented yet.
+> GodotCascade is at the prototype stage. A focused markup/stylesheet subset now executes the showcase end to end, while the broader language and APIs remain unstable and incomplete.
 
 ## Why GodotCascade?
 
@@ -85,15 +85,18 @@ The repository currently contains the first Phase 1 vertical slice:
 - `CascadeButton`, an owned `BaseButton` implementation with exact box-model sizing;
 - `CascadeLabel`, with a GodotCascade box around native text shaping and wrapping;
 - `CascadePanel`, the semantic styled-container component;
+- a recoverable `.gxml` parser and native control registry;
+- a focused `.gcss` subset with type/class/ID/descendant selectors, specificity, source order, box values, flex values, and button pseudo states;
+- `CascadeDocument`, which builds the running native UI directly from paired source files;
 - an example scene that exercises the layout container.
 
-Markup, stylesheet parsing, selectors, data binding, and hot reload remain roadmap work.
+Bindings, keyed reconciliation, broad property coverage, direct-child selectors, importers, and hot reload remain roadmap work.
 
 ## Trying the prototype
 
 1. Open this folder with Godot 4.3 or newer.
 2. Enable **GodotCascade** under **Project → Project Settings → Plugins**.
-3. Run the project. The configured main scene is `examples/basic_layout.tscn`.
+3. Run the project. The configured main scene is `examples/generated_showcase.tscn`, built at runtime from the showcase `.gxml` and `.gcss` files.
 4. Add a **CascadeBox** from the Create New Node dialog to experiment in your own scene.
 
 No external runtime dependencies are required.
@@ -104,6 +107,7 @@ Run the current headless smoke test with:
 godot --headless --path . --script res://tests/layout_smoke_test.gd
 godot --headless --path . --script res://tests/flex_layout_engine_test.gd
 godot --headless --path . --script res://tests/component_test.gd
+godot --headless --path . --script res://tests/source_pipeline_test.gd
 ```
 
 ## Using `CascadeBox`
@@ -143,7 +147,7 @@ Add a **CascadeButton** from the Create New Node dialog after enabling the addon
 
 ## HTML parity showcase
 
-The generated [parity showcase](docs/showcase/index.html) presents each demo as a fixed-viewport HTML reference beside an actual capture of its GodotCascade scene. It also includes the proposed `.gxml` and `.gcss` translation and a semantic mapping table.
+The generated [parity showcase](docs/showcase/index.html) presents each demo as a fixed-viewport HTML reference beside an actual capture of its source-generated GodotCascade scene. It also includes the executable `.gxml` and `.gcss` translation and a semantic mapping table.
 
 Showcases are registered in `examples/showcase/manifest.json`. A demo keeps four artifacts together:
 

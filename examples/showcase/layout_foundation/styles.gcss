@@ -1,4 +1,4 @@
-/* Target GodotCascade stylesheet. Parser implementation is roadmap work. */
+/* Executed by CascadeDocument's focused GXML/GCSS vertical slice. */
 .page {
     min-height: 540px;
     padding: 56px 80px;

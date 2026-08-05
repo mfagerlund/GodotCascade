@@ -41,6 +41,8 @@ The style engine indexes rules by the rightmost selector, matches only plausible
 
 The current prototype exposes the computed box-model shape as a mutable `CascadeStyle` resource. Both `CascadeBox` and owned components consume it and react to draw, measure, and arrange invalidation flags. Stylesheet resolution will eventually produce immutable snapshots of this same property surface; the editable resource is the bridge used before parsing and selector matching exist.
 
+The first executable stylesheet slice parses type, class, ID, and descendant selectors; resolves specificity and source order; and applies a focused property registry through `CascadeBuilder`. It intentionally emits diagnostics for unsupported values instead of retaining unknown CSS. This is a vertical slice, not the final tokenizer or computed-style cache.
+
 ### Layout engine
 
 Layout has two conceptual passes:
@@ -53,6 +55,8 @@ The layout engine consumes plain value objects and produces rectangles. The Phas
 ### Reconciler
 
 The reconciler compares the previous logical tree with the next one, then applies the smallest practical set of mutations to native nodes. It must preserve runtime state—especially focus, line-edit selection, scroll position, animation state, and user signal connections—whenever element identity is stable.
+
+`CascadeDocument` currently performs a full source-to-native build on load. Its parsed element tree uses weak parent links, allowing descendant selector matching without introducing reference cycles. Incremental keyed reconciliation will replace full rebuilding in a later slice.
 
 ### Godot adapter
 

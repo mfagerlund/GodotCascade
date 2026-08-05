@@ -1,4 +1,4 @@
-<!-- Target GodotCascade authoring format. Parser implementation is roadmap work. -->
+<!-- Executed by CascadeDocument's focused GXML/GCSS vertical slice. -->
 <Page class="page">
     <Label class="heading">GodotCascade</Label>
     <Label class="lede">Native controls. A predictable box model. Far fewer wrappers.</Label>

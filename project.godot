@@ -6,7 +6,7 @@ config_version=5
 [application]
 
 config/name="GodotCascade"
-run/main_scene="res://examples/basic_layout.tscn"
+run/main_scene="res://examples/generated_showcase.tscn"
 
 [display]
 
