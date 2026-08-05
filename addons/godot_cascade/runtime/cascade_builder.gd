@@ -9,19 +9,23 @@ const CascadeButton := preload("res://addons/godot_cascade/components/cascade_bu
 const CascadeCheckbox := preload("res://addons/godot_cascade/components/cascade_checkbox.gd")
 const CascadeRadioButton := preload("res://addons/godot_cascade/components/cascade_radio_button.gd")
 const CascadeSwitch := preload("res://addons/godot_cascade/components/cascade_switch.gd")
+const CascadeSelect := preload("res://addons/godot_cascade/components/cascade_select.gd")
 const CascadeProgress := preload("res://addons/godot_cascade/components/cascade_progress.gd")
+const CascadeSlider := preload("res://addons/godot_cascade/components/cascade_slider.gd")
+const PropertyCache := preload("res://addons/godot_cascade/runtime/property_cache.gd")
 
 
 static func build(root_element, rules: Array) -> Dictionary:
 	var diagnostics: Array[Dictionary] = []
 	var button_groups: Dictionary = {}
-	var root_control := _build_element(root_element, rules, diagnostics, "0", button_groups)
+	var rule_index := _index_rules(rules)
+	var root_control := _build_element(root_element, rule_index, diagnostics, "0", button_groups)
 	return {"root": root_control, "diagnostics": diagnostics}
 
 
 static func _build_element(
 	element,
-	rules: Array,
+	rule_index: Dictionary,
 	diagnostics: Array[Dictionary],
 	key_path: String,
 	button_groups: Dictionary
@@ -36,18 +40,22 @@ static func _build_element(
 	control.set_meta("cascade_classes", element.classes())
 	control.set_meta("cascade_key", "#" + element.element_id() if not element.element_id().is_empty() else key_path)
 	control.set_meta("cascade_bindings", {})
+	control.set_meta("cascade_explicit_accessible_label", false)
 
 	_apply_attributes(control, element.attributes, element.text, diagnostics, button_groups)
 	if element.tag_name.to_lower() == "row":
 		control.direction = CascadeBox.FlowDirection.ROW
 
-	var computed := _compute_declarations(element, rules)
+	var computed := _compute_declarations(element, rule_index)
 	_apply_declarations(control, computed, diagnostics)
+	if control is CascadeSelect:
+		_apply_select_options(control, element, rule_index, diagnostics)
+		return control
 
 	for index in element.children.size():
 		var child_element = element.children[index]
 		var child_key := "%s/%s:%s" % [key_path, index, child_element.tag_name]
-		var child_control := _build_element(child_element, rules, diagnostics, child_key, button_groups)
+		var child_control := _build_element(child_element, rule_index, diagnostics, child_key, button_groups)
 		if child_control != null:
 			control.add_child(child_control)
 	return control
@@ -69,8 +77,12 @@ static func _create_control(tag_name: String, diagnostics: Array[Dictionary]) ->
 			return CascadeRadioButton.new()
 		"switch":
 			return CascadeSwitch.new()
+		"select":
+			return CascadeSelect.new()
 		"progress":
 			return CascadeProgress.new()
+		"slider":
+			return CascadeSlider.new()
 		_:
 			diagnostics.append(_diagnostic(
 				"error",
@@ -79,31 +91,97 @@ static func _create_control(tag_name: String, diagnostics: Array[Dictionary]) ->
 			return null
 
 
-static func _compute_declarations(element, rules: Array) -> Dictionary:
+static func _compute_declarations(element, rule_index: Dictionary) -> Dictionary:
 	var winners := {}
-	for rule in rules:
+	for rule in _candidate_rules(element, rule_index):
 		if not rule.matches(element):
 			continue
 		var state: String = rule.pseudo_state
 		if not winners.has(state):
 			winners[state] = {}
-		var declarations := _expand_shorthands(rule.declarations)
+		var expansion := _expand_shorthands(rule.declarations)
+		var declarations: Dictionary = expansion["values"]
+		var origins: Dictionary = expansion["origins"]
 		for property_name in declarations:
 			var existing: Dictionary = winners[state].get(property_name, {})
 			if existing.is_empty() or rule.specificity > existing["specificity"] or (
 				rule.specificity == existing["specificity"] and rule.order >= existing["order"]
 			):
+				var origin: String = origins[property_name]
+				var location: Dictionary = rule.declaration_locations.get(origin, {"line": rule.line, "column": 1})
 				winners[state][property_name] = {
 					"value": declarations[property_name],
 					"specificity": rule.specificity,
 					"order": rule.order,
-					"line": rule.line,
+					"line": location["line"],
+					"column": location["column"],
 				}
 	return winners
 
 
+static func _index_rules(rules: Array) -> Dictionary:
+	var index := {"universal": [], "types": {}, "classes": {}, "ids": {}}
+	for rule in rules:
+		var compound := str(rule.compounds[-1])
+		var rule_id := _compound_token(compound, "#")
+		var rule_class := _compound_token(compound, ".")
+		var type_name := compound
+		var marker_positions := [compound.find("."), compound.find("#")]
+		for marker_position in marker_positions:
+			if marker_position >= 0:
+				type_name = compound.substr(0, mini(type_name.length(), marker_position))
+		if not rule_id.is_empty():
+			_append_indexed_rule(index["ids"], rule_id, rule)
+		elif not rule_class.is_empty():
+			_append_indexed_rule(index["classes"], rule_class, rule)
+		elif not type_name.is_empty():
+			_append_indexed_rule(index["types"], type_name.to_lower(), rule)
+		else:
+			index["universal"].append(rule)
+	return index
+
+
+static func _candidate_rules(element, index: Dictionary) -> Array:
+	var result: Array = index["universal"].duplicate()
+	var seen := {}
+	for rule in result:
+		seen[rule.get_instance_id()] = true
+	var buckets: Array = [index["types"].get(element.tag_name.to_lower(), [])]
+	var element_id: String = element.element_id()
+	if not element_id.is_empty():
+		buckets.append(index["ids"].get(element_id, []))
+	for class_value in element.classes():
+		buckets.append(index["classes"].get(class_value, []))
+	for bucket in buckets:
+		for rule in bucket:
+			if not seen.has(rule.get_instance_id()):
+				result.append(rule)
+				seen[rule.get_instance_id()] = true
+	return result
+
+
+static func _append_indexed_rule(index: Dictionary, key: String, rule) -> void:
+	if not index.has(key):
+		index[key] = []
+	index[key].append(rule)
+
+
+static func _compound_token(compound: String, marker: String) -> String:
+	var start := compound.find(marker)
+	if start < 0:
+		return ""
+	start += 1
+	var end := compound.length()
+	for other_marker in [".", "#"]:
+		var found := compound.find(other_marker, start)
+		if found >= 0:
+			end = mini(end, found)
+	return compound.substr(start, end - start)
+
+
 static func _expand_shorthands(declarations: Dictionary) -> Dictionary:
 	var expanded := {}
+	var origins := {}
 	for property_name in declarations:
 		var value: String = str(declarations[property_name])
 		if property_name in ["padding", "margin"]:
@@ -114,6 +192,7 @@ static func _expand_shorthands(declarations: Dictionary) -> Dictionary:
 				valid_lengths = valid_lengths and not is_nan(parsed) and parsed >= 0.0
 			if not valid_lengths:
 				expanded[property_name] = value
+				origins[property_name] = property_name
 				continue
 			var top := tokens[0]
 			var right := tokens[0] if tokens.size() == 1 else tokens[1]
@@ -123,22 +202,29 @@ static func _expand_shorthands(declarations: Dictionary) -> Dictionary:
 			expanded["%s-right" % property_name] = right
 			expanded["%s-bottom" % property_name] = bottom
 			expanded["%s-left" % property_name] = left
+			for edge in ["top", "right", "bottom", "left"]:
+				origins["%s-%s" % [property_name, edge]] = property_name
 		elif property_name == "border":
 			var tokens := _split_whitespace(value)
 			if tokens.size() == 3 and tokens[1].to_lower() == "solid":
 				expanded["border-width"] = tokens[0]
 				expanded["border-color"] = tokens[2]
+				origins["border-width"] = property_name
+				origins["border-color"] = property_name
 			else:
 				expanded[property_name] = value
+				origins[property_name] = property_name
 		else:
 			expanded[property_name] = value
-	return expanded
+			origins[property_name] = property_name
+	return {"values": expanded, "origins": origins}
 
 
 static func _apply_declarations(control: Control, computed: Dictionary, diagnostics: Array[Dictionary]) -> void:
 	for state in computed:
 		for property_name in computed[state]:
 			var declaration: Dictionary = computed[state][property_name]
+			var diagnostic_start := diagnostics.size()
 			_apply_declaration(
 				control,
 				property_name,
@@ -147,6 +233,7 @@ static func _apply_declarations(control: Control, computed: Dictionary, diagnost
 				int(declaration["line"]),
 				diagnostics
 			)
+			_stamp_diagnostics(diagnostics, diagnostic_start, int(declaration["line"]), int(declaration.get("column", 1)))
 
 
 static func _apply_declaration(
@@ -252,8 +339,8 @@ static func _apply_declaration(
 		"font-size":
 			_set_length_property(control, "font_size", value, line, diagnostics)
 		"fill-color":
-			if control is CascadeProgress:
-				control.fill_color = _parse_color(value, line, diagnostics)
+			if _has_property(control, "fill_color"):
+				control.set("fill_color", _parse_color(value, line, diagnostics))
 			else:
 				_diagnostic_not_applicable(diagnostics, line, property_name, control)
 		_:
@@ -307,12 +394,22 @@ static func _apply_attributes(
 	if attributes.has("accessible-label"):
 		if _has_property(control, "accessibility_name"):
 			control.set("accessibility_name", str(attributes["accessible-label"]))
+			control.set_meta("cascade_explicit_accessible_label", true)
 		else:
 			control.set_meta("cascade_accessible_label", str(attributes["accessible-label"]))
+	elif _has_property(control, "accessibility_name") and _has_property(control, "text"):
+		control.set("accessibility_name", str(control.get("text")))
+	if attributes.has("accessible-description") and _has_property(control, "accessibility_description"):
+		control.set("accessibility_description", str(attributes["accessible-description"]))
 	if control is BaseButton:
 		_apply_button_attributes(control, attributes, diagnostics, button_groups)
-	if not control is CascadeProgress:
+	if not (control is CascadeProgress or control is CascadeSlider):
 		return
+	var range_values := {
+		"min_value": control.min_value,
+		"max_value": control.max_value,
+		"value": control.value,
+	}
 	for attribute_name in ["min", "max", "value"]:
 		if not attributes.has(attribute_name):
 			continue
@@ -323,7 +420,14 @@ static func _apply_attributes(
 		if not raw_value.is_valid_float():
 			diagnostics.append(_diagnostic("error", "Progress attribute '%s' requires a number, got '%s'." % [attribute_name, raw_value]))
 			continue
-		control.set(property_name, raw_value.to_float())
+		range_values[property_name] = raw_value.to_float()
+	if control is CascadeSlider and attributes.has("step"):
+		var raw_step := str(attributes["step"])
+		if raw_step.is_valid_float() and raw_step.to_float() > 0.0:
+			control.set("step", raw_step.to_float())
+		else:
+			diagnostics.append(_diagnostic("error", "Slider attribute 'step' requires a positive number, got '%s'." % raw_step))
+	control.set_range_values(range_values["min_value"], range_values["max_value"], range_values["value"])
 
 
 static func _apply_button_attributes(
@@ -354,6 +458,77 @@ static func _apply_button_attributes(
 	if not button_groups.has(group_name):
 		button_groups[group_name] = ButtonGroup.new()
 	control.button_group = button_groups[group_name]
+
+
+static func _apply_select_options(
+	control: Control,
+	element,
+	rule_index: Dictionary,
+	diagnostics: Array[Dictionary]
+) -> void:
+	var options: Array[Dictionary] = []
+	for child in element.children:
+		if child.tag_name.to_lower() != "option":
+			diagnostics.append(_diagnostic("error", "Select only accepts <Option> children, got <%s>." % child.tag_name))
+			continue
+		var label := str(child.attributes.get("text", child.text)).strip_edges()
+		if label.is_empty():
+			diagnostics.append(_diagnostic("error", "Select options require text or a text attribute."))
+			continue
+		var option := {
+			"label": label,
+			"value": str(child.attributes.get("value", label)),
+			"disabled": false,
+		}
+		if child.attributes.has("disabled"):
+			var parsed: Variant = _parse_bool_attribute("disabled", str(child.attributes["disabled"]), diagnostics)
+			if parsed != null:
+				option["disabled"] = parsed
+		_apply_select_option_styles(option, _compute_declarations(child, rule_index), diagnostics)
+		options.append(option)
+	control.set("options", options)
+
+	var selected := str(element.attributes.get("selected", "")).strip_edges()
+	if selected.is_empty():
+		return
+	var selected_index := -1
+	if selected.is_valid_int():
+		selected_index = selected.to_int()
+	else:
+		for index in options.size():
+			if str(options[index]["value"]) == selected:
+				selected_index = index
+				break
+	if selected_index < 0 or selected_index >= options.size():
+		diagnostics.append(_diagnostic("error", "Select attribute 'selected' does not match an option: '%s'." % selected))
+		return
+	control.set("selected_index", selected_index)
+
+
+static func _apply_select_option_styles(
+	option: Dictionary,
+	computed: Dictionary,
+	diagnostics: Array[Dictionary]
+) -> void:
+	for state in computed:
+		for property_name in computed[state]:
+			var declaration: Dictionary = computed[state][property_name]
+			var line := int(declaration["line"])
+			var diagnostic_start := diagnostics.size()
+			var value := str(declaration["value"])
+			var style_key := ""
+			if property_name in ["background", "background-color"]:
+				style_key = "%sbackground_color" % ("" if state.is_empty() else "%s_" % state)
+			elif property_name == "color":
+				style_key = "%stext_color" % ("" if state.is_empty() else "%s_" % state)
+			else:
+				_diagnostic_unsupported_state(diagnostics, line, state, property_name)
+				continue
+			if state not in ["", "hover", "selected", "disabled"]:
+				_diagnostic_unsupported_state(diagnostics, line, state, property_name)
+				continue
+			option[style_key] = _parse_color(value, line, diagnostics)
+			_stamp_diagnostics(diagnostics, diagnostic_start, line, int(declaration.get("column", 1)))
 
 
 static func _parse_bool_attribute(attribute_name: String, value: String, diagnostics: Array[Dictionary]) -> Variant:
@@ -480,10 +655,7 @@ static func _split_whitespace(value: String) -> PackedStringArray:
 
 
 static func _has_property(target: Object, property_name: String) -> bool:
-	for property in target.get_property_list():
-		if property.name == property_name:
-			return true
-	return false
+	return PropertyCache.has(target, property_name)
 
 
 static func _diagnostic_bad_value(diagnostics: Array[Dictionary], line: int, property_name: String, value: String) -> void:
@@ -512,6 +684,12 @@ static func _diagnostic_unsupported_state(
 	property_name: String
 ) -> void:
 	diagnostics.append(_diagnostic("warning", "Line %s: unsupported :%s property '%s'." % [line, state, property_name]))
+
+
+static func _stamp_diagnostics(diagnostics: Array[Dictionary], start: int, line: int, column: int) -> void:
+	for index in range(start, diagnostics.size()):
+		diagnostics[index]["line"] = line
+		diagnostics[index]["column"] = column
 
 
 static func _diagnostic(severity: String, message: String) -> Dictionary:

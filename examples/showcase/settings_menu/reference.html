@@ -29,6 +29,7 @@
     .switch input:checked::after { left:20px; }
     footer { display:flex; align-items:center; gap:16px; }
     .hint { flex:1; color:#6f7f9b; font-size:13px; }
+    select { min-width:178px; min-height:42px; padding:9px 14px; color:#f2f4f7; font:inherit; background:#131b2a; border:1px solid #405477; border-radius:8px; }
     button { min-width:148px; min-height:42px; padding:9px 14px; color:#f2f4f7; font:inherit; background:#1c64d1; border:1px solid #5aa7ff; border-radius:8px; }
   </style>
 </head>
@@ -39,7 +40,7 @@
       <section><h2>Effects</h2><p class="help">Tune visual features independently.</p><label><input type="checkbox" checked>Dynamic shadows</label><label><input type="checkbox" checked>Bloom</label><label class="switch"><input type="checkbox" role="switch" checked>Vertical sync</label><label><input type="checkbox" disabled>Ray tracing · unavailable</label></section>
       <section><h2>Window mode</h2><p class="help">Choose one native radio-group option.</p><label><input type="radio" name="window-mode">Windowed</label><label><input type="radio" name="window-mode" checked>Borderless</label><label><input type="radio" name="window-mode">Exclusive fullscreen</label></section>
     </div>
-    <footer><span class="hint">Tab to move focus · Space or controller accept to toggle</span><button type="button">Apply settings</button></footer>
+    <footer><span class="hint">Tab to move focus · Space or controller accept to toggle</span><select aria-label="Graphics quality"><option>Low quality</option><option>Medium quality</option><option selected>High quality</option><option>Ultra quality</option></select><button type="button">Apply settings</button></footer>
   </main>
 </body>
 </html>

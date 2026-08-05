@@ -65,6 +65,14 @@ func ratio() -> float:
 	return clampf((value - min_value) / span, 0.0, 1.0)
 
 
+## Updates the complete range in a defined min/max/value order.
+func set_range_values(next_min: float, next_max: float, next_value: float) -> void:
+	var resolved_max := maxf(next_max, next_min)
+	min_value = next_min
+	max_value = resolved_max
+	value = clampf(next_value, next_min, resolved_max)
+
+
 func _get_minimum_size() -> Vector2:
 	return cascade_style.constrain_minimum(BoxPainter.outer_minimum_size(
 		Vector2.ZERO,

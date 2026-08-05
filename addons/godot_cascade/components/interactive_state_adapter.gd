@@ -11,6 +11,7 @@ const FOCUSED := "focused"
 const HOVER := "hover"
 const CHECKED := "checked"
 const SELECTED := "selected"
+const OPEN := "open"
 const PRESSED := "pressed"
 const DISABLED := "disabled"
 
@@ -31,7 +32,7 @@ func attach(control: BaseButton) -> void:
 	_last_state = current_state()
 
 
-func current_state() -> String:
+func current_state(open: bool = false) -> String:
 	if _control == null:
 		return BASE
 	return resolve(
@@ -39,7 +40,8 @@ func current_state() -> String:
 		_interaction_pressed,
 		_control.toggle_mode and _control.button_pressed,
 		_control.is_hovered(),
-		_control.has_focus()
+		_control.has_focus(),
+		open
 	)
 
 
@@ -56,12 +58,15 @@ static func resolve(
 	pressed: bool,
 	checked: bool,
 	hovered: bool,
-	focused: bool
+	focused: bool,
+	open: bool = false
 ) -> String:
 	if disabled:
 		return DISABLED
 	if pressed:
 		return PRESSED
+	if open:
+		return OPEN
 	if checked:
 		return CHECKED
 	if hovered:

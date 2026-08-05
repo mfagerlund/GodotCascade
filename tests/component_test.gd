@@ -6,6 +6,8 @@ const CascadeButton := preload("res://addons/godot_cascade/components/cascade_bu
 const CascadeCheckbox := preload("res://addons/godot_cascade/components/cascade_checkbox.gd")
 const CascadeRadioButton := preload("res://addons/godot_cascade/components/cascade_radio_button.gd")
 const CascadeSwitch := preload("res://addons/godot_cascade/components/cascade_switch.gd")
+const CascadeSelect := preload("res://addons/godot_cascade/components/cascade_select.gd")
+const CascadeSlider := preload("res://addons/godot_cascade/components/cascade_slider.gd")
 const InteractiveStateAdapter := preload("res://addons/godot_cascade/components/interactive_state_adapter.gd")
 const CascadeLabel := preload("res://addons/godot_cascade/components/cascade_label.gd")
 const CascadePanel := preload("res://addons/godot_cascade/components/cascade_panel.gd")
@@ -32,6 +34,8 @@ func _run() -> void:
 	await _test_owned_checkbox()
 	await _test_native_radio_group()
 	await _test_owned_switch()
+	await _test_owned_select()
+	await _test_owned_slider()
 	await _test_native_input_matrix()
 
 	if _failures.is_empty():
@@ -217,6 +221,10 @@ func _test_owned_progress() -> void:
 	_expect_float("CascadeProgress honors preferred height", progress.get_combined_minimum_size().y, 14.0)
 	progress.value = 200.0
 	_expect_float("CascadeProgress clamps value", progress.value, 120.0)
+	progress.set_range_values(50.0, 200.0, 175.0)
+	_expect_float("CascadeProgress atomic minimum", progress.min_value, 50.0)
+	_expect_float("CascadeProgress atomic maximum", progress.max_value, 200.0)
+	_expect_float("CascadeProgress atomic value", progress.value, 175.0)
 	progress.queue_free()
 
 
@@ -275,6 +283,66 @@ func _test_owned_switch() -> void:
 	await process_frame
 	_expect_true("CascadeSwitch reports checked state", toggle.cascade_visual_state() == "checked")
 	toggle.queue_free()
+
+
+func _test_owned_select() -> void:
+	var select := CascadeSelect.new()
+	select.options = [
+		{"label": "Low", "value": "low"},
+		{"label": "Medium", "value": "medium"},
+		{"label": "Unavailable", "value": "disabled", "disabled": true},
+		{"label": "High", "value": "high"},
+	]
+	select.selected_index = 0
+	select.size = Vector2(180.0, 42.0)
+	root.add_child(select)
+	await process_frame
+	_expect_true("CascadeSelect displays selected label", select.text == "Low")
+	_expect_true("CascadeSelect exposes selected value", select.selected_value() == "low")
+	select.open_popup()
+	await process_frame
+	_expect_true("CascadeSelect opens native popup", select.is_open())
+	_expect_true("open select reports open state", select.cascade_visual_state() == "open")
+	_send_action("ui_down", true)
+	_send_action("ui_down", false)
+	_send_action("ui_accept", true)
+	_send_action("ui_accept", false)
+	await process_frame
+	_expect_true("select keyboard navigation chooses next option", select.selected_value() == "medium")
+	_expect_true("select closes after keyboard selection", not select.is_open())
+	select.open_popup()
+	_send_action("ui_down", true)
+	_send_action("ui_down", false)
+	_send_action("ui_accept", true)
+	_send_action("ui_accept", false)
+	await process_frame
+	_expect_true("select navigation skips disabled option", select.selected_value() == "high")
+	select.queue_free()
+
+
+func _test_owned_slider() -> void:
+	var slider := CascadeSlider.new()
+	slider.set_range_values(0.0, 100.0, 25.0)
+	slider.step = 5.0
+	slider.size = Vector2(200.0, 30.0)
+	root.add_child(slider)
+	await process_frame
+	_expect_float("CascadeSlider native ratio", slider.ratio, 0.25)
+	var click := InputEventMouseButton.new()
+	click.button_index = MOUSE_BUTTON_LEFT
+	click.pressed = true
+	click.position = Vector2(100.0, 15.0)
+	slider.call("_gui_input", click)
+	_expect_float("CascadeSlider pointer updates value", slider.value, 50.0)
+	var right := InputEventAction.new()
+	right.action = "ui_right"
+	right.pressed = true
+	slider.call("_gui_input", right)
+	_expect_float("CascadeSlider keyboard increments by step", slider.value, 55.0)
+	slider.disabled = true
+	slider.call("_gui_input", right)
+	_expect_float("disabled CascadeSlider ignores input", slider.value, 55.0)
+	slider.queue_free()
 
 
 func _test_native_input_matrix() -> void:

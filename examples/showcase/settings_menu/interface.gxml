@@ -27,6 +27,12 @@
 
     <Row class="settings-footer">
         <Label class="hint">Tab to move focus · Space or controller accept to toggle</Label>
+        <Select id="quality" selected="high" accessible-label="Graphics quality">
+            <Option value="low">Low quality</Option>
+            <Option value="medium">Medium quality</Option>
+            <Option value="high">High quality</Option>
+            <Option value="ultra">Ultra quality</Option>
+        </Select>
         <Button id="apply">Apply settings</Button>
     </Row>
 </Page>

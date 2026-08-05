@@ -20,10 +20,12 @@ func _run() -> void:
 	_test_gxml_parser()
 	_test_gcss_specificity()
 	_test_form_controls_pipeline()
+	_test_select_pipeline()
+	_test_slider_pipeline()
 	_test_review_regressions()
 	_test_parser_recovery()
 	_test_binding_resolver()
-	_test_identity_preserving_reload()
+	await _test_identity_preserving_reload()
 	root.size = Vector2i(960, 540)
 	var document := GENERATED_SCENE.instantiate()
 	root.add_child(document)
@@ -196,6 +198,52 @@ func _test_form_controls_pipeline() -> void:
 	built_root.free()
 
 
+func _test_select_pipeline() -> void:
+	var markup := GxmlParser.parse("""<Page><Select id="quality" selected="high" accessible-label="Graphics quality">
+		<Option value="low">Low</Option>
+		<Option value="medium" disabled="true">Medium</Option>
+		<Option value="high">High</Option>
+	</Select></Page>""")
+	var stylesheet := GcssParser.parse("""Select:open { background: #234567; }
+		Option { background: #101828; color: #dddddd; }
+		Option:hover { background: #222222; }
+		Option:selected { background: #345678; color: #ffffff; }
+		Option:disabled { color: #777777; }""")
+	var build := CascadeBuilder.build(markup["root"], stylesheet["rules"])
+	_expect_int("select markup diagnostics", markup["diagnostics"].size(), 0)
+	_expect_int("select stylesheet diagnostics", stylesheet["diagnostics"].size(), 0)
+	_expect_int("select builder diagnostics", build["diagnostics"].size(), 0)
+	var built_root: Control = build["root"]
+	if built_root == null:
+		return
+	var select: Control = _find_by_id(built_root, "quality")[0]
+	_expect_true("select GXML selected value", select.call("selected_value") == "high")
+	_expect_true("select GXML accessibility label", select.get("accessibility_name") == "Graphics quality")
+	_expect_true("select open pseudo style", select.get("open_background_color") == Color("234567"))
+	var options: Array[Dictionary] = select.get("options")
+	_expect_int("select GXML option count", options.size(), 3)
+	_expect_true("select disabled option metadata", options[1]["disabled"])
+	_expect_true("selected option background style", options[2]["selected_background_color"] == Color("345678"))
+	built_root.free()
+
+
+func _test_slider_pipeline() -> void:
+	var markup := GxmlParser.parse("<Slider id=\"volume\" min=\"0\" max=\"10\" value=\"4\" step=\"0.5\" accessible-label=\"Master volume\" />")
+	var stylesheet := GcssParser.parse("Slider { width: 220px; fill-color: #55aaff; }")
+	var build := CascadeBuilder.build(markup["root"], stylesheet["rules"])
+	_expect_int("slider builder diagnostics", build["diagnostics"].size(), 0)
+	var slider: Control = build["root"]
+	if slider == null:
+		return
+	_expect_float("slider markup minimum", slider.get("min_value"), 0.0)
+	_expect_float("slider markup maximum", slider.get("max_value"), 10.0)
+	_expect_float("slider markup value", slider.get("value"), 4.0)
+	_expect_float("slider markup step", slider.get("step"), 0.5)
+	_expect_true("slider GCSS fill", slider.get("fill_color") == Color("55aaff"))
+	_expect_true("slider accessibility name", slider.get("accessibility_name") == "Master volume")
+	slider.free()
+
+
 func _test_review_regressions() -> void:
 	var magenta_markup := GxmlParser.parse("<Label id=\"color\">Magenta</Label>")
 	var magenta_stylesheet := GcssParser.parse("#color { color: #f0f; }")
@@ -244,6 +292,23 @@ func _test_review_regressions() -> void:
 			_expect_float("shorthand honors specificity in either source order", cascade_style.padding_left, 20.0)
 			cascade_build["root"].free()
 
+	var located_stylesheet := GcssParser.parse("Label {\n  font-size: 18px;\n  color: definitely-not-a-color;\n}")
+	var located_build := CascadeBuilder.build(magenta_markup["root"], located_stylesheet["rules"])
+	_expect_int("located builder diagnostic count", located_build["diagnostics"].size(), 1)
+	if located_build["diagnostics"].size() == 1:
+		_expect_int("builder diagnostic declaration line", int(located_build["diagnostics"][0]["line"]), 3)
+		_expect_int("builder diagnostic declaration column", int(located_build["diagnostics"][0]["column"]), 3)
+	if located_build["root"] != null:
+		located_build["root"].free()
+
+	var recovered_pseudo := GcssParser.parse("Label:focus { color: #123456; }")
+	_expect_int("unsupported pseudo emits one diagnostic", recovered_pseudo["diagnostics"].size(), 1)
+	_expect_true("unsupported pseudo is recoverable warning", recovered_pseudo["diagnostics"][0]["severity"] == "warning")
+	var recovered_build := CascadeBuilder.build(magenta_markup["root"], recovered_pseudo["rules"])
+	_expect_true("unsupported pseudo retains base declarations", recovered_build["root"].get("text_color") == Color("123456"))
+	if recovered_build["root"] != null:
+		recovered_build["root"].free()
+
 
 func _test_parser_recovery() -> void:
 	var malformed_markup := GxmlParser.parse("<Page><Label>broken</Page>")
@@ -265,8 +330,8 @@ func _test_binding_resolver() -> void:
 func _test_identity_preserving_reload() -> void:
 	var markup_path := "user://cascade_reload_test.gxml"
 	var stylesheet_path := "user://cascade_reload_test.gcss"
-	var initial_markup := "<Page><Button id=\"stable\">Before</Button></Page>"
-	var updated_markup := "<Page><Button id=\"stable\">After</Button></Page>"
+	var initial_markup := "<Page><Button id=\"stable\">Before</Button><Button id=\"move\">Move</Button><Checkbox id=\"runtime\">Runtime</Checkbox></Page>"
+	var updated_markup := "<Page><Checkbox id=\"runtime\">Runtime</Checkbox><Button id=\"move\">Move</Button><Button id=\"stable\">After</Button></Page>"
 	var stylesheet := "Page { display: flex; flex-direction: column; } Button { padding: 8px; }"
 	_expect_true("write initial reload markup", _write_text(markup_path, initial_markup))
 	_expect_true("write initial reload stylesheet", _write_text(stylesheet_path, stylesheet))
@@ -282,7 +347,14 @@ func _test_identity_preserving_reload() -> void:
 
 	var initial_button: Control = _find_by_id(document.generated_root(), "stable")[0]
 	var initial_instance_id := initial_button.get_instance_id()
+	var moved_button: Control = _find_by_id(document.generated_root(), "move")[0]
+	var moved_instance_id := moved_button.get_instance_id()
+	var runtime_checkbox: BaseButton = _find_by_id(document.generated_root(), "runtime")[0]
+	runtime_checkbox.button_pressed = true
 	initial_button.pressed.connect(_on_reload_test_pressed)
+	initial_button.grab_focus()
+	await process_frame
+	_expect_true("reload fixture acquires focus", initial_button.has_focus())
 
 	_expect_true("write updated reload markup", _write_text(markup_path, updated_markup))
 	_expect_true("source polling detects edit", document.poll_sources())
@@ -290,13 +362,25 @@ func _test_identity_preserving_reload() -> void:
 	_expect_true("reload preserves native node identity", updated_button.get_instance_id() == initial_instance_id)
 	_expect_true("reload updates component properties", updated_button.get("text") == "After")
 	_expect_true("reload preserves signal connections", updated_button.pressed.is_connected(_on_reload_test_pressed))
-	_expect_true("reload reports reused nodes", int(document.last_reconcile_stats["reused"]) >= 2)
+	_expect_true("reload preserves focus", updated_button.has_focus())
+	_expect_true("reload preserves reordered keyed sibling", _find_by_id(document.generated_root(), "move")[0].get_instance_id() == moved_instance_id)
+	_expect_true("reload applies authored sibling order", document.generated_root().get_child(0).get_meta("cascade_id") == "runtime")
+	_expect_true("reload preserves runtime toggle state", _find_by_id(document.generated_root(), "runtime")[0].get("button_pressed"))
+	_expect_true("reload reports reused nodes", int(document.last_reconcile_stats["reused"]) >= 4)
+
+	var replacement_markup := "<Page><Label id=\"stable\">Replacement</Label><Checkbox id=\"runtime\">Runtime</Checkbox></Page>"
+	_expect_true("write replacement reload markup", _write_text(markup_path, replacement_markup))
+	_expect_true("replacement source polling detects edit", document.poll_sources())
+	_expect_true("incompatible keyed type is replaced", _find_by_id(document.generated_root(), "stable")[0].get_instance_id() != initial_instance_id)
+	_expect_int("replacement stats", int(document.last_reconcile_stats["replaced"]), 1)
+	_expect_int("removal stats", int(document.last_reconcile_stats["removed"]), 1)
+	_expect_true("replacement reload keeps runtime toggle state", _find_by_id(document.generated_root(), "runtime")[0].get("button_pressed"))
 
 	_expect_true("write malformed reload markup", _write_text(markup_path, "<Page><Button>broken</Page>"))
 	_expect_true("source polling detects malformed edit", document.poll_sources())
-	var retained_button: Control = _find_by_id(document.generated_root(), "stable")[0]
-	_expect_true("invalid edit retains native node identity", retained_button.get_instance_id() == initial_instance_id)
-	_expect_true("invalid edit retains last valid properties", retained_button.get("text") == "After")
+	var retained_control: Control = _find_by_id(document.generated_root(), "stable")[0]
+	_expect_true("invalid edit retains native node identity", retained_control.get_meta("cascade_element_type") == "Label")
+	_expect_true("invalid edit retains last valid properties", retained_control.get("text") == "Replacement")
 	_expect_true("invalid edit publishes diagnostics", _has_error_diagnostics(document.diagnostics))
 
 	root.remove_child(document)

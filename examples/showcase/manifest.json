@@ -55,9 +55,11 @@
       "mappings": [
         ["input[type=checkbox]", "Checkbox", "CascadeCheckbox (BaseButton toggle)"],
         ["input[role=switch]", "Switch", "CascadeSwitch track/thumb drawing"],
+        ["select / option", "Select / Option", "CascadeSelect + PopupPanel"],
         ["input[type=radio] name", "RadioButton group", "CascadeRadioButton + ButtonGroup"],
         ["checked / disabled", "checked / disabled", "Native button state"],
         [":checked / :hover", ":checked / :hover", "Shared state adapter"],
+        [":open / option:checked", ":open / Option:selected", "Popup and option state"],
         ["aria-label", "accessible-label", "Native accessibility name"],
         ["fieldset-like cards", "Panel + Column", "CascadePanel flex layout"]
       ]

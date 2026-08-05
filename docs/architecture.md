@@ -33,7 +33,7 @@ The logical tree represents authored structure before native construction. Eleme
 
 ### Style engine
 
-The target style engine will index rules by the rightmost selector, match only plausible candidates, and produce immutable computed styles. It will own specificity, inheritance, initial values, pseudo states, and custom properties while keeping resolved style separate from mutable Godot theme resources.
+The style engine indexes rules by the rightmost selector before matching plausible candidates. The target computed-style layer will own inheritance, initial values, pseudo states, and custom properties while keeping resolved style separate from mutable Godot theme resources.
 
 The current executable slice parses rules, matches them against the logical element tree, resolves specificity and source order in `CascadeBuilder`, and applies a focused typed property registry. It exposes the computed box-model shape as a mutable `CascadeStyle` resource. `CascadeBox` and owned components consume it and react to draw, measure, and arrange invalidation flags. A later computed-style layer will produce immutable snapshots of this same property surface.
 

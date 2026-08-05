@@ -7,6 +7,8 @@ GodotCascade is a prototype. Documentation distinguishes between behavior that r
 - [Project README](../README.md) — overview, setup, examples, and development commands
 - [Current support reference](current-support.md) — exact GXML elements, GCSS properties, selectors, pseudo states, and known limits
 - [Architecture](architecture.md) — runtime boundaries, reconciliation, binding, layout, and invalidation
+- [Adapted text input plan](adapted-text-input-plan.md) — native editing boundary and required behavior matrix
+- [Public preview stability policy](api-stability.md) — current guarantees, unstable surfaces, and change process
 - [Roadmap](../ROADMAP.md) — completed work, next form controls, and later milestones
 - [HTML parity showcase](showcase/index.html) — live HTML references beside captured native Godot output
 

@@ -32,8 +32,8 @@ The form-control roadmap follows the same rule:
 | `CascadeCheckbox` | `BaseButton` toggle behavior | indicator, label layout, box model, and checked-state drawing |
 | `CascadeRadioButton` | `BaseButton` plus `ButtonGroup` | indicator, group-facing attributes, label layout, and state drawing |
 | `CascadeSwitch` (implemented) | Checkbox/toggle semantics | switch track, thumb, and state drawing |
-| `CascadeSelect` | Composite native button, popup, and option list behavior | closed control, popup styling, option layout, and open/selected states |
-| `CascadeSlider` | Native range semantics | track, fill, thumb geometry, and pointer/focus states |
+| `CascadeSelect` (implemented) | Composite native button, popup, and option list behavior | closed control, popup styling, option layout, and open/selected states |
+| `CascadeSlider` (implemented) | Native range semantics | track, fill, thumb geometry, and pointer/focus states |
 
 Complex editors such as line edits and rich text will initially use native controls behind explicit compatibility adapters. Replacing them requires separate design work around selection, IME composition, shaping, bidirectional text, clipboard behavior, and accessibility.
 

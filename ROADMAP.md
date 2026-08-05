@@ -6,7 +6,7 @@ The roadmap favors end-to-end slices over isolated subsystems. Each milestone sh
 
 The roadmap is not empty. The executable foundation now covers flex/box layout, owned button/label/panel/progress controls, GXML and focused GCSS parsing, native-tree construction, keyed hot reload, last-valid diagnostics, one-way property-path bindings, automated captures, and the HTML parity report.
 
-The source-generated settings-menu slice now includes shared interactive-state precedence, a native mouse/keyboard/controller test matrix, and owned checkbox, grouped radio-button, and switch components. Dropdown/select behavior is next.
+The source-generated settings-menu slice now includes shared interactive-state precedence, a native mouse/keyboard/controller test matrix, and owned checkbox, grouped radio-button, switch, select, and slider components. Every first-public-preview acceptance item is complete.
 
 The reproduced findings in the [2026-08-05 code review](docs/artifacts/review.md) are part of this roadmap. Blocking correctness fixes take priority when they touch the same runtime layer as an active vertical slice.
 
@@ -18,15 +18,15 @@ The reproduced findings in the [2026-08-05 code review](docs/artifacts/review.md
 - [x] [Give wrapped labels a non-zero min-content width](docs/artifacts/review.md#4-an-auto-wrapped-label-collapses-to-zero-width-inside-a-row)
 - [x] [Normalize whitespace in class lists and multi-value declarations](docs/artifacts/review.md#5-class-attributes-split-on-spaces-only)
 - [x] [Diagnose unsupported negative lengths](docs/artifacts/review.md#6-negative-lengths-are-silently-clamped)
-- [ ] [Attach declaration-level source locations to builder diagnostics](docs/artifacts/review.md#7-builder-diagnostics-point-at-the-selector-not-the-declaration)
-- [ ] [Avoid duplicate diagnostic logging on binding refresh](docs/artifacts/review.md#8-diagnostics-are-re-logged-on-every-binding-refresh)
-- [ ] [Cache property lookups in runtime hot paths](docs/artifacts/review.md#9-_has_property-is-a-linear-scan-in-three-hot-paths)
-- [ ] [Make CascadeBox property-source precedence explicit](docs/artifacts/review.md#10-_child_value-short-circuits-on-cascade_style-before-checking-direct-properties)
-- [ ] [Make GCSS comment stripping linear](docs/artifacts/review.md#11-_strip_comments-is-quadratic)
-- [ ] [Index selectors before documents grow](docs/artifacts/review.md#12-selector-matching-is-oelements--rules)
-- [ ] [Make progress range updates atomic](docs/artifacts/review.md#13-cascadeprogress-range-setters-are-order-dependent)
-- [ ] [Recover from unsupported pseudo states](docs/artifacts/review.md#14-an-unsupported-pseudo-state-discards-the-entire-rule)
-- [ ] Add the review's reconciliation, focus-preservation, diagnostic-content, cascade, and state-matrix regression tests
+- [x] [Attach declaration-level source locations to builder diagnostics](docs/artifacts/review.md#7-builder-diagnostics-point-at-the-selector-not-the-declaration)
+- [x] [Avoid duplicate diagnostic logging on binding refresh](docs/artifacts/review.md#8-diagnostics-are-re-logged-on-every-binding-refresh)
+- [x] [Cache property lookups in runtime hot paths](docs/artifacts/review.md#9-_has_property-is-a-linear-scan-in-three-hot-paths)
+- [x] [Make CascadeBox property-source precedence explicit](docs/artifacts/review.md#10-_child_value-short-circuits-on-cascade_style-before-checking-direct-properties)
+- [x] [Make GCSS comment stripping linear](docs/artifacts/review.md#11-_strip_comments-is-quadratic)
+- [x] [Index selectors before documents grow](docs/artifacts/review.md#12-selector-matching-is-oelements--rules)
+- [x] [Make progress range updates atomic](docs/artifacts/review.md#13-cascadeprogress-range-setters-are-order-dependent)
+- [x] [Recover from unsupported pseudo states](docs/artifacts/review.md#14-an-unsupported-pseudo-state-discards-the-entire-rule)
+- [x] Add the review's reconciliation, focus-preservation, diagnostic-content, cascade, and state-matrix regression tests
 
 ## Phase 1 — Layout foundation
 
@@ -84,9 +84,9 @@ The reproduced findings in the [2026-08-05 code review](docs/artifacts/review.md
 - [x] Mouse, keyboard, controller, focus, checked, and disabled state matrix tests
 - [x] Source-generated settings-menu HTML/Godot parity demo
 - [x] `CascadeSwitch` using checkbox semantics and switch-specific drawing
-- [ ] `CascadeSelect` composite with popup placement, option selection, keyboard navigation, and `:open`/`:selected`
-- [ ] `CascadeSlider` on native range semantics with owned track, fill, and thumb drawing
-- [ ] Adapted `CascadeTextInput` plan covering selection, IME, clipboard, bidi, and accessibility
+- [x] `CascadeSelect` composite with popup placement, option selection, keyboard navigation, and `:open`/`:selected`
+- [x] `CascadeSlider` on native range semantics with owned track, fill, and thumb drawing
+- [x] Adapted `CascadeTextInput` plan covering selection, IME, clipboard, bidi, and accessibility
 
 ## Phase 2 — Styles
 
@@ -100,7 +100,7 @@ The reproduced findings in the [2026-08-05 code review](docs/artifacts/review.md
 - [x] Specificity and source ordering
 - [ ] Style inheritance
 - [x] Button `:hover`, `:pressed`, `:focused`, and `:disabled`
-- [ ] Generalized `:checked`, `:selected`, `:open`, and pseudo-state adapters
+- [x] Generalized `:checked`, `:selected`, `:open`, and pseudo-state adapters
 - [ ] Computed-style caching and targeted invalidation
 - [ ] Godot theme and `StyleBox` adapters
 
@@ -139,11 +139,11 @@ The reproduced findings in the [2026-08-05 code review](docs/artifacts/review.md
 The first public preview should build a small settings menu from `.gxml` and a stylesheet, update bound values, react to pointer and focus states, and hot-reload edits without losing focus or signal connections.
 
 - [x] Settings menu built from GXML/GCSS
-- [ ] Checkbox, radio button, and select controls with keyboard/controller behavior
+- [x] Checkbox, radio button, and select controls with keyboard/controller behavior
 - [x] Focused one-way bound values
 - [x] Pointer and focus states on buttons
 - [x] Keyed hot reload preserving compatible native instances and signal connections
 - [x] Malformed-source diagnostics with last-valid rendering
 - [x] Headless layout, component, and source-pipeline tests
-- [ ] Accessibility pass and documented keyboard navigation
-- [ ] Public-preview API and source-format stability notes
+- [x] Accessibility pass and documented keyboard navigation
+- [x] Public-preview API and source-format stability notes

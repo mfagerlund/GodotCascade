@@ -128,7 +128,7 @@ Assigning a new context refreshes automatically. The current focused slice suppo
 
 ## Components and interactive states
 
-The executable GXML elements are `Page`, `Row`, `Column`, `Panel`, `Label`, `Button`, `Checkbox`, `RadioButton`/`Radio`, `Switch`, and `Progress`. GodotCascade owns the measurement and drawing of its core components while retaining useful native behavior underneath.
+The executable GXML elements are `Page`, `Row`, `Column`, `Panel`, `Label`, `Button`, `Checkbox`, `RadioButton`/`Radio`, `Switch`, `Select`/`Option`, `Slider`, and `Progress`. GodotCascade owns the measurement and drawing of its core components while retaining useful native behavior underneath.
 
 Button state selectors respond dynamically to Godot's native interaction state:
 

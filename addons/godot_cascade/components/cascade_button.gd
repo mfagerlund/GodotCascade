@@ -49,6 +49,10 @@ const InteractiveStateAdapter := preload("res://addons/godot_cascade/components/
 	set(value):
 		checked_background_color = value
 		queue_redraw()
+@export var open_background_color := Color("1d2939"):
+	set(value):
+		open_background_color = value
+		queue_redraw()
 @export var disabled_background_color := Color("1f2937"):
 	set(value):
 		disabled_background_color = value
@@ -175,6 +179,8 @@ func _current_background_color() -> Color:
 			return pressed_background_color
 		InteractiveStateAdapter.CHECKED:
 			return checked_background_color
+		InteractiveStateAdapter.OPEN:
+			return open_background_color
 		InteractiveStateAdapter.HOVER:
 			return hover_background_color
 		_:

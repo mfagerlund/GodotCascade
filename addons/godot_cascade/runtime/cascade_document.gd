@@ -39,6 +39,7 @@ var _generated_root: Control
 var _reload_queued := false
 var _watch_elapsed := 0.0
 var _source_signatures := {}
+var _published_diagnostic_keys := {}
 
 
 func _ready() -> void:
@@ -147,8 +148,13 @@ func _has_errors() -> bool:
 
 
 func _publish_diagnostics() -> void:
+	var current_keys := {}
 	if log_diagnostics_to_console:
 		for diagnostic in diagnostics:
+			var diagnostic_key := JSON.stringify(diagnostic)
+			current_keys[diagnostic_key] = true
+			if _published_diagnostic_keys.has(diagnostic_key):
+				continue
 			var location := str(diagnostic.get("path", ""))
 			if diagnostic.has("line"):
 				location += ":%s:%s" % [diagnostic["line"], diagnostic.get("column", 1)]
@@ -157,6 +163,7 @@ func _publish_diagnostics() -> void:
 				push_warning(rendered)
 			else:
 				push_error(rendered)
+	_published_diagnostic_keys = current_keys
 	diagnostics_changed.emit(diagnostics)
 
 
@@ -187,8 +194,23 @@ func _apply_bindings(node: Node) -> void:
 	if node is Control:
 		var control := node as Control
 		var bindings: Dictionary = control.get_meta("cascade_bindings", {})
+		var range_values := {}
+		if control.has_method("set_range_values"):
+			range_values = {
+				"min_value": control.get("min_value"),
+				"max_value": control.get("max_value"),
+				"value": control.get("value"),
+			}
 		for property_name in bindings:
-			_apply_binding(control, str(property_name), str(bindings[property_name]))
+			var property_key := str(property_name)
+			if not range_values.is_empty() and property_key in ["min_value", "max_value", "value"]:
+				var numeric := _resolve_numeric_binding(control, property_key, str(bindings[property_name]))
+				if numeric["found"]:
+					range_values[property_key] = numeric["value"]
+			else:
+				_apply_binding(control, property_key, str(bindings[property_name]))
+		if not range_values.is_empty():
+			control.call("set_range_values", range_values["min_value"], range_values["max_value"], range_values["value"])
 	for child in node.get_children():
 		_apply_bindings(child)
 
@@ -207,20 +229,34 @@ func _apply_binding(control: Control, property_name: String, path: String) -> vo
 		control.set(property_name, str(value))
 		return
 	if property_name in ["min_value", "max_value", "value"]:
-		if value is int or value is float:
-			control.set(property_name, float(value))
-			return
-		var rendered := str(value)
-		if rendered.is_valid_float():
-			control.set(property_name, rendered.to_float())
-			return
+		var numeric := _resolve_numeric_binding(control, property_name, path)
+		if numeric["found"]:
+			control.set(property_name, numeric["value"])
+		return
+	control.set(property_name, value)
+
+
+func _resolve_numeric_binding(control: Control, property_name: String, path: String) -> Dictionary:
+	var result := BindingResolver.resolve(binding_context, path)
+	if not result["found"]:
 		diagnostics.append(_diagnostic(
 			"warning",
 			"binding",
-			"%s on %s requires a number, got '%s'." % [property_name, control.get_meta("cascade_key", control.name), rendered]
+			"%s on %s: %s" % [property_name, control.get_meta("cascade_key", control.name), result["message"]]
 		))
-		return
-	control.set(property_name, value)
+		return {"found": false, "value": 0.0}
+	var value: Variant = result["value"]
+	if value is int or value is float:
+		return {"found": true, "value": float(value)}
+	var rendered := str(value)
+	if rendered.is_valid_float():
+		return {"found": true, "value": rendered.to_float()}
+	diagnostics.append(_diagnostic(
+		"warning",
+		"binding",
+		"%s on %s requires a number, got '%s'." % [property_name, control.get_meta("cascade_key", control.name), rendered]
+	))
+	return {"found": false, "value": 0.0}
 
 
 func _capture_source_signatures() -> void:

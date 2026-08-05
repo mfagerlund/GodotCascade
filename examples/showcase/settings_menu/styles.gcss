@@ -35,6 +35,12 @@
 
 .settings-footer { display: flex; flex-direction: row; align-items: center; gap: 16px; }
 .hint { color: #6f7f9b; font-size: 13px; flex-grow: 1; }
+#quality { min-width: 178px; min-height: 42px; background: #131b2a; border: 1px solid #405477; border-radius: 8px; }
+#quality:hover { background: #1d2939; }
+#quality:open { background: #253b61; }
+Option { background: #101828; color: #d0d5dd; }
+Option:hover { background: #1d2939; }
+Option:selected { background: #16233a; color: #ffffff; }
 #apply { min-width: 148px; min-height: 42px; background: #1c64d1; border: 1px solid #5aa7ff; border-radius: 8px; }
 #apply:hover { background: #2878e5; }
 #apply:pressed { background: #174fa5; }

@@ -10,6 +10,7 @@ class Rule:
 	var compounds: PackedStringArray = []
 	var pseudo_state := ""
 	var declarations: Dictionary = {}
+	var declaration_locations: Dictionary = {}
 	var specificity := 0
 	var order := 0
 	var line := 1
@@ -90,6 +91,7 @@ static func parse(source: String) -> Dictionary:
 				rules.size(),
 				cleaned,
 				selector_start,
+				open_brace + 1,
 				diagnostics
 			)
 			if rule != null:
@@ -105,6 +107,7 @@ static func _parse_rule(
 	order: int,
 	source: String,
 	offset: int,
+	body_offset: int,
 	diagnostics: Array[Dictionary]
 ) -> Rule:
 	var rule := Rule.new()
@@ -116,9 +119,9 @@ static func _parse_rule(
 	if colon >= 0:
 		rule.pseudo_state = selector.substr(colon + 1).strip_edges().to_lower()
 		selector_without_pseudo = selector.substr(0, colon).strip_edges()
-		if rule.pseudo_state not in ["hover", "pressed", "checked", "focused", "disabled", "selected"]:
-			diagnostics.append(_diagnostic(source, offset + colon, "Unsupported pseudo state :%s." % rule.pseudo_state))
-			return null
+		if rule.pseudo_state not in ["hover", "pressed", "checked", "focused", "disabled", "selected", "open"]:
+			diagnostics.append(_diagnostic(source, offset + colon, "Unsupported pseudo state :%s; declarations apply to the base selector." % rule.pseudo_state, "warning"))
+			rule.pseudo_state = ""
 
 	rule.compounds = selector_without_pseudo.split(" ", false)
 	if rule.compounds.is_empty():
@@ -126,8 +129,13 @@ static func _parse_rule(
 		return null
 	rule.specificity = _specificity(selector_without_pseudo, rule.pseudo_state)
 
+	var body_cursor := 0
 	for raw_declaration in body.split(";"):
 		var declaration := raw_declaration.strip_edges()
+		var declaration_start := body_cursor
+		while declaration_start < body_cursor + raw_declaration.length() and source[body_offset + declaration_start] in [" ", "\t", "\r", "\n"]:
+			declaration_start += 1
+		body_cursor += raw_declaration.length() + 1
 		if declaration.is_empty():
 			continue
 		var separator := declaration.find(":")
@@ -140,6 +148,11 @@ static func _parse_rule(
 			diagnostics.append(_diagnostic(source, offset, "Property '%s' has no value." % property_name))
 			continue
 		rule.declarations[property_name] = value
+		var location := _diagnostic(source, body_offset + declaration_start, "")
+		rule.declaration_locations[property_name] = {
+			"line": location["line"],
+			"column": location["column"],
+		}
 	return rule
 
 
@@ -154,22 +167,21 @@ static func _specificity(selector: String, pseudo_state: String) -> int:
 
 
 static func _strip_comments(source: String) -> String:
-	var result := source
+	var result := PackedStringArray()
 	var cursor := 0
-	while cursor < result.length() - 1:
-		if result.substr(cursor, 2) != "/*":
+	while cursor < source.length():
+		if cursor + 1 >= source.length() or source.substr(cursor, 2) != "/*":
+			result.append(source[cursor])
 			cursor += 1
 			continue
-		var close := result.find("*/", cursor + 2)
+		var close := source.find("*/", cursor + 2)
 		if close < 0:
-			close = result.length() - 2
-		var length := close + 2 - cursor
-		var replacement := ""
-		for index in length:
-			replacement += "\n" if result[cursor + index] == "\n" else " "
-		result = result.substr(0, cursor) + replacement + result.substr(cursor + length)
-		cursor += length
-	return result
+			close = source.length() - 2
+		var end := mini(close + 2, source.length())
+		while cursor < end:
+			result.append("\n" if source[cursor] == "\n" else " ")
+			cursor += 1
+	return "".join(result)
 
 
 static func _skip_whitespace(source: String, cursor: int) -> int:
@@ -178,12 +190,12 @@ static func _skip_whitespace(source: String, cursor: int) -> int:
 	return cursor
 
 
-static func _diagnostic(source: String, offset: int, message: String) -> Dictionary:
+static func _diagnostic(source: String, offset: int, message: String, severity: String = "error") -> Dictionary:
 	var safe_offset := clampi(offset, 0, source.length())
 	var prefix := source.substr(0, safe_offset)
 	var last_newline := prefix.rfind("\n")
 	return {
-		"severity": "error",
+		"severity": severity,
 		"line": prefix.count("\n") + 1,
 		"column": safe_offset + 1 if last_newline < 0 else safe_offset - last_newline,
 		"message": message,

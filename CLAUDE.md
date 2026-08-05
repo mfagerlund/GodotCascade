@@ -143,8 +143,9 @@ One trailing pseudo state per selector, from `hover|pressed|focused|disabled|sel
 currently only apply to `CascadeButton`. Check `ROADMAP.md` before "fixing" a gap — several are scheduled.
 
 The settings-menu/form-control milestone in `ROADMAP.md` is in progress: shared state adapters,
-checkbox, radio-button, switch behavior, the native input-state matrix, and a parity showcase are
-implemented. Select/dropdown behavior is next.
+checkbox, radio-button, switch, select, and slider behavior, the native input-state matrix, and a
+parity showcase are implemented. The adapted text-input boundary is documented; implementation waits
+for the event/two-way-binding milestone.
 
 ### GDScript style in this repo
 

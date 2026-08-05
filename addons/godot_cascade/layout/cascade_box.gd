@@ -3,6 +3,8 @@ extends Container
 
 ## Native row/column layout implementing GodotCascade's first box-model slice.
 
+const PropertyCache := preload("res://addons/godot_cascade/runtime/property_cache.gd")
+
 enum FlowDirection {
 	ROW,
 	COLUMN,
@@ -179,14 +181,17 @@ func _child_value(child: Control, property_name: String, fallback: float) -> flo
 	if child.has_meta(metadata_name):
 		return maxf(float(child.get_meta(metadata_name)), 0.0)
 
-	for property in child.get_property_list():
-		if property.name == "cascade_style":
-			var child_style: CascadeStyle = child.get("cascade_style")
-			if child_style != null:
-				return maxf(float(child_style.get(property_name)), 0.0)
-		if property.name == property_name:
-			return maxf(float(child.get(property_name)), 0.0)
+	if _has_property(child, "cascade_style"):
+		var child_style: CascadeStyle = child.get("cascade_style")
+		if child_style != null and _has_property(child_style, property_name):
+			return maxf(float(child_style.get(property_name)), 0.0)
+	if _has_property(child, property_name):
+		return maxf(float(child.get(property_name)), 0.0)
 	return fallback
+
+
+func _has_property(target: Object, property_name: String) -> bool:
+	return PropertyCache.has(target, property_name)
 
 
 func _layout_children() -> Array[Control]:
