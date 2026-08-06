@@ -97,7 +97,7 @@ The parser recognizes `:hover`, `:pressed`, `:checked`, `:focused`, `:focus-visi
 
 Unlike a browser, state rules are resolved into typed component state properties during the build. Native Godot state changes then select the appropriate drawing dynamically. State precedence is `disabled` → `pressed` → `checked`/`selected` → `hover` → `focus` → base; focus-ring drawing remains visible alongside other states. `:pressed` is the GodotCascade equivalent of HTML `:active`.
 
-On `Slider`, a `:hover` background declaration colors the owned track while the pointer is inside the control.
+On `Slider`, a `:hover` background declaration colors the unfilled owned track while the pointer is inside the control. The owned filled track and thumb also brighten together so the complete slider has visible hover feedback.
 
 `Page`/`Row`/`Column`/`Panel`, `Grid`, and `Stack` accept `:hover` background declarations without becoming focusable or clickable. Other pseudo states on non-interactive containers remain unsupported. There is no pseudo-state animation support; reconciliation-time style transitions are documented below. Pseudo-state declarations on unsupported controls warn.
 

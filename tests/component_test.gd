@@ -551,10 +551,16 @@ func _test_owned_slider() -> void:
 	await process_frame
 	_expect_float("CascadeSlider native ratio", slider.ratio, 0.25)
 	var base_track_color := slider.cascade_style.background_color
+	var base_fill_color := slider.fill_color
+	var base_thumb_color := slider.thumb_color
 	slider.emit_signal("mouse_entered")
 	_expect_true("CascadeSlider hover changes track color", slider.cascade_track_color() == slider.hover_background_color and slider.cascade_track_color() != base_track_color)
+	_expect_true("CascadeSlider hover changes fill color", slider.cascade_fill_color() == slider.hover_fill_color and slider.cascade_fill_color() != base_fill_color)
+	_expect_true("CascadeSlider hover changes thumb color", slider.cascade_thumb_color() == slider.hover_thumb_color and slider.cascade_thumb_color() != base_thumb_color)
 	slider.emit_signal("mouse_exited")
 	_expect_true("CascadeSlider mouse exit restores track color", slider.cascade_track_color() == base_track_color)
+	_expect_true("CascadeSlider mouse exit restores fill color", slider.cascade_fill_color() == base_fill_color)
+	_expect_true("CascadeSlider mouse exit restores thumb color", slider.cascade_thumb_color() == base_thumb_color)
 	var click := InputEventMouseButton.new()
 	click.button_index = MOUSE_BUTTON_LEFT
 	click.pressed = true
@@ -569,6 +575,8 @@ func _test_owned_slider() -> void:
 	slider.disabled = true
 	slider.call("_gui_input", right)
 	_expect_float("disabled CascadeSlider ignores input", slider.value, 55.0)
+	slider.emit_signal("mouse_entered")
+	_expect_true("disabled CascadeSlider ignores hover colors", slider.cascade_track_color() == base_track_color and slider.cascade_fill_color() == base_fill_color and slider.cascade_thumb_color() == slider.disabled_thumb_color)
 	slider.queue_free()
 
 

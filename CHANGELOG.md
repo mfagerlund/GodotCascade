@@ -6,7 +6,7 @@ All notable changes to GodotCascade are documented here. Versions follow semanti
 
 - Compacted select popup rows and removed inherited closed-control borders from options.
 - Added antialiasing to slider, switch, and radio circular drawing.
-- Added native `Slider:hover` track feedback to the owned slider component and parity showcase.
+- Added native `Slider:hover` feedback across the owned track, fill, and thumb, with matching HTML showcase behavior.
 - Kept settings-panel backgrounds stable while hovering form controls and moved container-hover coverage to the layout cards.
 - Extended the runnable showcase test to cover checkbox write-back and native radio grouping.
 - Made each repeated HUD channel a full-row checkbox target in both native and HTML showcases.

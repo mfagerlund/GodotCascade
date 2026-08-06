@@ -18,6 +18,10 @@ const FocusVisibilityTracker := preload("res://addons/godot_cascade/components/f
 	set(next):
 		fill_color = next
 		queue_redraw()
+@export var hover_fill_color := Color("75a5ff"):
+	set(next):
+		hover_fill_color = next
+		queue_redraw()
 @export var hover_background_color := Color("475467"):
 	set(next):
 		hover_background_color = next
@@ -25,6 +29,10 @@ const FocusVisibilityTracker := preload("res://addons/godot_cascade/components/f
 @export var thumb_color := Color.WHITE:
 	set(next):
 		thumb_color = next
+		queue_redraw()
+@export var hover_thumb_color := Color("dbeafe"):
+	set(next):
+		hover_thumb_color = next
 		queue_redraw()
 @export var disabled_thumb_color := Color("98a2b3"):
 	set(next):
@@ -106,9 +114,9 @@ func _draw() -> void:
 	BoxPainter.draw_box(self, track, cascade_track_color(), cascade_style.border_color, cascade_style.border_width, track_height * 0.5)
 	var fill := track
 	fill.size.x *= ratio
-	BoxPainter.draw_box(self, fill, fill_color, Color.TRANSPARENT, 0.0, track_height * 0.5)
+	BoxPainter.draw_box(self, fill, cascade_fill_color(), Color.TRANSPARENT, 0.0, track_height * 0.5)
 	var thumb_center := Vector2(track.position.x + track.size.x * ratio, content.get_center().y)
-	draw_circle(thumb_center, thumb_size * 0.5, disabled_thumb_color if disabled else thumb_color, true, -1.0, true)
+	draw_circle(thumb_center, thumb_size * 0.5, cascade_thumb_color(), true, -1.0, true)
 	var show_ring: bool = has_focus() and (not focus_visible_style_enabled or _focus_tracker == null or bool(_focus_tracker.is_focus_visible()))
 	if show_ring:
 		var ring_color := focus_visible_ring_color if focus_visible_style_enabled else focus_ring_color
@@ -144,6 +152,16 @@ func set_range_values(next_min: float, next_max: float, next_value: float) -> vo
 
 func cascade_track_color() -> Color:
 	return hover_background_color if _hovered and not disabled else cascade_style.background_color
+
+
+func cascade_fill_color() -> Color:
+	return hover_fill_color if _hovered and not disabled else fill_color
+
+
+func cascade_thumb_color() -> Color:
+	if disabled:
+		return disabled_thumb_color
+	return hover_thumb_color if _hovered else thumb_color
 
 
 func _set_value_from_position(local_x: float) -> void:

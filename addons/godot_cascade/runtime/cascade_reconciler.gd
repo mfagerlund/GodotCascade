@@ -21,7 +21,7 @@ const COPIED_PROPERTIES: PackedStringArray = [
 	"placeholder", "options", "option_background_color", "option_hover_background_color",
 	"option_selected_background_color", "option_text_color", "option_selected_text_color", "option_height",
 	"min_value", "max_value", "value", "fill_color", "fill_border_radius",
-	"step", "track_height", "thumb_size", "thumb_color", "disabled_thumb_color",
+	"step", "track_height", "thumb_size", "thumb_color", "disabled_thumb_color", "hover_fill_color", "hover_thumb_color",
 	"texture", "fit",
 	"placeholder_text", "placeholder_color", "editable", "read_only", "secret", "max_length", "required", "validation_pattern", "validation_message",
 	"focused_background_color", "invalid_background_color", "invalid_text_color", "invalid_border_color",
