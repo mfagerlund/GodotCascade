@@ -48,6 +48,9 @@ jobs:
       - name: Verify generated showcase
         run: python tools/showcase/generate_showcase.py --check
 
+      - name: Scan editor imports
+        run: godot --headless --editor --path . --quit-after 3
+
       - name: Run headless suites
         shell: bash
         run: |
@@ -58,9 +61,6 @@ jobs:
 
       - name: Run performance gate
         run: godot --headless --path . --script res://benchmarks/pipeline_benchmark.gd
-
-      - name: Scan editor imports
-        run: godot --headless --editor --path . --quit-after 2
 
       - name: Package addon
         run: python tools/release/package_addon.py
