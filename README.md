@@ -219,6 +219,17 @@ Run the production performance/allocation gate with:
 godot --headless --path . --script benchmarks/pipeline_benchmark.gd
 ```
 
+Run the repository integrity, packaging, and clean-install gates with:
+
+```powershell
+python tools/ci/verify_repo.py
+python tools/showcase/generate_showcase.py --check
+python tools/release/package_addon.py
+python tools/release/clean_install_smoke.py --godot path/to/godot
+```
+
+See the [changelog](CHANGELOG.md), [0.1.0 release notes](docs/releases/0.1.0.md), and [release process](docs/release-process.md). CI runs the same headless suites, benchmark, editor import scan, generated-showcase check, deterministic packaging step, and clean-project installation smoke test.
+
 ## Architecture
 
 ```text

@@ -14,10 +14,12 @@ GodotCascade 0.1 is a public preview. Documentation distinguishes the supported 
 - [Markup and state](markup-and-state.md) — keyed repeats, scoped bindings, event methods, and custom component lifecycle
 - [Editor tooling](editor-tooling.md) — importers, live preview, generated-control Inspector, debugger, and source navigation
 - [Production readiness](production-readiness.md) — transitions, responsive rules, navigation, accessibility, and release gates
+- [Release process](release-process.md) — reproducible packaging, clean-install smoke testing, and tag publishing
+- [Changelog](../CHANGELOG.md) — versioned user-visible changes
 - [Performance budgets](performance.md) — executable 500-item benchmark and allocation ceilings
 - [Migration notes](migrations.md) — source/API compatibility and upgrade instructions
 - [Public preview stability policy](api-stability.md) — current guarantees, unstable surfaces, and change process
-- [Roadmap](../ROADMAP.md) — completed 0.1 milestones and public-preview acceptance criteria
+- [Roadmap](../ROADMAP.md) — completed 0.1 milestones and the next public-preview direction
 - [HTML parity showcase](showcase/index.html) — live HTML references beside captured native Godot output
 
 ## Decisions

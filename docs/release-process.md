@@ -1,0 +1,27 @@
+# Release process
+
+GodotCascade releases are built from the exact tagged tree and are never assembled manually.
+
+## Local release gate
+
+Run the four headless suites and benchmark documented in the project README, then run:
+
+```powershell
+python tools/ci/verify_repo.py
+python tools/showcase/generate_showcase.py --check
+python tools/release/package_addon.py
+python tools/release/clean_install_smoke.py --godot path/to/godot
+```
+
+The package command creates a deterministic addon-only ZIP and SHA-256 checksum under `dist/`. The smoke test extracts that archive into a new temporary Godot project and exercises GXML parsing, GCSS parsing, styling, and native control construction using only packaged files.
+
+## Publishing
+
+Before creating `vX.Y.Z`:
+
+1. Match `addons/godot_cascade/plugin.cfg`, `CHANGELOG.md`, and `docs/releases/X.Y.Z.md`.
+2. Commit a clean tree and push it to `main`.
+3. Create and push the annotated version tag.
+4. Confirm the tag workflow passes. It packages the addon again and creates the GitHub release with the matching notes, ZIP, and checksum.
+
+The repository currently has no software license. A license must be selected explicitly by the copyright holder; release automation must not infer one.
