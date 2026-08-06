@@ -147,8 +147,8 @@ the preview supports descendant and direct-child selectors, focused inheritance,
 transition shorthands, width media conditions, and `px`/`vw`/`vh` lengths. Selector lists, arbitrary CSS,
 compound media queries, and browser-wide pseudo-state behavior remain unsupported. The settings-menu
 controls and their input matrix are complete. The 0.2 line adds an adapted single-line `TextInput`, explicit
-`bind-*` write-back, validation, and `:focus-visible`; multiline `TextEdit` remains deferred in
-`docs/adapted-text-input-plan.md`.
+`bind-*` write-back, validation, and `:focus-visible`; the 0.3 development line adds the multiline native
+`TextEdit` adapter documented in `docs/adapted-text-input-plan.md`.
 
 ### GDScript style in this repo
 

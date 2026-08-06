@@ -20,12 +20,12 @@ This page documents the executable subset on `main`. GodotCascade borrows produc
 | `Select` | `CascadeSelect` | Owned closed control with native popup, options, and keyboard navigation |
 | `Option` | Select option data | Valid only as a direct authored child of `Select` |
 | `Slider` | `CascadeSlider` | Native range semantics with owned track, fill, thumb, and pointer/keyboard input |
-| `TextInput` / `Input` | `CascadeTextInput` | Adapted native single-line `LineEdit` with Cascade box styling and validation |
+| `TextInput` / `Input` | `CascadeTextInput` or `CascadeTextArea` | Adapted native `LineEdit`; `multiline="true"` selects `TextEdit` |
 | `Progress` | `CascadeProgress` | Owned horizontal track, fill, range, and box model |
 | `Image` | `CascadeImage` | Texture resource rendering with contain, cover, fill, or intrinsic crop geometry |
 | `Repeat` | `CascadeBox` plus expanded template | One child template repeated from an array binding with optional item key |
 
-Every element accepts `id`, `class`, `accessible-label`, and `accessible-description`. Text-bearing controls use their visible text as the native accessibility name when no explicit label is authored. `Label`, `Button`, `Checkbox`, `RadioButton`, and `Switch` accept text as element content or through a `text` attribute. Interactive controls accept boolean `disabled`; toggle controls accept boolean `checked`; radio buttons use `group` to share a native `ButtonGroup`. `Select` accepts `selected` as an option value or zero-based index; `Option` accepts `value` and boolean `disabled`. `Progress` and `Slider` accept numeric `min`, `max`, and `value`; `Slider` also accepts a positive `step`. `TextInput` accepts `text`, `placeholder`, boolean `read-only`, `disabled`, `secret`, and `required`, non-negative `max-length`, a Godot regular-expression `pattern`, and `error-message`. `multiline="false"` is accepted; `multiline="true"` is diagnosed until the planned native `TextEdit` adapter lands. `Image` requires a `src` path that loads a Godot `Texture2D` resource.
+Every element accepts `id`, `class`, `accessible-label`, and `accessible-description`. Text-bearing controls use their visible text as the native accessibility name when no explicit label is authored. `Label`, `Button`, `Checkbox`, `RadioButton`, and `Switch` accept text as element content or through a `text` attribute. Interactive controls accept boolean `disabled`; toggle controls accept boolean `checked`; radio buttons use `group` to share a native `ButtonGroup`. `Select` accepts `selected` as an option value or zero-based index; `Option` accepts `value` and boolean `disabled`. `Progress` and `Slider` accept numeric `min`, `max`, and `value`; `Slider` also accepts a positive `step`. `TextInput` accepts `text`, `placeholder`, boolean `read-only`, `disabled`, `required`, and `multiline`, non-negative `max-length`, a Godot regular-expression `pattern`, and `error-message`. `secret` is supported only by the single-line adapter and is an error with `multiline="true"`. `Image` requires a `src` path that loads a Godot `Texture2D` resource.
 
 Unknown elements are build errors unless their native factory is registered through `ComponentRegistry`. `Window` is not implemented.
 
@@ -103,7 +103,7 @@ There is no general `Panel:hover` or pseudo-state animation support. Reconciliat
 
 Owned interactive controls retain native `BaseButton` input behavior. Pointer press/release and the focused `ui_accept` action activate buttons and toggles; this covers keyboard acceptance and mapped controller buttons. Checkbox and switch activation toggles their checked state, radio buttons update their native group selection, and disabled controls ignore activation. The document wires linear next/previous focus order after reconciliation; controller directional navigation continues to use Godot's native behavior. Its accessibility audit warns about unnamed interactive controls and undescribed images.
 
-`CascadeTextInput` delegates caret movement, selection, clipboard, undo/redo, context menus, shaping, bidi, IME, password masking, and native accessibility behavior to Godot `LineEdit`. GodotCascade preserves text, caret, and selection across compatible keyed reloads and owns required/pattern validation plus adapted box styles. Call `CascadeDocument.validate()` to publish validation diagnostics before committing a form.
+The text adapters delegate caret movement, selection, clipboard, undo/redo, context menus, shaping, bidi, IME, and native accessibility behavior to Godot `LineEdit`/`TextEdit`; password masking is single-line-only. GodotCascade preserves single-line text/caret/selection and multiline text/primary-caret/selection/scroll across compatible keyed reloads, and owns required/pattern validation plus adapted box styles. Call `CascadeDocument.validate()` to publish validation diagnostics before committing a form.
 
 When a select popup is open, `ui_up` and `ui_down` move through enabled options, `ui_accept` commits the highlighted option, and `ui_cancel` closes the popup. Pointer selection uses the same option path. Authors should provide `accessible-label` whenever visible text alone does not describe a control's purpose.
 
@@ -143,7 +143,7 @@ Unsupported properties produce warnings; unsupported values for known properties
 
 ## Component support
 
-Implemented exact components are `CascadeBox`, `CascadeGrid`, `CascadeStack`, `CascadePanel`, `CascadeLabel`, `CascadeImage`, `CascadeButton`, `CascadeCheckbox`, `CascadeRadioButton`, `CascadeSwitch`, `CascadeSelect`, `CascadeSlider`, and `CascadeProgress`. `CascadeTextInput` is adapted: native `LineEdit` owns editing behavior while Cascade maps its documented box and state surface. Exact means GodotCascade owns the supported measurement and visual semantics.
+Implemented exact components are `CascadeBox`, `CascadeGrid`, `CascadeStack`, `CascadePanel`, `CascadeLabel`, `CascadeImage`, `CascadeButton`, `CascadeCheckbox`, `CascadeRadioButton`, `CascadeSwitch`, `CascadeSelect`, `CascadeSlider`, and `CascadeProgress`. `CascadeTextInput` and `CascadeTextArea` are adapted: native `LineEdit`/`TextEdit` own editing behavior while Cascade maps the documented box and state surface. Exact means GodotCascade owns the supported measurement and visual semantics.
 
 Ordinary Godot `Control` children are layout-only by default. Integrations can declare an adapted property surface; `CompatibilityRegistry` reports warnings for inexact or unsupported visual mappings while permitting layout properties. See the [compatibility tier reference](compatibility-tiers.md) and [ADR 0001](decisions/0001-owned-core-controls.md).
 
@@ -172,6 +172,7 @@ The migration target is semantic, not source-compatible:
 | switch input | `Switch` → `CascadeSwitch` |
 | select input | `Select` + `Option` → `CascadeSelect` + native popup |
 | single-line text input | `TextInput` → adapted native `LineEdit` |
+| multiline textarea | `TextInput multiline="true"` → adapted native `TextEdit` |
 | `progress` | `Progress` → `CascadeProgress` |
 | Application data | Exact one-way `{path.to.value}` or explicit writable `bind-*="{path}"` attributes |
 | `:hover`/`:active` button appearance | `:hover`/`:pressed` |

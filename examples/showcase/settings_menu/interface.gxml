@@ -31,6 +31,8 @@
                 <Slider id="ui-scale" min="75" max="125" bind-value="{settings.ui_scale}" step="5" accessible-label="Interface scale" />
                 <Label class="scale-value" text="{ui.scale_label}" />
             </Row>
+            <Label class="notes-label">Session notes</Label>
+            <TextInput id="session-notes" multiline="true" bind-text="{settings.notes}" placeholder="Add notes for the next launch" max-length="160" accessible-label="Session notes" />
         </Panel>
     </Row>
 

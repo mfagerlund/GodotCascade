@@ -1,7 +1,7 @@
 @tool
-extends LineEdit
+extends TextEdit
 
-## Adapted single-line text entry: Godot owns editing; Cascade owns its box and validation state.
+## Adapted multiline text entry: Godot owns editing; Cascade owns its box and validation state.
 
 signal validation_changed(valid: bool, message: String)
 
@@ -82,6 +82,20 @@ const FocusVisibilityTracker := preload("res://addons/godot_cascade/components/f
 		focus_visible_style_enabled = next
 		_sync_theme()
 
+@export_group("Editing")
+@export var disabled := false:
+	set(next):
+		disabled = next
+		_sync_editability()
+@export var read_only := false:
+	set(next):
+		read_only = next
+		_sync_editability()
+@export_range(0, 1000000, 1, "or_greater") var max_length := 0:
+	set(next):
+		max_length = maxi(next, 0)
+		_enforce_max_length()
+
 @export_group("Validation")
 @export var required := false:
 	set(next):
@@ -103,27 +117,20 @@ const FocusVisibilityTracker := preload("res://addons/godot_cascade/components/f
 		invalid = next
 		_sync_theme()
 
-@export_group("Editing")
-@export var disabled := false:
-	set(next):
-		disabled = next
-		_sync_editability()
-@export var read_only := false:
-	set(next):
-		read_only = next
-		_sync_editability()
 var _compiled_pattern: RegEx
 var _pattern_error := ""
 var _focus_tracker: RefCounted
 var _last_validation_message := ""
 var _mouse_inside := false
 var _base_accessibility_description := ""
+var _enforcing_max_length := false
 
 
 func _init() -> void:
-	clear_button_enabled = true
 	context_menu_enabled = true
 	selecting_enabled = true
+	wrap_mode = TextEdit.LINE_WRAPPING_BOUNDARY
+	scroll_fit_content_height = false
 	cascade_style.padding_left = 12.0
 	cascade_style.padding_top = 8.0
 	cascade_style.padding_right = 12.0
@@ -153,11 +160,11 @@ func _ready() -> void:
 func _get_minimum_size() -> Vector2:
 	var font := get_theme_default_font()
 	var sample := placeholder_text if text.is_empty() else text
-	var content := Vector2(80.0, float(font_size))
+	var content := Vector2(160.0, float(font_size) * 4.0)
 	if font != null:
-		content = font.get_string_size(sample, HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size)
-		content.x = maxf(content.x, 80.0)
-		content.y = font.get_height(font_size)
+		var measured := font.get_multiline_string_size(sample, HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size)
+		content.x = maxf(measured.x, 160.0)
+		content.y = maxf(measured.y, font.get_height(font_size) * 4.0)
 	var minimum := content + Vector2(
 		cascade_style.padding_left + cascade_style.padding_right + cascade_style.border_width * 2.0,
 		cascade_style.padding_top + cascade_style.padding_bottom + cascade_style.border_width * 2.0
@@ -202,23 +209,47 @@ func cascade_focus_visible() -> bool:
 func capture_runtime_state() -> Dictionary:
 	return {
 		"text": text,
-		"caret_column": caret_column,
-		"selection_from": get_selection_from_column() if has_selection() else -1,
-		"selection_to": get_selection_to_column() if has_selection() else -1,
+		"caret_line": get_caret_line(),
+		"caret_column": get_caret_column(),
+		"selection_from_line": get_selection_from_line() if has_selection() else -1,
+		"selection_from_column": get_selection_from_column() if has_selection() else -1,
+		"selection_to_line": get_selection_to_line() if has_selection() else -1,
+		"selection_to_column": get_selection_to_column() if has_selection() else -1,
+		"scroll_vertical": scroll_vertical,
+		"scroll_horizontal": scroll_horizontal,
 	}
 
 
-## Restores native editing state after a compatible keyed hot reload.
+## Restores native text, primary caret, selection, and scroll after a compatible keyed reload.
 func restore_runtime_state(state: Dictionary) -> void:
 	text = str(state.get("text", text))
-	caret_column = mini(int(state.get("caret_column", caret_column)), text.length())
-	var selection_from := int(state.get("selection_from", -1))
-	var selection_to := int(state.get("selection_to", -1))
-	if selection_from >= 0 and selection_to >= selection_from:
-		select(selection_from, mini(selection_to, text.length()))
+	var caret_line := _clamped_line(int(state.get("caret_line", get_caret_line())))
+	set_caret_line(caret_line)
+	set_caret_column(_clamped_column(caret_line, int(state.get("caret_column", get_caret_column()))))
+	var from_line := int(state.get("selection_from_line", -1))
+	var to_line := int(state.get("selection_to_line", -1))
+	if from_line >= 0 and to_line >= from_line:
+		from_line = _clamped_line(from_line)
+		to_line = _clamped_line(to_line)
+		select(
+			from_line,
+			_clamped_column(from_line, int(state.get("selection_from_column", 0))),
+			to_line,
+			_clamped_column(to_line, int(state.get("selection_to_column", 0)))
+		)
 	else:
 		deselect()
+	scroll_vertical = float(state.get("scroll_vertical", scroll_vertical))
+	scroll_horizontal = int(state.get("scroll_horizontal", scroll_horizontal))
 	validate()
+
+
+func _clamped_line(line: int) -> int:
+	return clampi(line, 0, maxi(get_line_count() - 1, 0))
+
+
+func _clamped_column(line: int, column: int) -> int:
+	return clampi(column, 0, get_line(line).length())
 
 
 func _compile_pattern() -> void:
@@ -246,8 +277,22 @@ func _on_style_invalidated(_flags: int) -> void:
 	update_minimum_size()
 
 
-func _on_text_changed(_value: String) -> void:
+func _on_text_changed() -> void:
+	_enforce_max_length()
 	validate()
+
+
+func _enforce_max_length() -> void:
+	if _enforcing_max_length or max_length <= 0 or text.length() <= max_length:
+		return
+	_enforcing_max_length = true
+	var caret_line := get_caret_line()
+	var caret_column := get_caret_column()
+	text = text.left(max_length)
+	caret_line = _clamped_line(caret_line)
+	set_caret_line(caret_line)
+	set_caret_column(_clamped_column(caret_line, caret_column))
+	_enforcing_max_length = false
 
 
 func _sync_editability() -> void:
@@ -308,6 +353,6 @@ func _sync_theme() -> void:
 	add_theme_stylebox_override("focus", style)
 	add_theme_stylebox_override("read_only", style)
 	add_theme_color_override("font_color", resolved_text)
-	add_theme_color_override("font_uneditable_color", resolved_text)
+	add_theme_color_override("font_readonly_color", resolved_text)
 	add_theme_color_override("font_placeholder_color", placeholder_color)
 	add_theme_font_size_override("font_size", font_size)

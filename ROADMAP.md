@@ -8,7 +8,7 @@ The executable foundation now covers flex/grid/stack layout, owned and adapted f
 
 All planned 0.1 milestones and every first-public-preview acceptance item are complete. The source-generated settings-menu slice includes shared interactive-state precedence, a native mouse/keyboard/controller test matrix, and owned checkbox, grouped radio-button, switch, select, and slider components. The layout foundation includes native grid tracks, automatic and explicit placement, stack overlays, absolute insets, media, responsive rules, and viewport values. The editor and performance release gates are executable.
 
-Versions 0.1.0 and 0.2.0 are tagged and published through the reproducible release gate. The 0.2 interactive-forms slice adds an adapted native text input, explicit writable bindings, validation state, input-modality-aware focus styling, and a live settings workflow exercised in both native and HTML showcase views.
+Versions 0.1.0 and 0.2.0 are tagged and published through the reproducible release gate. The 0.2 interactive-forms slice adds an adapted native single-line text input, explicit writable bindings, validation state, input-modality-aware focus styling, and a live settings workflow exercised in both native and HTML showcase views. The 0.3 development line now includes the corresponding native multiline adapter.
 
 The reproduced findings in the [2026-08-05 code review](docs/artifacts/review.md) are part of this roadmap. Blocking correctness fixes take priority when they touch the same runtime layer as an active vertical slice.
 
@@ -164,10 +164,16 @@ The first public preview should build a small settings menu from `.gxml` and a s
 - [x] Interactive settings-menu Apply workflow in native Godot and HTML parity views
 - [x] Component, pipeline, validation, writable-binding, and clean-install regression coverage
 
-### Deferred beyond the 0.2 slice
+## Phase 7 — 0.3 scoped and multiline forms — in progress
 
-- [ ] Multiline `TextInput` adapter on native `TextEdit`
-- [x] Publish the automated and platform-dependent [TextInput certification matrix](docs/text-input-certification.md)
-- [ ] Complete manual IME, screen-reader, touch selection, and clipboard certification on each supported platform
+- [x] Multiline `TextInput` adapter on native `TextEdit`
+- [x] Multiline validation, max length, read-only/disabled behavior, writable binding, and adapted pseudo states
+- [x] Preserve multiline text, primary caret, selection, and scroll across compatible keyed hot reloads
+- [x] Add multiline editing to the native and HTML settings showcase without removing existing form controls
 - [ ] Writable bindings inside repeated-item scopes
 - [ ] General pseudo-state adapters for non-interactive layout containers
+
+### Platform-dependent certification
+
+- [x] Publish the automated and platform-dependent [TextInput certification matrix](docs/text-input-certification.md)
+- [ ] Complete manual IME, screen-reader, touch selection, and clipboard certification on each supported platform

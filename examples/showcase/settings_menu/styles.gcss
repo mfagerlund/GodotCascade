@@ -1,6 +1,6 @@
 /* Source-native settings menu matching reference.html. */
 .settings-page {
-    min-height: 540px;
+    min-height: 660px;
     padding: 34px 52px;
     display: flex;
     flex-direction: column;
@@ -43,6 +43,12 @@
 .scale-label { min-width: 58px; color: #c9d5e9; font-size: 14px; }
 .scale-value { min-width: 38px; color: #8fa1bf; font-size: 13px; }
 #ui-scale { min-width: 150px; height: 30px; flex-grow: 1; background: #344054; fill-color: #528bff; }
+.notes-label { color: #c9d5e9; font-size: 14px; margin-top: 5px; }
+#session-notes { min-height: 104px; padding: 9px 11px; color: #f2f4f7; font-size: 14px; background: #101828; border: 1px solid #405477; border-radius: 7px; }
+#session-notes:hover { background: #182235; }
+#session-notes:focused { background: #131b2a; }
+#session-notes:focus-visible { border-color: #84adff; border-width: 2px; }
+#session-notes:invalid { background: #2a1720; color: #fff1f0; border-color: #f97066; }
 
 .settings-footer { display: flex; flex-direction: row; align-items: center; gap: 16px; }
 .hint { color: #6f7f9b; font-size: 13px; flex-grow: 1; }

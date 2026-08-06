@@ -12,6 +12,7 @@ func _ready() -> void:
 			"vsync": true,
 			"ui_scale": 100.0,
 			"quality": "high",
+			"notes": "Ready for the next match.",
 		},
 		"ui": {
 			"scale_label": "100%",

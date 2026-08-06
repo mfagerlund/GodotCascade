@@ -4,6 +4,10 @@ All notable changes to GodotCascade are documented here. Versions follow semanti
 
 ## [Unreleased]
 
+- Added `TextInput multiline="true"` as an adapted native `TextEdit`, including validation, writable binding, focus-visible styling, max length, and editing-state preservation.
+- Made release archives byte-for-byte reproducible across Windows and Linux.
+- Made showcase capture honor each manifest viewport through an isolated `SubViewport`.
+
 ## [0.2.0] — 2026-08-06
 
 - Added an adapted native single-line `TextInput` with validation and editing-state preservation.

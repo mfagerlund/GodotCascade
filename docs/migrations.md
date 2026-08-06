@@ -1,5 +1,9 @@
 # Migration notes
 
+## 0.3 development line
+
+`TextInput multiline="true"` now selects an adapted native `TextEdit`. It supports the existing text, placeholder, read-only, disabled, max-length, required, pattern, error-message, accessibility, state-style, and `bind-text` surface. `secret="true"` remains single-line-only and is an explicit error on the multiline adapter.
+
 ## 0.2.0 interactive forms
 
 The interactive-forms additions are backward-compatible with source format version 1:

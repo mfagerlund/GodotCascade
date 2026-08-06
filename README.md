@@ -5,7 +5,7 @@ GodotCascade is an experimental retained-mode UI framework for Godot 4. It bring
 The goal is to make game UI faster to build and easier to maintain without embedding a browser or replacing Godot's renderer. A GodotCascade interface remains a tree of native controls, so it can continue to use Godot's signals, themes, input, rendering, and editor tooling.
 
 > [!IMPORTANT]
-> GodotCascade 0.2.0 is a public preview for Godot 4.7, adding interactive forms without becoming a browser engine. APIs outside the documented preview references remain unstable.
+> GodotCascade 0.2.0 is the current public preview for Godot 4.7. The `main` branch is the 0.3 development line, adding adapted multiline editing without becoming a browser engine; APIs outside the documented preview references remain unstable.
 
 ## Why GodotCascade?
 
@@ -92,7 +92,7 @@ The repository currently contains several working vertical slices:
 - keyed `Repeat` collections, `on-*` event methods, and registered custom-component lifecycle hooks;
 - three source-generated parity scenes covering layout, media, components, form controls, and bound telemetry data.
 
-Version 0.2 adds native single-line text editing, validation, and explicit `bind-*` write-back while retaining the 0.1 source surface. Browser-wide property coverage remains out of scope.
+Version 0.2 adds native single-line text editing, validation, and explicit `bind-*` write-back while retaining the 0.1 source surface. The 0.3 development line also adapts native `TextEdit` through `TextInput multiline="true"`. Browser-wide property coverage remains out of scope.
 
 ## Trying the preview
 
@@ -145,7 +145,7 @@ Native edits assign only existing Dictionary, Array, or object-property paths, e
 
 ## Components and interactive states
 
-The executable GXML elements are `Page`, `Row`, `Column`, `Panel`, `Label`, `Button`, `Checkbox`, `RadioButton`/`Radio`, `Switch`, `Select`/`Option`, `Slider`, `Progress`, and the adapted single-line `TextInput`. GodotCascade owns the measurement and drawing of its exact components while native `LineEdit` continues to own text editing behavior.
+The executable GXML elements are `Page`, `Row`, `Column`, `Panel`, `Label`, `Button`, `Checkbox`, `RadioButton`/`Radio`, `Switch`, `Select`/`Option`, `Slider`, `Progress`, and the adapted `TextInput`. GodotCascade owns the measurement and drawing of its exact components while native `LineEdit` and `TextEdit` continue to own single-line and multiline editing behavior.
 
 Button state selectors respond dynamically to Godot's native interaction state:
 

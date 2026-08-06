@@ -15,6 +15,7 @@ const CascadeSelect := preload("res://addons/godot_cascade/components/cascade_se
 const CascadeProgress := preload("res://addons/godot_cascade/components/cascade_progress.gd")
 const CascadeSlider := preload("res://addons/godot_cascade/components/cascade_slider.gd")
 const CascadeTextInput := preload("res://addons/godot_cascade/components/cascade_text_input.gd")
+const CascadeTextArea := preload("res://addons/godot_cascade/components/cascade_text_area.gd")
 const CascadeImage := preload("res://addons/godot_cascade/components/cascade_image.gd")
 const PropertyCache := preload("res://addons/godot_cascade/runtime/property_cache.gd")
 const ComputedStyleCache := preload("res://addons/godot_cascade/style/computed_style_cache.gd")
@@ -46,7 +47,7 @@ static func _build_element(
 	binding_scope: Dictionary = {},
 	key_scope: String = ""
 ) -> Control:
-	var control := _create_control(element.tag_name, diagnostics)
+	var control := _create_control(element.tag_name, diagnostics, element.attributes)
 	if control == null:
 		return null
 
@@ -65,9 +66,9 @@ static func _build_element(
 	control.set_meta("cascade_transition_properties", PackedStringArray())
 	control.set_meta("cascade_transition_duration", 0.0)
 	control.set_meta("cascade_explicit_accessible_label", false)
-	var compatibility_tier := "layout-only" if ComponentRegistry.has(element.tag_name) else ("adapted" if control is CascadeTextInput else "exact")
+	var compatibility_tier := "layout-only" if ComponentRegistry.has(element.tag_name) else ("adapted" if _is_text_input(control) else "exact")
 	control.set_meta("cascade_compatibility_tier", compatibility_tier)
-	if control is CascadeTextInput:
+	if _is_text_input(control):
 		control.set_meta("cascade_adapted_properties", PackedStringArray(["background", "border", "color", "font-size", "padding"]))
 
 	_apply_attributes(control, element.attributes, element.text, diagnostics, button_groups)
@@ -153,7 +154,7 @@ static func _build_repeat_children(
 			control.add_child(child)
 
 
-static func _create_control(tag_name: String, diagnostics: Array[Dictionary]) -> Control:
+static func _create_control(tag_name: String, diagnostics: Array[Dictionary], attributes: Dictionary = {}) -> Control:
 	match tag_name.to_lower():
 		"page", "row", "column":
 			return CascadeBox.new()
@@ -180,7 +181,7 @@ static func _create_control(tag_name: String, diagnostics: Array[Dictionary]) ->
 		"slider":
 			return CascadeSlider.new()
 		"textinput", "input":
-			return CascadeTextInput.new()
+			return CascadeTextArea.new() if _raw_boolean_attribute(attributes, "multiline") else CascadeTextInput.new()
 		"image":
 			return CascadeImage.new()
 		"repeat":
@@ -197,6 +198,16 @@ static func _create_control(tag_name: String, diagnostics: Array[Dictionary]) ->
 				"Unknown GXML element <%s>. Register a native control factory before using it." % tag_name
 			))
 			return null
+
+
+static func _raw_boolean_attribute(attributes: Dictionary, attribute_name: String) -> bool:
+	if not attributes.has(attribute_name):
+		return false
+	return str(attributes[attribute_name]).strip_edges().to_lower() in ["true", "1", "yes", "on", attribute_name]
+
+
+static func _is_text_input(control: Control) -> bool:
+	return control is CascadeTextInput or control is CascadeTextArea
 
 
 static func _compute_declarations(element, rule_index: Dictionary) -> Dictionary:
@@ -668,7 +679,7 @@ static func _apply_attributes(
 ) -> void:
 	_apply_event_attributes(control, attributes, diagnostics)
 	_apply_writable_binding_attributes(control, attributes, diagnostics)
-	if control is CascadeLabel or control is CascadeButton or control is CascadeTextInput:
+	if control is CascadeLabel or control is CascadeButton or _is_text_input(control):
 		var raw_text := str(attributes.get("text", element_text))
 		if not control.get_meta("cascade_bindings", {}).has("text") and not _record_binding(control, "text", raw_text):
 			control.set("text", raw_text)
@@ -685,7 +696,7 @@ static func _apply_attributes(
 		control.set_meta("cascade_authored_accessible_description", str(attributes["accessible-description"]))
 	if control is BaseButton:
 		_apply_button_attributes(control, attributes, diagnostics, button_groups)
-	if control is CascadeTextInput:
+	if _is_text_input(control):
 		_apply_text_input_attributes(control, attributes, diagnostics)
 	if control is CascadeImage:
 		_apply_image_attributes(control, attributes, diagnostics)
@@ -745,13 +756,16 @@ static func _apply_writable_binding_attributes(control: Control, attributes: Dic
 		bindings[property_name] = path
 		control.set_meta("cascade_bindings", bindings)
 		var writable: Dictionary = control.get_meta("cascade_writable_bindings", {})
-		writable[property_name] = {"path": path, "signal": definition["signal"]}
+		writable[property_name] = {
+			"path": path,
+			"signal": definition["signal"],
+			"read_property": control is CascadeTextArea,
+		}
 		control.set_meta("cascade_writable_bindings", writable)
 
 
-static func _apply_text_input_attributes(control: CascadeTextInput, attributes: Dictionary, diagnostics: Array[Dictionary]) -> void:
+static func _apply_text_input_attributes(control: Control, attributes: Dictionary, diagnostics: Array[Dictionary]) -> void:
 	control.placeholder_text = str(attributes.get("placeholder", ""))
-	var read_only := false
 	for attribute_name in ["read-only", "disabled", "secret", "required"]:
 		if not attributes.has(attribute_name):
 			continue
@@ -759,16 +773,17 @@ static func _apply_text_input_attributes(control: CascadeTextInput, attributes: 
 		if parsed == null:
 			continue
 		match attribute_name:
-			"read-only": read_only = parsed
+			"read-only":
+				control.read_only = parsed
 			"disabled": control.disabled = parsed
-			"secret": control.secret = parsed
+			"secret":
+				if control is CascadeTextArea and parsed:
+					diagnostics.append(_diagnostic("error", "TextInput secret=true is only supported by the single-line LineEdit adapter."))
+				elif control is CascadeTextInput:
+					control.secret = parsed
 			"required": control.required = parsed
-	if read_only:
-		control.editable = false
 	if attributes.has("multiline"):
-		var multiline: Variant = _parse_bool_attribute("multiline", str(attributes["multiline"]), diagnostics)
-		if multiline == true:
-			diagnostics.append(_diagnostic("error", "TextInput multiline=true is not supported by the single-line adapter; use multiline=false."))
+		_parse_bool_attribute("multiline", str(attributes["multiline"]), diagnostics)
 	if attributes.has("max-length"):
 		var raw_max := str(attributes["max-length"])
 		if not raw_max.is_valid_int() or raw_max.to_int() < 0:

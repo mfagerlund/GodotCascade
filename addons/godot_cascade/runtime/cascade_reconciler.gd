@@ -23,7 +23,7 @@ const COPIED_PROPERTIES: PackedStringArray = [
 	"min_value", "max_value", "value", "fill_color", "fill_border_radius",
 	"step", "track_height", "thumb_size", "thumb_color", "disabled_thumb_color",
 	"texture", "fit",
-	"placeholder_text", "placeholder_color", "editable", "secret", "max_length", "required", "validation_pattern", "validation_message",
+	"placeholder_text", "placeholder_color", "editable", "read_only", "secret", "max_length", "required", "validation_pattern", "validation_message",
 	"focused_background_color", "invalid_background_color", "invalid_text_color", "invalid_border_color",
 ]
 

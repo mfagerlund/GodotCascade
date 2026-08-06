@@ -42,7 +42,7 @@ static func _audit_node(control: Control, diagnostics: Array[Dictionary]) -> voi
 
 
 static func _requires_accessible_name(control: Control) -> bool:
-	return (control is BaseButton or control is Range or control is LineEdit) and _has_property(control, "accessibility_name")
+	return (control is BaseButton or control is Range or control is LineEdit or control is TextEdit) and _has_property(control, "accessibility_name")
 
 
 static func _collect_focusable(control: Control, result: Array[Control]) -> void:

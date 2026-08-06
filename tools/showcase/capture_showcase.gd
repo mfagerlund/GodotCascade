@@ -26,7 +26,7 @@ func _capture() -> void:
 
 func _capture_demo(demo: Dictionary) -> Error:
 	var viewport: Array = demo["viewport"]
-	root.size = Vector2i(int(viewport[0]), int(viewport[1]))
+	var viewport_size := Vector2i(int(viewport[0]), int(viewport[1]))
 	var scene_path := "res://" + str(demo["godot_scene"])
 	var output_path := "res://" + str(demo["godot_screenshot"])
 	var packed_scene := load(scene_path) as PackedScene
@@ -34,13 +34,18 @@ func _capture_demo(demo: Dictionary) -> Error:
 		push_error("Could not load showcase scene: %s" % scene_path)
 		return ERR_CANT_OPEN
 
+	var capture_viewport := SubViewport.new()
+	capture_viewport.size = viewport_size
+	capture_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	capture_viewport.disable_3d = true
+	root.add_child(capture_viewport)
 	var instance := packed_scene.instantiate()
-	root.add_child(instance)
+	capture_viewport.add_child(instance)
 	await process_frame
 	await process_frame
 	await process_frame
 
-	var texture := root.get_texture()
+	var texture := capture_viewport.get_texture()
 	if texture == null:
 		push_error("The active display driver does not expose a viewport texture.")
 		return ERR_UNAVAILABLE
@@ -57,6 +62,6 @@ func _capture_demo(demo: Dictionary) -> Error:
 		return save_error
 
 	print("Captured %s at %s×%s." % [output_path, image.get_width(), image.get_height()])
-	instance.queue_free()
+	capture_viewport.queue_free()
 	await process_frame
 	return OK

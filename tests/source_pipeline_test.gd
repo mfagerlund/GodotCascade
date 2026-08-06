@@ -385,11 +385,20 @@ func _test_text_input_attribute_contract() -> void:
 	_expect_true("TextInput applies invalid appearance", input.get("invalid_border_color") == Color("f97066") and input.get("invalid_text_color") == Color("fff1f0"))
 	if input != null:
 		input.free()
-	var multiline_markup := GxmlParser.parse("<TextInput multiline=\"true\" />")
+	var multiline_markup := GxmlParser.parse("""<TextInput multiline="true" text="First line&#10;Second line" placeholder="Session notes" read-only="true" max-length="80" required="true" accessible-label="Session notes" />""")
 	var multiline_build := CascadeBuilder.build(multiline_markup["root"], [])
-	_expect_true("multiline TextInput is an explicit build error", _has_error_diagnostics(multiline_build["diagnostics"]))
+	_expect_true("multiline TextInput builds without errors", not _has_error_diagnostics(multiline_build["diagnostics"]))
+	var text_area: Control = multiline_build["root"]
+	_expect_true("multiline TextInput builds a native TextEdit adapter", text_area is TextEdit)
+	_expect_true("multiline TextInput is classified as adapted", text_area.get_meta("cascade_compatibility_tier") == "adapted")
+	_expect_true("multiline TextInput applies editing attributes", text_area.get("text") == "First line\nSecond line" and text_area.get("placeholder_text") == "Session notes" and text_area.get("read_only") and text_area.get("max_length") == 80)
 	if multiline_build["root"] != null:
 		multiline_build["root"].free()
+	var secret_multiline := GxmlParser.parse("<TextInput multiline=\"true\" secret=\"true\" />")
+	var secret_multiline_build := CascadeBuilder.build(secret_multiline["root"], [])
+	_expect_true("multiline secret mode is an explicit build error", _has_error_diagnostics(secret_multiline_build["diagnostics"]))
+	if secret_multiline_build["root"] != null:
+		secret_multiline_build["root"].free()
 
 
 func _test_stack_pipeline() -> void:
@@ -536,10 +545,12 @@ func _test_writable_binding_pipeline() -> void:
 	var stylesheet_path := "user://cascade_writable_test.gcss"
 	var markup := """<Page>
 		<TextInput id="profile" bind-text="{settings.profile}" placeholder="Profile name" required="true" pattern="^.{2,16}$" error-message="Enter 2–16 characters." accessible-label="Profile name" />
+		<TextInput id="notes" multiline="true" bind-text="{settings.notes}" placeholder="Session notes" max-length="120" accessible-label="Session notes" />
 		<Checkbox id="shadows" bind-checked="{settings.shadows}">Dynamic shadows</Checkbox>
 		<Slider id="scale" min="75" max="125" bind-value="{settings.scale}" />
 		<Select id="quality" bind-selected="{settings.quality}"><Option value="low">Low</Option><Option value="high">High</Option><Option value="ultra">Ultra</Option></Select>
 		<Label id="profile-output" text="{settings.profile}" />
+		<Label id="notes-output" text="{settings.notes}" />
 		<Label id="scale-output" text="{settings.scale}" />
 	</Page>"""
 	var stylesheet := """Page { gap: 4px; }
@@ -548,7 +559,7 @@ func _test_writable_binding_pipeline() -> void:
 		Button:focus-visible { border-color: #99bbff; border-width: 4px; }"""
 	_expect_true("write writable-binding markup", _write_text(markup_path, markup))
 	_expect_true("write writable-binding stylesheet", _write_text(stylesheet_path, stylesheet))
-	var context := {"settings": {"profile": "Rhea", "shadows": true, "scale": 100.0, "quality": "high"}}
+	var context := {"settings": {"profile": "Rhea", "notes": "Ready\nfor launch", "shadows": true, "scale": 100.0, "quality": "high"}}
 	var document: Control = CascadeDocument.new()
 	document.load_on_ready = false
 	document.log_diagnostics_to_console = false
@@ -559,10 +570,12 @@ func _test_writable_binding_pipeline() -> void:
 	root.add_child(document)
 	_expect_true("writable-binding document loads", document.reload_document())
 	var input: LineEdit = _find_by_id(document.generated_root(), "profile")[0]
+	var notes: TextEdit = _find_by_id(document.generated_root(), "notes")[0]
 	var checkbox: BaseButton = _find_by_id(document.generated_root(), "shadows")[0]
 	var slider: Range = _find_by_id(document.generated_root(), "scale")[0]
 	var select: Control = _find_by_id(document.generated_root(), "quality")[0]
 	_expect_true("writable text binding initializes native text", input.text == "Rhea")
+	_expect_true("writable multiline binding initializes native text", notes.text == "Ready\nfor launch")
 	_expect_true("writable checked binding initializes toggle", checkbox.button_pressed)
 	_expect_float("writable range binding initializes value", slider.value, 100.0)
 	_expect_true("writable selected binding initializes select", select.call("selected_value") == "high")
@@ -570,23 +583,33 @@ func _test_writable_binding_pipeline() -> void:
 	_expect_true("focus-visible pseudo enables modality-aware ring", input.get("focus_visible_style_enabled") and input.get("focus_visible_ring_color") == Color("88aaff"))
 	input.text = "Nova"
 	input.text_changed.emit(input.text)
+	notes.text = "Launch\nconfirmed"
+	notes.text_changed.emit()
 	checkbox.button_pressed = false
 	slider.value = 115.0
 	select.call("select_value", "ultra", true)
 	await process_frame
 	_expect_true("text edit writes binding context", context["settings"]["profile"] == "Nova")
+	_expect_true("multiline edit writes binding context", context["settings"]["notes"] == "Launch\nconfirmed")
 	_expect_true("toggle writes binding context", not context["settings"]["shadows"])
 	_expect_float("slider writes binding context", context["settings"]["scale"], 115.0)
 	_expect_true("select writes binding context", context["settings"]["quality"] == "ultra")
 	_expect_true("writable update refreshes dependent text", _find_by_id(document.generated_root(), "profile-output")[0].get("text") == "Nova")
+	_expect_true("multiline writable update refreshes dependent text", _find_by_id(document.generated_root(), "notes-output")[0].get("text") == "Launch\nconfirmed")
 	var input_instance := input.get_instance_id()
+	var notes_instance := notes.get_instance_id()
 	input.select(1, 3)
+	notes.select(0, 1, 1, 4)
 	_expect_true("write text-input hot-reload markup", _write_text(markup_path, markup.replace("Profile name", "Display name")))
 	_expect_true("text-input source edit reloads", document.poll_sources())
 	input = _find_by_id(document.generated_root(), "profile")[0]
+	notes = _find_by_id(document.generated_root(), "notes")[0]
 	_expect_true("text-input reload preserves native identity", input.get_instance_id() == input_instance)
 	_expect_true("text-input reload preserves writable text", input.text == "Nova")
 	_expect_true("text-input reload preserves selection", input.has_selection() and input.get_selection_from_column() == 1 and input.get_selection_to_column() == 3)
+	_expect_true("multiline reload preserves native identity", notes.get_instance_id() == notes_instance)
+	_expect_true("multiline reload preserves writable text", notes.text == "Launch\nconfirmed")
+	_expect_true("multiline reload preserves selection", notes.has_selection() and notes.get_selection_from_line() == 0 and notes.get_selection_to_line() == 1)
 
 	input.text = ""
 	input.text_changed.emit(input.text)

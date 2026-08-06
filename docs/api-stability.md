@@ -1,6 +1,6 @@
 # Public preview stability policy
 
-GodotCascade 0.2.0 is the current public preview targeting Godot 4.7. Source format version 1 and the documented runtime surface follow the preview guarantees below; broader API compatibility is not promised until a stable release.
+GodotCascade 0.2.0 is the current public preview targeting Godot 4.7; `main` is the backward-compatible 0.3 development line. Source format version 1 and the documented runtime surface follow the preview guarantees below; broader API compatibility is not promised until a stable release.
 
 ## Preview guarantees
 

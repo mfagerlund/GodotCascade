@@ -1,6 +1,6 @@
 # Adapted text input status and remaining plan
 
-GodotCascade 0.2 adapts native `LineEdit` for single-line text entry rather than owning text editing. A later slice will adapt `TextEdit` for multiline content. Text entry has a much larger behavioral contract than labels and buttons, and visual ownership must not regress platform behavior.
+GodotCascade adapts native `LineEdit` for single-line text entry and native `TextEdit` when `multiline="true"` rather than owning text editing. Text entry has a much larger behavioral contract than labels and buttons, and visual ownership must not regress platform behavior.
 
 ## Compatibility boundary
 
@@ -20,6 +20,7 @@ GodotCascade 0.2 adapts native `LineEdit` for single-line text entry rather than
 - explicit `bind-text` write-back;
 - text, caret, selection, focus, and native instance preservation during compatible keyed reload;
 - hover, focused, disabled, invalid, and input-modality-aware `:focus-visible` adapted styles.
+- multiline newline behavior, max length, writable binding, and primary caret/selection/scroll preservation on native `TextEdit`.
 
 ## Remaining certification matrix
 
@@ -35,11 +36,11 @@ Before the adapter enters the public component set, automated and manual checks 
 6. Password masking without exposing text through accessibility metadata.
 7. Read-only, disabled, invalid, placeholder, focused, and selection states.
 8. Screen-reader name, description, value, selection, and validation announcements.
-9. Multiline newline behavior after the native `TextEdit` adapter lands.
+9. Multiline newline behavior on the native `TextEdit` adapter.
 10. Hot reload without losing text, cursor, selection, scroll, or IME composition state.
 
 ## Source surface
 
-The implemented GXML attributes are `text`, `bind-text`, `placeholder`, `read-only`, `disabled`, `secret`, `max-length`, `required`, `pattern`, `error-message`, `accessible-label`, and `accessible-description`. `multiline="false"` is accepted and `multiline="true"` is an explicit error until the `TextEdit` adapter exists. Event methods continue to use `on-*`; writable binding uses an exact existing property path and does not introduce expression syntax.
+The implemented GXML attributes are `text`, `bind-text`, `placeholder`, `read-only`, `disabled`, `secret`, `max-length`, `required`, `pattern`, `error-message`, `accessible-label`, `accessible-description`, and `multiline`. `multiline="true"` selects native `TextEdit`; password masking remains single-line-only. Event methods continue to use `on-*`; writable binding uses an exact existing property path and does not introduce expression syntax.
 
 Exact ownership is intentionally deferred. Replacing native editing would require equivalent tests on every supported platform and input method, not merely matching its appearance.

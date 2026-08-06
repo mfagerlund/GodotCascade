@@ -332,6 +332,8 @@ func _apply_writable_bindings(node: Node) -> void:
 			var callback: Callable
 			if signal_name == &"selection_changed":
 				callback = _on_writable_selection_changed.bind(control, path)
+			elif bool(definition.get("read_property", false)):
+				callback = _on_writable_property_changed.bind(control, str(property_name), path)
 			else:
 				callback = _on_writable_value_changed.bind(control, str(property_name), path)
 			var error := control.connect(signal_name, callback)
@@ -348,6 +350,12 @@ func _on_writable_value_changed(value: Variant, control: Control, property_name:
 	if _applying_bindings:
 		return
 	_write_binding(control, property_name, path, value)
+
+
+func _on_writable_property_changed(control: Control, property_name: String, path: String) -> void:
+	if _applying_bindings:
+		return
+	_write_binding(control, property_name, path, control.get(property_name))
 
 
 func _on_writable_selection_changed(value: String, _index: int, control: Control, path: String) -> void:

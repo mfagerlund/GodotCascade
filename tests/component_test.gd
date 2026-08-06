@@ -12,6 +12,7 @@ const CascadeSwitch := preload("res://addons/godot_cascade/components/cascade_sw
 const CascadeSelect := preload("res://addons/godot_cascade/components/cascade_select.gd")
 const CascadeSlider := preload("res://addons/godot_cascade/components/cascade_slider.gd")
 const CascadeTextInput := preload("res://addons/godot_cascade/components/cascade_text_input.gd")
+const CascadeTextArea := preload("res://addons/godot_cascade/components/cascade_text_area.gd")
 const FocusVisibilityTracker := preload("res://addons/godot_cascade/components/focus_visibility_tracker.gd")
 const InteractiveStateAdapter := preload("res://addons/godot_cascade/components/interactive_state_adapter.gd")
 const CascadeLabel := preload("res://addons/godot_cascade/components/cascade_label.gd")
@@ -53,6 +54,7 @@ func _run() -> void:
 	await _test_owned_select()
 	await _test_owned_slider()
 	await _test_adapted_text_input()
+	await _test_adapted_text_area()
 	await _test_native_input_matrix()
 
 	if _failures.is_empty():
@@ -617,6 +619,10 @@ func _test_adapted_text_input() -> void:
 	_expect_true("native password masking mode remains available", input.secret)
 	input.secret = false
 	_expect_true("native context menu and selection remain enabled", input.context_menu_enabled and input.selecting_enabled)
+	input.read_only = true
+	input.disabled = false
+	_expect_true("single-line read-only survives disabled=false", not input.editable and input.focus_mode == Control.FOCUS_ALL)
+	input.read_only = false
 	input.caret_column = 3
 	input.select(1, 3)
 	var state := input.capture_runtime_state()
@@ -631,6 +637,57 @@ func _test_adapted_text_input() -> void:
 	FocusVisibilityTracker.set_keyboard_navigation(false)
 	_expect_true("pointer modality suppresses focus-visible state", not input.cascade_focus_visible())
 	FocusVisibilityTracker.set_keyboard_navigation(true)
+	input.queue_free()
+
+
+func _test_adapted_text_area() -> void:
+	var input := CascadeTextArea.new()
+	input.required = true
+	input.validation_message = "Notes are required."
+	input.placeholder_text = "Session notes"
+	input.max_length = 40
+	input.focus_visible_style_enabled = true
+	root.add_child(input)
+	await process_frame
+	_expect_true("required multiline input starts invalid", input.invalid)
+	input.text = "Alpha אבג\nSecond line"
+	input.text_changed.emit()
+	_expect_true("native multiline input retains newlines and bidi text", input.text == "Alpha אבג\nSecond line")
+	_expect_true("native multiline input validates authored text", input.validate())
+	_expect_true("multiline context menu and selection remain enabled", input.context_menu_enabled and input.selecting_enabled)
+	input.set_caret_line(1)
+	input.set_caret_column(4)
+	input.select(0, 2, 1, 4)
+	var state := input.capture_runtime_state()
+	input.text = "Changed"
+	input.restore_runtime_state(state)
+	_expect_true("multiline runtime state restores text", input.text == "Alpha אבג\nSecond line")
+	_expect_true("multiline runtime state restores caret", input.get_caret_line() == 1 and input.get_caret_column() == 4)
+	_expect_true("multiline runtime state restores selection", input.has_selection() and input.get_selection_from_line() == 0 and input.get_selection_to_line() == 1)
+	input.max_length = 8
+	input.text = "1234567890"
+	input.text_changed.emit()
+	_expect_true("multiline max length constrains native edits", input.text == "12345678")
+	input.max_length = 0
+	input.custom_minimum_size = Vector2(240.0, 80.0)
+	input.size = Vector2(240.0, 80.0)
+	input.text = "One\nTwo\nThree\nFour\nFive\nSix\nSeven\nEight\nNine\nTen"
+	await process_frame
+	input.scroll_vertical = 5.0
+	var scroll_state := input.capture_runtime_state()
+	input.scroll_vertical = 0.0
+	input.restore_runtime_state(scroll_state)
+	_expect_float("multiline runtime state restores vertical scroll", input.scroll_vertical, 5.0)
+	input.read_only = true
+	_expect_true("multiline read-only retains focus while preventing edits", not input.editable and input.focus_mode == Control.FOCUS_ALL)
+	input.disabled = true
+	_expect_true("multiline disabled removes focus", not input.editable and input.focus_mode == Control.FOCUS_NONE)
+	input.disabled = false
+	input.read_only = false
+	FocusVisibilityTracker.set_keyboard_navigation(true)
+	input.grab_focus()
+	await process_frame
+	_expect_true("multiline keyboard navigation exposes focus-visible state", input.cascade_focus_visible())
 	input.queue_free()
 
 
