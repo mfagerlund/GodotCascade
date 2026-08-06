@@ -29,6 +29,8 @@ Every element accepts `id`, `class`, `accessible-label`, and `accessible-descrip
 
 Unknown elements are build errors unless their native factory is registered through `ComponentRegistry`. `Window` is not implemented.
 
+`Table`, table-row/cell elements, and a data-grid component are not implemented. A fixed visual matrix can be composed with `Grid`, but there is no table-specific shared column measurement across repeated rows, header semantics, sorting, selection, resizing, or virtualization.
+
 ## Bindings
 
 An entire supported attribute value may be an exact property-path binding:

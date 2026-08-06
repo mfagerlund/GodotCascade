@@ -4,6 +4,7 @@ All notable changes to GodotCascade are documented here. Versions follow semanti
 
 ## [Unreleased]
 
+- Made the settings showcase's two-way write-back visible through live one-way labels bound to the same profile, quality, scale, and shadow values.
 - Compacted select popup rows and removed inherited closed-control borders from options.
 - Added antialiasing to slider, switch, and radio circular drawing.
 - Added native `Slider:hover` feedback across the owned track, fill, and thumb, with matching HTML showcase behavior.

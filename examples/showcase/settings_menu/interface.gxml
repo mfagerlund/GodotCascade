@@ -40,6 +40,31 @@
         </Panel>
     </Row>
 
+    <Panel class="binding-monitor">
+        <Column class="binding-intro">
+            <Label class="binding-title">LIVE BINDING MODEL</Label>
+            <Label class="binding-help">Form write-back refreshes these one-way values immediately.</Label>
+        </Column>
+        <Row class="binding-values">
+            <Column class="binding-cell">
+                <Label class="binding-key">PROFILE</Label>
+                <Label id="bound-profile" class="binding-value" text="{settings.profile}" />
+            </Column>
+            <Column class="binding-cell">
+                <Label class="binding-key">QUALITY</Label>
+                <Label id="bound-quality" class="binding-value" text="{settings.quality}" />
+            </Column>
+            <Column class="binding-cell">
+                <Label class="binding-key">UI SCALE</Label>
+                <Label id="bound-scale" class="binding-value" text="{settings.ui_scale}" />
+            </Column>
+            <Column class="binding-cell">
+                <Label class="binding-key">SHADOWS</Label>
+                <Label id="bound-shadows" class="binding-value" text="{settings.shadows}" />
+            </Column>
+        </Row>
+    </Panel>
+
     <Row class="settings-footer">
         <Label id="settings-status" class="hint" text="{ui.status}" />
         <Label class="select-label">QUALITY</Label>

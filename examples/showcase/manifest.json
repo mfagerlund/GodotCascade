@@ -53,8 +53,8 @@
     {
       "id": "settings-menu",
       "title": "Settings menu",
-      "summary": "An interactive source-generated settings surface exercising native text editing, validation, writable bindings, owned form controls, focus-visible state, and shared pseudo-state precedence.",
-      "viewport": [960, 660],
+      "summary": "An interactive source-generated settings surface making two-way form write-back and dependent one-way refresh visible alongside native editing, validation, and owned controls.",
+      "viewport": [960, 760],
       "html": "examples/showcase/settings_menu/reference.html",
       "gxml": "examples/showcase/settings_menu/interface.gxml",
       "gcss": "examples/showcase/settings_menu/styles.gcss",
@@ -76,6 +76,8 @@
         "Exclusive fullscreen",
         "UI scale",
         "Session notes",
+        "LIVE BINDING MODEL",
+        "Form write-back refreshes these one-way values immediately.",
         "QUALITY",
         "Low quality",
         "Medium quality",
@@ -99,6 +101,7 @@
         {"label": "visible select face", "html": "class=\"select-face\"", "gxml": "<Select"},
         {"label": "validation", "html": "checkValidity()", "gxml": "required=\"true\""},
         {"label": "live range output", "html": "scaleValue.textContent", "gxml": "{ui.scale_label}"},
+        {"label": "dependent binding output", "html": "id=\"bound-profile\"", "gxml": "text=\"{settings.profile}\""},
         {"label": "apply action", "html": "addEventListener('click'", "gxml": "on-pressed=\"_on_apply_settings\""}
       ],
       "mappings": [
@@ -106,6 +109,7 @@
         ["input[type=text]", "TextInput", "CascadeTextInput (native LineEdit adapter)"],
         ["textarea", "TextInput multiline=\"true\"", "CascadeTextArea (native TextEdit adapter)"],
         ["input/change", "bind-*={path}", "Validated writable binding + dependent refresh"],
+        ["live model output", "Label text={path}", "Immediate dependent one-way refresh"],
         ["repeated form rows", "Repeat + bind-checked={item.enabled}", "Keyed item-scope write-back"],
         ["input[role=switch]", "Switch", "CascadeSwitch track/thumb drawing"],
         ["select / option", "Select / Option", "CascadeSelect + PopupPanel"],
