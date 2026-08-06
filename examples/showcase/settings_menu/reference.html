@@ -23,12 +23,19 @@
     label:has(input:checked) { color:#fff; background:#16233a; }
     label:has(input:disabled) { color:#667085; background:#111827; }
     input[type=checkbox],input[type=radio] { width:18px; height:18px; margin:0; accent-color:#528bff; }
-    .switch input { width:38px; height:20px; position:relative; appearance:none; border:1px solid #667085; border-radius:99px; background:#344054; }
-    .switch input::after { content:""; position:absolute; top:2px; left:2px; width:14px; height:14px; border-radius:50%; background:#fff; transition:left .1s ease; }
-    .switch input:checked { background:#528bff; }
-    .switch input:checked::after { left:20px; }
+    .switch input { position:absolute; width:1px; height:1px; opacity:0; }
+    .switch-track { position:relative; width:38px; height:20px; flex:none; border:1px solid #667085; border-radius:99px; background:#344054; }
+    .switch-thumb { position:absolute; top:2px; left:2px; width:14px; height:14px; border-radius:50%; background:#fff; transition:left .1s ease; }
+    .switch input:checked + .switch-track { background:#528bff; }
+    .switch input:checked + .switch-track .switch-thumb { left:20px; }
+    .switch input:focus-visible + .switch-track { outline:2px solid #84adff; outline-offset:2px; }
     .range-setting { min-height:36px; margin-top:5px; display:flex; align-items:center; gap:10px; color:#c9d5e9; font-size:14px; }
-    .range-setting input { min-width:150px; flex:1; accent-color:#528bff; }
+    .range-control { position:relative; min-width:150px; height:30px; flex:1; }
+    .range-control input { position:absolute; inset:0; z-index:2; width:100%; height:100%; margin:0; opacity:0; cursor:pointer; }
+    .range-track { position:absolute; left:9px; right:9px; top:12px; height:6px; border-radius:99px; background:#344054; }
+    .range-fill { position:absolute; inset:0 50% 0 0; border-radius:99px; background:#528bff; }
+    .range-thumb { position:absolute; top:50%; left:50%; width:18px; height:18px; border-radius:50%; background:#fff; transform:translate(-50%,-50%); }
+    .range-control input:focus-visible + .range-track { outline:2px solid #84adff; outline-offset:3px; }
     .range-setting output { min-width:38px; color:#8fa1bf; font-size:13px; }
     footer { display:flex; align-items:center; gap:16px; }
     .hint { flex:1; color:#6f7f9b; font-size:13px; }
@@ -41,8 +48,8 @@
   <main>
     <header><p class="eyebrow">GAME SETTINGS</p><h1>Graphics &amp; display</h1><p class="subtitle">Native focus, toggle, and radio-group behavior with Cascade-owned drawing.</p></header>
     <div class="content">
-      <section><h2>Effects</h2><p class="help">Tune visual features independently.</p><label><input type="checkbox" checked>Dynamic shadows</label><label><input type="checkbox" checked>Bloom</label><label class="switch"><input type="checkbox" role="switch" checked>Vertical sync</label><label><input type="checkbox" disabled>Ray tracing · unavailable</label></section>
-      <section><h2>Window mode</h2><p class="help">Choose one native radio-group option.</p><label><input type="radio" name="window-mode">Windowed</label><label><input type="radio" name="window-mode" checked>Borderless</label><label><input type="radio" name="window-mode">Exclusive fullscreen</label><div class="range-setting"><span>UI scale</span><input type="range" min="75" max="125" value="100" step="5" aria-label="Interface scale"><output>100%</output></div></section>
+      <section><h2>Effects</h2><p class="help">Tune visual features independently.</p><label><input type="checkbox" checked>Dynamic shadows</label><label><input type="checkbox" checked>Bloom</label><label class="switch"><input type="checkbox" role="switch" checked><span class="switch-track" aria-hidden="true"><span class="switch-thumb"></span></span><span>Vertical sync</span></label><label><input type="checkbox" disabled>Ray tracing · unavailable</label></section>
+      <section><h2>Window mode</h2><p class="help">Choose one native radio-group option.</p><label><input type="radio" name="window-mode">Windowed</label><label><input type="radio" name="window-mode" checked>Borderless</label><label><input type="radio" name="window-mode">Exclusive fullscreen</label><div class="range-setting"><span>UI scale</span><span class="range-control"><input type="range" min="75" max="125" value="100" step="5" aria-label="Interface scale"><span class="range-track" aria-hidden="true"><span class="range-fill"></span><span class="range-thumb"></span></span></span><output>100%</output></div></section>
     </div>
     <footer><span class="hint">Tab to move focus · Space or controller accept to toggle</span><span class="select-label">QUALITY</span><select aria-label="Graphics quality"><option>Low quality</option><option>Medium quality</option><option selected>High quality</option><option>Ultra quality</option></select><button type="button">Apply settings</button></footer>
   </main>

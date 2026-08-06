@@ -1039,12 +1039,19 @@
     label:has(input:checked) { color:#fff; background:#16233a; }
     label:has(input:disabled) { color:#667085; background:#111827; }
     input[type=checkbox],input[type=radio] { width:18px; height:18px; margin:0; accent-color:#528bff; }
-    .switch input { width:38px; height:20px; position:relative; appearance:none; border:1px solid #667085; border-radius:99px; background:#344054; }
-    .switch input::after { content:&quot;&quot;; position:absolute; top:2px; left:2px; width:14px; height:14px; border-radius:50%; background:#fff; transition:left .1s ease; }
-    .switch input:checked { background:#528bff; }
-    .switch input:checked::after { left:20px; }
+    .switch input { position:absolute; width:1px; height:1px; opacity:0; }
+    .switch-track { position:relative; width:38px; height:20px; flex:none; border:1px solid #667085; border-radius:99px; background:#344054; }
+    .switch-thumb { position:absolute; top:2px; left:2px; width:14px; height:14px; border-radius:50%; background:#fff; transition:left .1s ease; }
+    .switch input:checked + .switch-track { background:#528bff; }
+    .switch input:checked + .switch-track .switch-thumb { left:20px; }
+    .switch input:focus-visible + .switch-track { outline:2px solid #84adff; outline-offset:2px; }
     .range-setting { min-height:36px; margin-top:5px; display:flex; align-items:center; gap:10px; color:#c9d5e9; font-size:14px; }
-    .range-setting input { min-width:150px; flex:1; accent-color:#528bff; }
+    .range-control { position:relative; min-width:150px; height:30px; flex:1; }
+    .range-control input { position:absolute; inset:0; z-index:2; width:100%; height:100%; margin:0; opacity:0; cursor:pointer; }
+    .range-track { position:absolute; left:9px; right:9px; top:12px; height:6px; border-radius:99px; background:#344054; }
+    .range-fill { position:absolute; inset:0 50% 0 0; border-radius:99px; background:#528bff; }
+    .range-thumb { position:absolute; top:50%; left:50%; width:18px; height:18px; border-radius:50%; background:#fff; transform:translate(-50%,-50%); }
+    .range-control input:focus-visible + .range-track { outline:2px solid #84adff; outline-offset:3px; }
     .range-setting output { min-width:38px; color:#8fa1bf; font-size:13px; }
     footer { display:flex; align-items:center; gap:16px; }
     .hint { flex:1; color:#6f7f9b; font-size:13px; }
@@ -1057,8 +1064,8 @@
   &lt;main&gt;
     &lt;header&gt;&lt;p class=&quot;eyebrow&quot;&gt;GAME SETTINGS&lt;/p&gt;&lt;h1&gt;Graphics &amp;amp; display&lt;/h1&gt;&lt;p class=&quot;subtitle&quot;&gt;Native focus, toggle, and radio-group behavior with Cascade-owned drawing.&lt;/p&gt;&lt;/header&gt;
     &lt;div class=&quot;content&quot;&gt;
-      &lt;section&gt;&lt;h2&gt;Effects&lt;/h2&gt;&lt;p class=&quot;help&quot;&gt;Tune visual features independently.&lt;/p&gt;&lt;label&gt;&lt;input type=&quot;checkbox&quot; checked&gt;Dynamic shadows&lt;/label&gt;&lt;label&gt;&lt;input type=&quot;checkbox&quot; checked&gt;Bloom&lt;/label&gt;&lt;label class=&quot;switch&quot;&gt;&lt;input type=&quot;checkbox&quot; role=&quot;switch&quot; checked&gt;Vertical sync&lt;/label&gt;&lt;label&gt;&lt;input type=&quot;checkbox&quot; disabled&gt;Ray tracing · unavailable&lt;/label&gt;&lt;/section&gt;
-      &lt;section&gt;&lt;h2&gt;Window mode&lt;/h2&gt;&lt;p class=&quot;help&quot;&gt;Choose one native radio-group option.&lt;/p&gt;&lt;label&gt;&lt;input type=&quot;radio&quot; name=&quot;window-mode&quot;&gt;Windowed&lt;/label&gt;&lt;label&gt;&lt;input type=&quot;radio&quot; name=&quot;window-mode&quot; checked&gt;Borderless&lt;/label&gt;&lt;label&gt;&lt;input type=&quot;radio&quot; name=&quot;window-mode&quot;&gt;Exclusive fullscreen&lt;/label&gt;&lt;div class=&quot;range-setting&quot;&gt;&lt;span&gt;UI scale&lt;/span&gt;&lt;input type=&quot;range&quot; min=&quot;75&quot; max=&quot;125&quot; value=&quot;100&quot; step=&quot;5&quot; aria-label=&quot;Interface scale&quot;&gt;&lt;output&gt;100%&lt;/output&gt;&lt;/div&gt;&lt;/section&gt;
+      &lt;section&gt;&lt;h2&gt;Effects&lt;/h2&gt;&lt;p class=&quot;help&quot;&gt;Tune visual features independently.&lt;/p&gt;&lt;label&gt;&lt;input type=&quot;checkbox&quot; checked&gt;Dynamic shadows&lt;/label&gt;&lt;label&gt;&lt;input type=&quot;checkbox&quot; checked&gt;Bloom&lt;/label&gt;&lt;label class=&quot;switch&quot;&gt;&lt;input type=&quot;checkbox&quot; role=&quot;switch&quot; checked&gt;&lt;span class=&quot;switch-track&quot; aria-hidden=&quot;true&quot;&gt;&lt;span class=&quot;switch-thumb&quot;&gt;&lt;/span&gt;&lt;/span&gt;&lt;span&gt;Vertical sync&lt;/span&gt;&lt;/label&gt;&lt;label&gt;&lt;input type=&quot;checkbox&quot; disabled&gt;Ray tracing · unavailable&lt;/label&gt;&lt;/section&gt;
+      &lt;section&gt;&lt;h2&gt;Window mode&lt;/h2&gt;&lt;p class=&quot;help&quot;&gt;Choose one native radio-group option.&lt;/p&gt;&lt;label&gt;&lt;input type=&quot;radio&quot; name=&quot;window-mode&quot;&gt;Windowed&lt;/label&gt;&lt;label&gt;&lt;input type=&quot;radio&quot; name=&quot;window-mode&quot; checked&gt;Borderless&lt;/label&gt;&lt;label&gt;&lt;input type=&quot;radio&quot; name=&quot;window-mode&quot;&gt;Exclusive fullscreen&lt;/label&gt;&lt;div class=&quot;range-setting&quot;&gt;&lt;span&gt;UI scale&lt;/span&gt;&lt;span class=&quot;range-control&quot;&gt;&lt;input type=&quot;range&quot; min=&quot;75&quot; max=&quot;125&quot; value=&quot;100&quot; step=&quot;5&quot; aria-label=&quot;Interface scale&quot;&gt;&lt;span class=&quot;range-track&quot; aria-hidden=&quot;true&quot;&gt;&lt;span class=&quot;range-fill&quot;&gt;&lt;/span&gt;&lt;span class=&quot;range-thumb&quot;&gt;&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;output&gt;100%&lt;/output&gt;&lt;/div&gt;&lt;/section&gt;
     &lt;/div&gt;
     &lt;footer&gt;&lt;span class=&quot;hint&quot;&gt;Tab to move focus · Space or controller accept to toggle&lt;/span&gt;&lt;span class=&quot;select-label&quot;&gt;QUALITY&lt;/span&gt;&lt;select aria-label=&quot;Graphics quality&quot;&gt;&lt;option&gt;Low quality&lt;/option&gt;&lt;option&gt;Medium quality&lt;/option&gt;&lt;option selected&gt;High quality&lt;/option&gt;&lt;option&gt;Ultra quality&lt;/option&gt;&lt;/select&gt;&lt;button type=&quot;button&quot;&gt;Apply settings&lt;/button&gt;&lt;/footer&gt;
   &lt;/main&gt;
@@ -1114,12 +1121,19 @@
     label:has(input:checked) { color:#fff; background:#16233a; }
     label:has(input:disabled) { color:#667085; background:#111827; }
     input[type=checkbox],input[type=radio] { width:18px; height:18px; margin:0; accent-color:#528bff; }
-    .switch input { width:38px; height:20px; position:relative; appearance:none; border:1px solid #667085; border-radius:99px; background:#344054; }
-    .switch input::after { content:&quot;&quot;; position:absolute; top:2px; left:2px; width:14px; height:14px; border-radius:50%; background:#fff; transition:left .1s ease; }
-    .switch input:checked { background:#528bff; }
-    .switch input:checked::after { left:20px; }
+    .switch input { position:absolute; width:1px; height:1px; opacity:0; }
+    .switch-track { position:relative; width:38px; height:20px; flex:none; border:1px solid #667085; border-radius:99px; background:#344054; }
+    .switch-thumb { position:absolute; top:2px; left:2px; width:14px; height:14px; border-radius:50%; background:#fff; transition:left .1s ease; }
+    .switch input:checked + .switch-track { background:#528bff; }
+    .switch input:checked + .switch-track .switch-thumb { left:20px; }
+    .switch input:focus-visible + .switch-track { outline:2px solid #84adff; outline-offset:2px; }
     .range-setting { min-height:36px; margin-top:5px; display:flex; align-items:center; gap:10px; color:#c9d5e9; font-size:14px; }
-    .range-setting input { min-width:150px; flex:1; accent-color:#528bff; }
+    .range-control { position:relative; min-width:150px; height:30px; flex:1; }
+    .range-control input { position:absolute; inset:0; z-index:2; width:100%; height:100%; margin:0; opacity:0; cursor:pointer; }
+    .range-track { position:absolute; left:9px; right:9px; top:12px; height:6px; border-radius:99px; background:#344054; }
+    .range-fill { position:absolute; inset:0 50% 0 0; border-radius:99px; background:#528bff; }
+    .range-thumb { position:absolute; top:50%; left:50%; width:18px; height:18px; border-radius:50%; background:#fff; transform:translate(-50%,-50%); }
+    .range-control input:focus-visible + .range-track { outline:2px solid #84adff; outline-offset:3px; }
     .range-setting output { min-width:38px; color:#8fa1bf; font-size:13px; }
     footer { display:flex; align-items:center; gap:16px; }
     .hint { flex:1; color:#6f7f9b; font-size:13px; }
@@ -1132,8 +1146,8 @@
   &lt;main&gt;
     &lt;header&gt;&lt;p class=&quot;eyebrow&quot;&gt;GAME SETTINGS&lt;/p&gt;&lt;h1&gt;Graphics &amp;amp; display&lt;/h1&gt;&lt;p class=&quot;subtitle&quot;&gt;Native focus, toggle, and radio-group behavior with Cascade-owned drawing.&lt;/p&gt;&lt;/header&gt;
     &lt;div class=&quot;content&quot;&gt;
-      &lt;section&gt;&lt;h2&gt;Effects&lt;/h2&gt;&lt;p class=&quot;help&quot;&gt;Tune visual features independently.&lt;/p&gt;&lt;label&gt;&lt;input type=&quot;checkbox&quot; checked&gt;Dynamic shadows&lt;/label&gt;&lt;label&gt;&lt;input type=&quot;checkbox&quot; checked&gt;Bloom&lt;/label&gt;&lt;label class=&quot;switch&quot;&gt;&lt;input type=&quot;checkbox&quot; role=&quot;switch&quot; checked&gt;Vertical sync&lt;/label&gt;&lt;label&gt;&lt;input type=&quot;checkbox&quot; disabled&gt;Ray tracing · unavailable&lt;/label&gt;&lt;/section&gt;
-      &lt;section&gt;&lt;h2&gt;Window mode&lt;/h2&gt;&lt;p class=&quot;help&quot;&gt;Choose one native radio-group option.&lt;/p&gt;&lt;label&gt;&lt;input type=&quot;radio&quot; name=&quot;window-mode&quot;&gt;Windowed&lt;/label&gt;&lt;label&gt;&lt;input type=&quot;radio&quot; name=&quot;window-mode&quot; checked&gt;Borderless&lt;/label&gt;&lt;label&gt;&lt;input type=&quot;radio&quot; name=&quot;window-mode&quot;&gt;Exclusive fullscreen&lt;/label&gt;&lt;div class=&quot;range-setting&quot;&gt;&lt;span&gt;UI scale&lt;/span&gt;&lt;input type=&quot;range&quot; min=&quot;75&quot; max=&quot;125&quot; value=&quot;100&quot; step=&quot;5&quot; aria-label=&quot;Interface scale&quot;&gt;&lt;output&gt;100%&lt;/output&gt;&lt;/div&gt;&lt;/section&gt;
+      &lt;section&gt;&lt;h2&gt;Effects&lt;/h2&gt;&lt;p class=&quot;help&quot;&gt;Tune visual features independently.&lt;/p&gt;&lt;label&gt;&lt;input type=&quot;checkbox&quot; checked&gt;Dynamic shadows&lt;/label&gt;&lt;label&gt;&lt;input type=&quot;checkbox&quot; checked&gt;Bloom&lt;/label&gt;&lt;label class=&quot;switch&quot;&gt;&lt;input type=&quot;checkbox&quot; role=&quot;switch&quot; checked&gt;&lt;span class=&quot;switch-track&quot; aria-hidden=&quot;true&quot;&gt;&lt;span class=&quot;switch-thumb&quot;&gt;&lt;/span&gt;&lt;/span&gt;&lt;span&gt;Vertical sync&lt;/span&gt;&lt;/label&gt;&lt;label&gt;&lt;input type=&quot;checkbox&quot; disabled&gt;Ray tracing · unavailable&lt;/label&gt;&lt;/section&gt;
+      &lt;section&gt;&lt;h2&gt;Window mode&lt;/h2&gt;&lt;p class=&quot;help&quot;&gt;Choose one native radio-group option.&lt;/p&gt;&lt;label&gt;&lt;input type=&quot;radio&quot; name=&quot;window-mode&quot;&gt;Windowed&lt;/label&gt;&lt;label&gt;&lt;input type=&quot;radio&quot; name=&quot;window-mode&quot; checked&gt;Borderless&lt;/label&gt;&lt;label&gt;&lt;input type=&quot;radio&quot; name=&quot;window-mode&quot;&gt;Exclusive fullscreen&lt;/label&gt;&lt;div class=&quot;range-setting&quot;&gt;&lt;span&gt;UI scale&lt;/span&gt;&lt;span class=&quot;range-control&quot;&gt;&lt;input type=&quot;range&quot; min=&quot;75&quot; max=&quot;125&quot; value=&quot;100&quot; step=&quot;5&quot; aria-label=&quot;Interface scale&quot;&gt;&lt;span class=&quot;range-track&quot; aria-hidden=&quot;true&quot;&gt;&lt;span class=&quot;range-fill&quot;&gt;&lt;/span&gt;&lt;span class=&quot;range-thumb&quot;&gt;&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;output&gt;100%&lt;/output&gt;&lt;/div&gt;&lt;/section&gt;
     &lt;/div&gt;
     &lt;footer&gt;&lt;span class=&quot;hint&quot;&gt;Tab to move focus · Space or controller accept to toggle&lt;/span&gt;&lt;span class=&quot;select-label&quot;&gt;QUALITY&lt;/span&gt;&lt;select aria-label=&quot;Graphics quality&quot;&gt;&lt;option&gt;Low quality&lt;/option&gt;&lt;option&gt;Medium quality&lt;/option&gt;&lt;option selected&gt;High quality&lt;/option&gt;&lt;option&gt;Ultra quality&lt;/option&gt;&lt;/select&gt;&lt;button type=&quot;button&quot;&gt;Apply settings&lt;/button&gt;&lt;/footer&gt;
   &lt;/main&gt;

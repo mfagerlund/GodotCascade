@@ -83,8 +83,10 @@
       "source_parity": [
         {"label": "checkbox", "html": "type=\"checkbox\"", "gxml": "<Checkbox"},
         {"label": "switch", "html": "role=\"switch\"", "gxml": "<Switch"},
+        {"label": "visible switch track", "html": "class=\"switch-track\"", "gxml": "<Switch"},
         {"label": "radio group", "html": "type=\"radio\"", "gxml": "<RadioButton"},
         {"label": "range slider", "html": "type=\"range\"", "gxml": "<Slider"},
+        {"label": "visible range track", "html": "class=\"range-track\"", "gxml": "<Slider"},
         {"label": "select dropdown", "html": "<select", "gxml": "<Select"}
       ],
       "mappings": [
