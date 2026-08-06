@@ -40,13 +40,16 @@ def package(output_dir: Path) -> tuple[Path, Path]:
     if not included or PLUGIN_CONFIG not in included:
         raise RuntimeError("addon package would be empty or omit plugin.cfg")
 
-    with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as bundle:
+    # Stored entries avoid platform-specific DEFLATE output while the normalized
+    # timestamp and Unix mode make the complete archive reproducible byte-for-byte.
+    with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_STORED) as bundle:
         for path in included:
             relative = path.relative_to(ROOT).as_posix()
             info = zipfile.ZipInfo(relative, FIXED_TIMESTAMP)
-            info.compress_type = zipfile.ZIP_DEFLATED
+            info.compress_type = zipfile.ZIP_STORED
+            info.create_system = 3
             info.external_attr = 0o100644 << 16
-            bundle.writestr(info, path.read_bytes(), compresslevel=9)
+            bundle.writestr(info, path.read_bytes())
 
     digest = hashlib.sha256(archive.read_bytes()).hexdigest()
     checksum.write_text(f"{digest}  {archive.name}\n", encoding="utf-8", newline="\n")

@@ -13,7 +13,7 @@ python tools/release/package_addon.py
 python tools/release/clean_install_smoke.py --godot path/to/godot
 ```
 
-The package command creates a deterministic addon-only ZIP and SHA-256 checksum under `dist/`. The smoke test extracts that archive into a new temporary Godot project and exercises GXML parsing, GCSS parsing, styling, and native control construction using only packaged files.
+The package command creates a deterministic addon-only ZIP and SHA-256 checksum under `dist/`. Entries are stored with normalized timestamps, paths, and Unix file modes so the complete archive is reproducible across Windows and Linux instead of depending on the host's DEFLATE implementation. The smoke test extracts that archive into a new temporary Godot project and exercises GXML parsing, GCSS parsing, styling, and native control construction using only packaged files.
 
 The showcase generator keeps superseded content-hashed HTML references as redirects to the current hash. This lets a cached `docs/showcase/index.html` continue resolving its iframe instead of producing a missing-file error.
 
