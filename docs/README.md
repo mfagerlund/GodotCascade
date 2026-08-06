@@ -1,6 +1,6 @@
 # GodotCascade documentation
 
-GodotCascade 0.1 is a public preview. Documentation distinguishes the supported focused surface from intentionally unsupported browser features.
+GodotCascade 0.1.0 is the published public preview; `main` documents the 0.2 development surface. Documentation distinguishes the supported focused surface from intentionally unsupported browser features.
 
 ## Start here
 
@@ -19,7 +19,7 @@ GodotCascade 0.1 is a public preview. Documentation distinguishes the supported 
 - [Performance budgets](performance.md) — executable 500-item benchmark and allocation ceilings
 - [Migration notes](migrations.md) — source/API compatibility and upgrade instructions
 - [Public preview stability policy](api-stability.md) — current guarantees, unstable surfaces, and change process
-- [Roadmap](../ROADMAP.md) — completed 0.1 milestones and the next public-preview direction
+- [Roadmap](../ROADMAP.md) — completed 0.1 and 0.2 milestones plus deferred boundaries
 - [HTML parity showcase](showcase/index.html) — live HTML references beside captured native Godot output
 
 ## Decisions

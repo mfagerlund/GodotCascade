@@ -5,7 +5,7 @@ GodotCascade is an experimental retained-mode UI framework for Godot 4. It bring
 The goal is to make game UI faster to build and easier to maintain without embedding a browser or replacing Godot's renderer. A GodotCascade interface remains a tree of native controls, so it can continue to use Godot's signals, themes, input, rendering, and editor tooling.
 
 > [!IMPORTANT]
-> GodotCascade 0.1 is a public preview for Godot 4.7. Its focused, documented source surface is executable end to end; it is not a browser engine, and APIs outside the preview references remain unstable.
+> GodotCascade 0.1.0 is the published public preview for Godot 4.7. The `main` branch is the 0.2 development line, adding interactive forms without becoming a browser engine; APIs outside the documented preview references remain unstable.
 
 ## Why GodotCascade?
 
@@ -60,6 +60,7 @@ Bindings connect the interface to game state:
 ```xml
 <Label text="{player.name}" />
 <Progress value="{player.health}" max="100" />
+<TextInput bind-text="{player.name}" required="true" />
 ```
 
 These formats deliberately borrow familiar ideas from HTML and CSS, but they are small, Godot-specific languages. GodotCascade is not a browser engine and does not aim for web standards compatibility.
@@ -87,11 +88,11 @@ The repository currently contains several working vertical slices:
 - `.gxml`/`.gcss` import resources plus a docked live preview, Inspector summary, layout debugger, and source navigation;
 - stable ID and structural keys that reconcile edits into the existing native tree;
 - last-valid rendering when an in-progress edit has parser or builder errors;
-- focused `{dot.separated.path}` one-way bindings for text and progress values;
+- focused `{dot.separated.path}` one-way bindings plus explicit writable form bindings;
 - keyed `Repeat` collections, `on-*` event methods, and registered custom-component lifecycle hooks;
 - three source-generated parity scenes covering layout, media, components, form controls, and bound telemetry data.
 
-Two-way binding and browser-wide property coverage are intentionally outside the 0.1 preview. Focused one-way properties, keyed repeats, event-to-method bindings, source importers, and editor preview/debug tooling are implemented.
+The 0.2 development line adds native single-line text editing, validation, and explicit `bind-*` write-back while retaining the 0.1 source surface. Browser-wide property coverage remains out of scope.
 
 ## Trying the preview
 
@@ -129,9 +130,22 @@ document.refresh_bindings()
 
 Assigning a new context refreshes automatically. The current focused slice supports text on `Label`/`Button` and `min`, `max`, and `value` on `Progress`; unresolved paths produce binding diagnostics instead of executing expressions or methods.
 
+### Writable form binding and validation
+
+Writable bindings are opt-in, so existing `{path}` attributes remain one-way:
+
+```xml
+<TextInput bind-text="{settings.profile}" required="true" pattern="^.{2,16}$" />
+<Checkbox bind-checked="{settings.shadows}">Dynamic shadows</Checkbox>
+<Slider min="75" max="125" bind-value="{settings.ui_scale}" />
+<Select bind-selected="{settings.quality}">…</Select>
+```
+
+Native edits assign only existing Dictionary, Array, or object-property paths, emit `binding_value_changed`, and refresh dependent one-way controls. `CascadeDocument.validate()` evaluates adapted controls and publishes validation diagnostics. No expressions, converters, implicit object creation, or method calls are involved.
+
 ## Components and interactive states
 
-The executable GXML elements are `Page`, `Row`, `Column`, `Panel`, `Label`, `Button`, `Checkbox`, `RadioButton`/`Radio`, `Switch`, `Select`/`Option`, `Slider`, and `Progress`. GodotCascade owns the measurement and drawing of its core components while retaining useful native behavior underneath.
+The executable GXML elements are `Page`, `Row`, `Column`, `Panel`, `Label`, `Button`, `Checkbox`, `RadioButton`/`Radio`, `Switch`, `Select`/`Option`, `Slider`, `Progress`, and the adapted single-line `TextInput`. GodotCascade owns the measurement and drawing of its exact components while native `LineEdit` continues to own text editing behavior.
 
 Button state selectors respond dynamically to Godot's native interaction state:
 
@@ -141,9 +155,11 @@ Button:pressed { background: #1d2939; }
 Button:focused { border-color: #84adff; border-width: 2px; }
 Button:disabled { background: #1f2937; color: #98a2b3; }
 Checkbox:checked { background: #1d2939; color: #ffffff; }
+TextInput:invalid { border-color: #f97066; }
+TextInput:focus-visible { border-color: #84adff; border-width: 2px; }
 ```
 
-This is a focused subset, not browser-wide pseudo-class support. Owned interactive controls share native state precedence and styling; `:open` is supported for selects, while arbitrary-control hover and pseudo-state animation are outside the preview. Reconciliation-time property transitions have a separate interruption contract. See the [current support reference](docs/current-support.md) for the exact element, selector, property, and state matrices.
+This is a focused subset, not browser-wide pseudo-class support. Owned interactive controls share native state precedence and styling; selects support `:open`, text inputs support `:invalid`, and interactive borders support `:focus-visible`. Arbitrary-container hover and pseudo-state animation remain outside the preview. Reconciliation-time property transitions have a separate interruption contract. See the [current support reference](docs/current-support.md) for the exact element, selector, property, and state matrices.
 
 Run the current headless smoke test with:
 

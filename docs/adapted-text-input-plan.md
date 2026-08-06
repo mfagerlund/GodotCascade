@@ -1,10 +1,10 @@
-# Adapted text input plan
+# Adapted text input status and remaining plan
 
-GodotCascade will initially adapt Godot's native `LineEdit` and `TextEdit` rather than own text editing. Text entry has a much larger behavioral contract than labels and buttons, and visual ownership must not regress platform behavior.
+GodotCascade 0.2 adapts native `LineEdit` for single-line text entry rather than owning text editing. A later slice will adapt `TextEdit` for multiline content. Text entry has a much larger behavioral contract than labels and buttons, and visual ownership must not regress platform behavior.
 
 ## Compatibility boundary
 
-The first `CascadeTextInput` will be an **adapted** component:
+`CascadeTextInput` is an **adapted** component:
 
 - native controls own text storage, cursor movement, selection, undo/redo, clipboard commands, drag selection, and context menus;
 - Godot's text server owns shaping, bidirectional text, language, and OpenType features;
@@ -12,7 +12,16 @@ The first `CascadeTextInput` will be an **adapted** component:
 - GodotCascade owns the outer box, documented theme adapters, layout metadata, diagnostics, and GXML attributes;
 - unsupported appearance declarations produce an adapted-compatibility warning rather than silently implying exact rendering.
 
-## Required behavior matrix
+## Implemented automated boundary
+
+- single-line text, placeholder, read-only, disabled, secret, max-length, and accessibility attributes;
+- native caret, selection, clipboard, undo/redo, context-menu, bidi, shaping, and IME ownership;
+- required and regular-expression validation with `:invalid` styling;
+- explicit `bind-text` write-back;
+- text, caret, selection, focus, and native instance preservation during compatible keyed reload;
+- hover, focused, disabled, invalid, and input-modality-aware `:focus-visible` adapted styles.
+
+## Remaining certification matrix
 
 Before the adapter enters the public component set, automated and manual checks must cover:
 
@@ -24,11 +33,11 @@ Before the adapter enters the public component set, automated and manual checks 
 6. Password masking without exposing text through accessibility metadata.
 7. Read-only, disabled, invalid, placeholder, focused, and selection states.
 8. Screen-reader name, description, value, selection, and validation announcements.
-9. Single-line submit versus multiline newline behavior.
+9. Multiline newline behavior after the native `TextEdit` adapter lands.
 10. Hot reload without losing text, cursor, selection, scroll, or IME composition state.
 
-## Initial source surface
+## Source surface
 
-The intended GXML attributes are `text`, `placeholder`, `multiline`, `read-only`, `disabled`, `secret`, `max-length`, `accessible-label`, and `accessible-description`. The adapter can use the existing `on-*` signal-to-method contract; two-way value binding remains outside the preview and will not invent expression syntax.
+The implemented GXML attributes are `text`, `bind-text`, `placeholder`, `read-only`, `disabled`, `secret`, `max-length`, `required`, `pattern`, `error-message`, `accessible-label`, and `accessible-description`. `multiline="false"` is accepted and `multiline="true"` is an explicit error until the `TextEdit` adapter exists. Event methods continue to use `on-*`; writable binding uses an exact existing property path and does not introduce expression syntax.
 
 Exact ownership is intentionally deferred. Replacing native editing would require equivalent tests on every supported platform and input method, not merely matching its appearance.

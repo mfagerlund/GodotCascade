@@ -20,13 +20,14 @@ This page documents the executable subset on `main`. GodotCascade borrows produc
 | `Select` | `CascadeSelect` | Owned closed control with native popup, options, and keyboard navigation |
 | `Option` | Select option data | Valid only as a direct authored child of `Select` |
 | `Slider` | `CascadeSlider` | Native range semantics with owned track, fill, thumb, and pointer/keyboard input |
+| `TextInput` / `Input` | `CascadeTextInput` | Adapted native single-line `LineEdit` with Cascade box styling and validation |
 | `Progress` | `CascadeProgress` | Owned horizontal track, fill, range, and box model |
 | `Image` | `CascadeImage` | Texture resource rendering with contain, cover, fill, or intrinsic crop geometry |
 | `Repeat` | `CascadeBox` plus expanded template | One child template repeated from an array binding with optional item key |
 
-Every element accepts `id`, `class`, `accessible-label`, and `accessible-description`. Text-bearing controls use their visible text as the native accessibility name when no explicit label is authored. `Label`, `Button`, `Checkbox`, `RadioButton`, and `Switch` accept text as element content or through a `text` attribute. Interactive controls accept boolean `disabled`; toggle controls accept boolean `checked`; radio buttons use `group` to share a native `ButtonGroup`. `Select` accepts `selected` as an option value or zero-based index; `Option` accepts `value` and boolean `disabled`. `Progress` and `Slider` accept numeric `min`, `max`, and `value`; `Slider` also accepts a positive `step`. `Image` requires a `src` path that loads a Godot `Texture2D` resource.
+Every element accepts `id`, `class`, `accessible-label`, and `accessible-description`. Text-bearing controls use their visible text as the native accessibility name when no explicit label is authored. `Label`, `Button`, `Checkbox`, `RadioButton`, and `Switch` accept text as element content or through a `text` attribute. Interactive controls accept boolean `disabled`; toggle controls accept boolean `checked`; radio buttons use `group` to share a native `ButtonGroup`. `Select` accepts `selected` as an option value or zero-based index; `Option` accepts `value` and boolean `disabled`. `Progress` and `Slider` accept numeric `min`, `max`, and `value`; `Slider` also accepts a positive `step`. `TextInput` accepts `text`, `placeholder`, boolean `read-only`, `disabled`, `secret`, and `required`, non-negative `max-length`, a Godot regular-expression `pattern`, and `error-message`. `multiline="false"` is accepted; `multiline="true"` is diagnosed until the planned native `TextEdit` adapter lands. `Image` requires a `src` path that loads a Godot `Texture2D` resource.
 
-Unknown elements are build errors unless their native factory is registered through `ComponentRegistry`. `Window` and `TextInput` are not implemented yet.
+Unknown elements are build errors unless their native factory is registered through `ComponentRegistry`. `Window` is not implemented.
 
 ## Bindings
 
@@ -37,18 +38,29 @@ An entire supported attribute value may be an exact property-path binding:
 <Progress min="0" max="100" value="{player.health}" />
 ```
 
-The current property-binding surface is:
+The one-way property-binding surface is:
 
-- `text` on `Label` and `Button`;
-- `min`, `max`, and `value` on `Progress`.
+- `text` on `Label`, `Button`, and `TextInput`;
+- `min`, `max`, and `value` on `Progress` and `Slider`.
 
 `BindingResolver` traverses Dictionaries, Arrays using numeric path segments, and Godot object properties. It does not execute expressions or call methods. Assigning a new `CascadeDocument.binding_context` refreshes automatically; nested mutations require `refresh_bindings()`.
 
 `Repeat` accepts an array path through `items="{path}"`; its template can bind through local `item` and `index` scopes while retaining access to root paths. A `key` path relative to each item enables identity-preserving reorder/add/remove reconciliation.
 
+Form write-back is explicit and reuses the same exact path grammar:
+
+```xml
+<TextInput bind-text="{settings.profile}" />
+<Checkbox bind-checked="{settings.shadows}">Dynamic shadows</Checkbox>
+<Slider bind-value="{settings.scale}" min="75" max="125" />
+<Select bind-selected="{settings.quality}">…</Select>
+```
+
+`bind-text`, `bind-checked`, `bind-value`, and `bind-selected` initialize from the context and assign native changes back to an existing Dictionary key, Array index, or Godot object property. Successful writes emit `binding_value_changed` and refresh dependent one-way bindings. Missing paths produce diagnostics and are never created implicitly. Writable bindings inside a repeated item scope are deferred.
+
 `on-<signal>="method_name"` connects a native signal to `CascadeDocument.event_context`, an object-valued binding context, or the document itself. Authored connections are refreshed without disturbing user signal connections. See [markup and state](markup-and-state.md).
 
-Interpolation such as `"Health: {player.health}"`, two-way binding, and converters are not supported.
+Interpolation such as `"Health: {player.health}"`, converters, computed assignments, and implicit write-back from ordinary attributes are not supported.
 
 ## Selectors
 
@@ -69,7 +81,7 @@ Type, class, ID, combined compounds, descendant matching, and the direct-child c
 
 ## Pseudo states
 
-The parser recognizes `:hover`, `:pressed`, `:checked`, `:focused`, `:disabled`, `:selected`, and `:open`. Runtime state styling is implemented for the owned `BaseButton` controls and select options:
+The parser recognizes `:hover`, `:pressed`, `:checked`, `:focused`, `:focus-visible`, `:disabled`, `:selected`, `:open`, and `:invalid`. Runtime state styling is implemented for owned `BaseButton` controls, select options, sliders, and the adapted text input:
 
 | Selector | Supported declarations | Runtime source |
 | --- | --- | --- |
@@ -77,17 +89,21 @@ The parser recognizes `:hover`, `:pressed`, `:checked`, `:focused`, `:disabled`,
 | `:pressed` | `background`, `background-color` | Native activation press |
 | `:checked` / `:selected` | `background`, `background-color`, `color` | Native toggle selection; `:selected` is the style alias |
 | `:focused` | `border-color`, `border-width` | Native focus state |
+| `:focus-visible` | `border-color`, `border-width` | Keyboard/controller focus modality on interactive controls |
 | `:disabled` | `background`, `background-color`, `color` | Native disabled state |
+| `TextInput:invalid` | `background`, `background-color`, `color`, `border-color` | Required/pattern validation result |
 | `Select:open` | `background`, `background-color` | Visible option popup |
 | `Option:selected` | `background`, `background-color`, `color` | Current select option |
 
 Unlike a browser, state rules are resolved into typed component state properties during the build. Native Godot state changes then select the appropriate drawing dynamically. State precedence is `disabled` → `pressed` → `checked`/`selected` → `hover` → `focus` → base; focus-ring drawing remains visible alongside other states. `:pressed` is the GodotCascade equivalent of HTML `:active`.
 
-There is no general `Panel:hover`, `:focus-visible`, or pseudo-state animation support. Reconciliation-time style transitions are documented below. Pseudo-state declarations on unsupported controls warn.
+There is no general `Panel:hover` or pseudo-state animation support. Reconciliation-time style transitions are documented below. Pseudo-state declarations on unsupported controls warn.
 
 ### Input behavior
 
 Owned interactive controls retain native `BaseButton` input behavior. Pointer press/release and the focused `ui_accept` action activate buttons and toggles; this covers keyboard acceptance and mapped controller buttons. Checkbox and switch activation toggles their checked state, radio buttons update their native group selection, and disabled controls ignore activation. The document wires linear next/previous focus order after reconciliation; controller directional navigation continues to use Godot's native behavior. Its accessibility audit warns about unnamed interactive controls and undescribed images.
+
+`CascadeTextInput` delegates caret movement, selection, clipboard, undo/redo, context menus, shaping, bidi, IME, password masking, and native accessibility behavior to Godot `LineEdit`. GodotCascade preserves text, caret, and selection across compatible keyed reloads and owns required/pattern validation plus adapted box styles. Call `CascadeDocument.validate()` to publish validation diagnostics before committing a form.
 
 When a select popup is open, `ui_up` and `ui_down` move through enabled options, `ui_accept` commits the highlighted option, and `ui_cancel` closes the popup. Pointer selection uses the same option path. Authors should provide `accessible-label` whenever visible text alone does not describe a control's purpose.
 
@@ -123,11 +139,11 @@ Unsupported properties produce warnings; unsupported values for known properties
 - Margins do not collapse.
 - Final rectangles are pixel-snapped by rounding leading and trailing edges independently.
 - `overflow` supports `visible`, `clip`, and `hidden` as an alias for clipping.
-- Percentages and flex shrink/basis shorthands are outside the 0.1 preview surface.
+- Percentages and flex shrink/basis shorthands are outside the current preview surface.
 
 ## Component support
 
-Implemented exact components are `CascadeBox`, `CascadeGrid`, `CascadeStack`, `CascadePanel`, `CascadeLabel`, `CascadeImage`, `CascadeButton`, `CascadeCheckbox`, `CascadeRadioButton`, `CascadeSwitch`, `CascadeSelect`, `CascadeSlider`, and `CascadeProgress`. Exact means GodotCascade owns the supported measurement and visual semantics.
+Implemented exact components are `CascadeBox`, `CascadeGrid`, `CascadeStack`, `CascadePanel`, `CascadeLabel`, `CascadeImage`, `CascadeButton`, `CascadeCheckbox`, `CascadeRadioButton`, `CascadeSwitch`, `CascadeSelect`, `CascadeSlider`, and `CascadeProgress`. `CascadeTextInput` is adapted: native `LineEdit` owns editing behavior while Cascade maps its documented box and state surface. Exact means GodotCascade owns the supported measurement and visual semantics.
 
 Ordinary Godot `Control` children are layout-only by default. Integrations can declare an adapted property surface; `CompatibilityRegistry` reports warnings for inexact or unsupported visual mappings while permitting layout properties. See the [compatibility tier reference](compatibility-tiers.md) and [ADR 0001](decisions/0001-owned-core-controls.md).
 
@@ -155,8 +171,9 @@ The migration target is semantic, not source-compatible:
 | grouped radio input | `RadioButton group="…"` → `CascadeRadioButton` + `ButtonGroup` |
 | switch input | `Switch` → `CascadeSwitch` |
 | select input | `Select` + `Option` → `CascadeSelect` + native popup |
+| single-line text input | `TextInput` → adapted native `LineEdit` |
 | `progress` | `Progress` → `CascadeProgress` |
-| Application data | Exact `{path.to.value}` attributes |
+| Application data | Exact one-way `{path.to.value}` or explicit writable `bind-*="{path}"` attributes |
 | `:hover`/`:active` button appearance | `:hover`/`:pressed` |
 | Arbitrary HTML, scripts, DOM APIs | Not a goal |
 

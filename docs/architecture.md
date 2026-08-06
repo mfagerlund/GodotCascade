@@ -106,4 +106,4 @@ Godot scene-tree mutation remains on the main thread. Tokenization, parsing, sel
 
 ## Compatibility policy
 
-The 0.1 preview targets Godot 4.7 and source format version 1. Documented runtime APIs receive a one-preview-minor deprecation window; source imports are derived caches regenerated after addon upgrades. Breaking changes require migration notes and replacement tests.
+The 0.1.0 preview and 0.2 development line target Godot 4.7 and source format version 1. Documented runtime APIs receive a one-preview-minor deprecation window; source imports are derived caches regenerated after addon upgrades. Breaking changes require migration notes and replacement tests.

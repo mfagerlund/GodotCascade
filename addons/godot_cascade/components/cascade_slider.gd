@@ -4,6 +4,7 @@ extends Range
 ## Native Range semantics with GodotCascade-owned track, fill, and thumb drawing.
 
 const BoxPainter := preload("res://addons/godot_cascade/components/box_painter.gd")
+const FocusVisibilityTracker := preload("res://addons/godot_cascade/components/focus_visibility_tracker.gd")
 
 @export_group("Computed Style")
 @export var cascade_style: CascadeStyle = CascadeStyle.new():
@@ -29,6 +30,18 @@ const BoxPainter := preload("res://addons/godot_cascade/components/box_painter.g
 	set(next):
 		focus_ring_color = next
 		queue_redraw()
+@export var focus_visible_ring_color := Color("84adff"):
+	set(next):
+		focus_visible_ring_color = next
+		queue_redraw()
+@export var focus_visible_ring_width := 2.0:
+	set(next):
+		focus_visible_ring_width = maxf(next, 0.0)
+		queue_redraw()
+@export var focus_visible_style_enabled := false:
+	set(next):
+		focus_visible_style_enabled = next
+		queue_redraw()
 @export_range(2.0, 64.0, 1.0, "or_greater") var track_height := 6.0:
 	set(next):
 		track_height = maxf(next, 2.0)
@@ -46,6 +59,7 @@ var disabled := false:
 		mouse_filter = Control.MOUSE_FILTER_IGNORE if disabled else Control.MOUSE_FILTER_STOP
 		queue_redraw()
 var _dragging := false
+var _focus_tracker: RefCounted
 
 
 func _init() -> void:
@@ -61,6 +75,9 @@ func _init() -> void:
 
 func _ready() -> void:
 	value_changed.connect(_on_value_changed)
+	_focus_tracker = FocusVisibilityTracker.new()
+	_focus_tracker.attach(self)
+	_focus_tracker.changed.connect(queue_redraw)
 
 
 func _get_minimum_size() -> Vector2:
@@ -85,8 +102,11 @@ func _draw() -> void:
 	BoxPainter.draw_box(self, fill, fill_color, Color.TRANSPARENT, 0.0, track_height * 0.5)
 	var thumb_center := Vector2(track.position.x + track.size.x * ratio, content.get_center().y)
 	draw_circle(thumb_center, thumb_size * 0.5, disabled_thumb_color if disabled else thumb_color)
-	if has_focus():
-		draw_arc(thumb_center, thumb_size * 0.5 + 2.0, 0.0, TAU, 32, focus_ring_color, 2.0, true)
+	var show_ring: bool = has_focus() and (not focus_visible_style_enabled or _focus_tracker == null or bool(_focus_tracker.is_focus_visible()))
+	if show_ring:
+		var ring_color := focus_visible_ring_color if focus_visible_style_enabled else focus_ring_color
+		var ring_width := focus_visible_ring_width if focus_visible_style_enabled else 2.0
+		draw_arc(thumb_center, thumb_size * 0.5 + 2.0, 0.0, TAU, 32, ring_color, ring_width, true)
 
 
 func _gui_input(event: InputEvent) -> void:

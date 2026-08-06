@@ -40,6 +40,8 @@ def tracked_files() -> list[Path]:
 
 def check_text_format(files: list[Path], failures: list[str]) -> None:
     for path in files:
+        if not path.is_file():
+            continue
         if path.suffix.lower() not in TEXT_SUFFIXES:
             continue
         data = path.read_bytes()
@@ -58,6 +60,8 @@ def check_text_format(files: list[Path], failures: list[str]) -> None:
 
 def check_json(files: list[Path], failures: list[str]) -> None:
     for path in files:
+        if not path.is_file():
+            continue
         if path.suffix.lower() != ".json":
             continue
         try:
@@ -68,6 +72,8 @@ def check_json(files: list[Path], failures: list[str]) -> None:
 
 def check_markdown_links(files: list[Path], failures: list[str]) -> None:
     for path in files:
+        if not path.is_file():
+            continue
         if path.suffix.lower() != ".md":
             continue
         text = path.read_text(encoding="utf-8")

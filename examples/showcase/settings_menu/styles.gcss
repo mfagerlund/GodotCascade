@@ -26,6 +26,13 @@
 }
 .section-title { color: #f1f5ff; font-size: 20px; }
 .section-help { color: #7f91af; font-size: 13px; margin-bottom: 5px; }
+.profile-setting { min-height: 38px; display: flex; flex-direction: row; align-items: center; gap: 10px; }
+.profile-label { min-width: 52px; color: #c9d5e9; font-size: 14px; }
+#profile-name { min-width: 170px; min-height: 38px; flex-grow: 1; padding: 8px 11px; color: #f2f4f7; font-size: 14px; background: #101828; border: 1px solid #405477; border-radius: 7px; }
+#profile-name:hover { background: #182235; }
+#profile-name:focused { background: #131b2a; }
+#profile-name:focus-visible { border-color: #84adff; border-width: 2px; }
+#profile-name:invalid { background: #2a1720; color: #fff1f0; border-color: #f97066; }
 .setting-option { min-height: 35px; color: #c9d5e9; font-size: 15px; border-radius: 7px; }
 .setting-option:hover { background: #1d2939; }
 .setting-option:pressed { background: #253b61; }
@@ -49,3 +56,4 @@ Option:selected { background: #16233a; color: #ffffff; }
 #apply { min-width: 148px; min-height: 42px; background: #1c64d1; border: 1px solid #5aa7ff; border-radius: 8px; }
 #apply:hover { background: #2878e5; }
 #apply:pressed { background: #174fa5; }
+#apply:focus-visible { border-color: #b7d2ff; border-width: 2px; }

@@ -14,6 +14,7 @@ const CascadeSwitch := preload("res://addons/godot_cascade/components/cascade_sw
 const CascadeSelect := preload("res://addons/godot_cascade/components/cascade_select.gd")
 const CascadeProgress := preload("res://addons/godot_cascade/components/cascade_progress.gd")
 const CascadeSlider := preload("res://addons/godot_cascade/components/cascade_slider.gd")
+const CascadeTextInput := preload("res://addons/godot_cascade/components/cascade_text_input.gd")
 const CascadeImage := preload("res://addons/godot_cascade/components/cascade_image.gd")
 const PropertyCache := preload("res://addons/godot_cascade/runtime/property_cache.gd")
 const ComputedStyleCache := preload("res://addons/godot_cascade/style/computed_style_cache.gd")
@@ -56,6 +57,7 @@ static func _build_element(
 	var local_key: String = "#" + element.element_id() if not element.element_id().is_empty() else key_path
 	control.set_meta("cascade_key", "%s/%s" % [key_scope, local_key] if not key_scope.is_empty() else local_key)
 	control.set_meta("cascade_bindings", {})
+	control.set_meta("cascade_writable_bindings", {})
 	control.set_meta("cascade_events", {})
 	control.set_meta("cascade_binding_scope", binding_scope)
 	control.set_meta("cascade_source_line", element.source_line)
@@ -63,7 +65,10 @@ static func _build_element(
 	control.set_meta("cascade_transition_properties", PackedStringArray())
 	control.set_meta("cascade_transition_duration", 0.0)
 	control.set_meta("cascade_explicit_accessible_label", false)
-	control.set_meta("cascade_compatibility_tier", "layout-only" if ComponentRegistry.has(element.tag_name) else "exact")
+	var compatibility_tier := "layout-only" if ComponentRegistry.has(element.tag_name) else ("adapted" if control is CascadeTextInput else "exact")
+	control.set_meta("cascade_compatibility_tier", compatibility_tier)
+	if control is CascadeTextInput:
+		control.set_meta("cascade_adapted_properties", PackedStringArray(["background", "border", "color", "font-size", "padding"]))
 
 	_apply_attributes(control, element.attributes, element.text, diagnostics, button_groups)
 	if element.tag_name.to_lower() == "row":
@@ -174,6 +179,8 @@ static func _create_control(tag_name: String, diagnostics: Array[Dictionary]) ->
 			return CascadeProgress.new()
 		"slider":
 			return CascadeSlider.new()
+		"textinput", "input":
+			return CascadeTextInput.new()
 		"image":
 			return CascadeImage.new()
 		"repeat":
@@ -618,11 +625,20 @@ static func _apply_state_declaration(
 	line: int,
 	diagnostics: Array[Dictionary]
 ) -> void:
-	if not control is BaseButton:
-		diagnostics.append(_diagnostic("warning", "Line %s: :%s styles require an interactive control." % [line, state]))
-		return
-
 	var normalized_state := "checked" if state == "selected" else state
+	if normalized_state == "focus-visible" and property_name in ["border-color", "border-width"]:
+		if not _has_property(control, "focus_visible_style_enabled"):
+			_diagnostic_unsupported_state(diagnostics, line, state, property_name)
+			return
+		control.set("focus_visible_style_enabled", true)
+		if property_name == "border-color":
+			control.set("focus_visible_ring_color", _parse_color(value, line, diagnostics))
+		else:
+			_set_length_property(control, "focus_visible_ring_width", value, line, diagnostics)
+		return
+	if normalized_state == "invalid" and property_name == "border-color" and _has_property(control, "invalid_border_color"):
+		control.set("invalid_border_color", _parse_color(value, line, diagnostics))
+		return
 	if property_name in ["background", "background-color"]:
 		var background_property := "%s_background_color" % normalized_state
 		if _has_property(control, background_property):
@@ -635,9 +651,9 @@ static func _apply_state_declaration(
 			control.set(color_property, _parse_color(value, line, diagnostics))
 		else:
 			_diagnostic_unsupported_state(diagnostics, line, state, property_name)
-	elif state == "focused" and property_name == "border-color":
-		control.focus_ring_color = _parse_color(value, line, diagnostics)
-	elif state == "focused" and property_name == "border-width":
+	elif state == "focused" and property_name == "border-color" and _has_property(control, "focus_ring_color"):
+		control.set("focus_ring_color", _parse_color(value, line, diagnostics))
+	elif state == "focused" and property_name == "border-width" and _has_property(control, "focus_ring_width"):
 		_set_length_property(control, "focus_ring_width", value, line, diagnostics)
 	else:
 		_diagnostic_unsupported_state(diagnostics, line, state, property_name)
@@ -651,9 +667,10 @@ static func _apply_attributes(
 	button_groups: Dictionary
 ) -> void:
 	_apply_event_attributes(control, attributes, diagnostics)
-	if control is CascadeLabel or control is CascadeButton:
+	_apply_writable_binding_attributes(control, attributes, diagnostics)
+	if control is CascadeLabel or control is CascadeButton or control is CascadeTextInput:
 		var raw_text := str(attributes.get("text", element_text))
-		if not _record_binding(control, "text", raw_text):
+		if not control.get_meta("cascade_bindings", {}).has("text") and not _record_binding(control, "text", raw_text):
 			control.set("text", raw_text)
 	if attributes.has("accessible-label"):
 		if _has_property(control, "accessibility_name"):
@@ -665,8 +682,11 @@ static func _apply_attributes(
 		control.set("accessibility_name", str(control.get("text")))
 	if attributes.has("accessible-description") and _has_property(control, "accessibility_description"):
 		control.set("accessibility_description", str(attributes["accessible-description"]))
+		control.set_meta("cascade_authored_accessible_description", str(attributes["accessible-description"]))
 	if control is BaseButton:
 		_apply_button_attributes(control, attributes, diagnostics, button_groups)
+	if control is CascadeTextInput:
+		_apply_text_input_attributes(control, attributes, diagnostics)
 	if control is CascadeImage:
 		_apply_image_attributes(control, attributes, diagnostics)
 	if not (control is CascadeProgress or control is CascadeSlider):
@@ -694,6 +714,71 @@ static func _apply_attributes(
 		else:
 			diagnostics.append(_diagnostic("error", "Slider attribute 'step' requires a positive number, got '%s'." % raw_step))
 	control.set_range_values(range_values["min_value"], range_values["max_value"], range_values["value"])
+
+
+static func _apply_writable_binding_attributes(control: Control, attributes: Dictionary, diagnostics: Array[Dictionary]) -> void:
+	var supported := {
+		"bind-text": {"property": "text", "signal": "text_changed", "types": ["textinput"]},
+		"bind-checked": {"property": "button_pressed", "signal": "toggled", "types": ["checkbox", "switch", "radiobutton", "radio"]},
+		"bind-value": {"property": "value", "signal": "value_changed", "types": ["slider"]},
+		"bind-selected": {"property": "selected_value", "signal": "selection_changed", "types": ["select"]},
+	}
+	var element_type := str(control.get_meta("cascade_element_type", "")).to_lower()
+	for attribute_name in attributes:
+		var normalized_name := str(attribute_name).to_lower()
+		if not normalized_name.begins_with("bind-"):
+			continue
+		if not supported.has(normalized_name):
+			diagnostics.append(_diagnostic("error", "Unsupported writable binding attribute '%s'." % attribute_name))
+			continue
+		var definition: Dictionary = supported[normalized_name]
+		if element_type not in definition["types"]:
+			diagnostics.append(_diagnostic("error", "Writable binding '%s' is not supported on <%s>." % [attribute_name, control.get_meta("cascade_element_type", control.get_class())]))
+			continue
+		var raw_value := str(attributes[attribute_name])
+		var path := _binding_path(raw_value)
+		if path.is_empty():
+			diagnostics.append(_diagnostic("error", "Writable binding '%s' requires an exact {dot.separated.path}." % attribute_name))
+			continue
+		var property_name := str(definition["property"])
+		var bindings: Dictionary = control.get_meta("cascade_bindings", {})
+		bindings[property_name] = path
+		control.set_meta("cascade_bindings", bindings)
+		var writable: Dictionary = control.get_meta("cascade_writable_bindings", {})
+		writable[property_name] = {"path": path, "signal": definition["signal"]}
+		control.set_meta("cascade_writable_bindings", writable)
+
+
+static func _apply_text_input_attributes(control: CascadeTextInput, attributes: Dictionary, diagnostics: Array[Dictionary]) -> void:
+	control.placeholder_text = str(attributes.get("placeholder", ""))
+	var read_only := false
+	for attribute_name in ["read-only", "disabled", "secret", "required"]:
+		if not attributes.has(attribute_name):
+			continue
+		var parsed: Variant = _parse_bool_attribute(attribute_name, str(attributes[attribute_name]), diagnostics)
+		if parsed == null:
+			continue
+		match attribute_name:
+			"read-only": read_only = parsed
+			"disabled": control.disabled = parsed
+			"secret": control.secret = parsed
+			"required": control.required = parsed
+	if read_only:
+		control.editable = false
+	if attributes.has("multiline"):
+		var multiline: Variant = _parse_bool_attribute("multiline", str(attributes["multiline"]), diagnostics)
+		if multiline == true:
+			diagnostics.append(_diagnostic("error", "TextInput multiline=true is not supported by the single-line adapter; use multiline=false."))
+	if attributes.has("max-length"):
+		var raw_max := str(attributes["max-length"])
+		if not raw_max.is_valid_int() or raw_max.to_int() < 0:
+			diagnostics.append(_diagnostic("error", "TextInput max-length requires a non-negative integer, got '%s'." % raw_max))
+		else:
+			control.max_length = raw_max.to_int()
+	control.validation_pattern = str(attributes.get("pattern", ""))
+	if not control.validation_pattern_is_valid():
+		diagnostics.append(_diagnostic("error", "TextInput pattern is not a valid Godot regular expression."))
+	control.validation_message = str(attributes.get("error-message", "Invalid value."))
 
 
 static func _apply_event_attributes(control: Control, attributes: Dictionary, diagnostics: Array[Dictionary]) -> void:
@@ -857,16 +942,20 @@ static func _parse_bool_attribute(attribute_name: String, value: String, diagnos
 
 
 static func _record_binding(control: Control, property_name: String, raw_value: String) -> bool:
-	var normalized := raw_value.strip_edges()
-	if normalized.length() < 3 or not normalized.begins_with("{") or not normalized.ends_with("}"):
-		return false
-	var path := normalized.substr(1, normalized.length() - 2).strip_edges()
+	var path := _binding_path(raw_value)
 	if path.is_empty():
 		return false
 	var bindings: Dictionary = control.get_meta("cascade_bindings", {})
 	bindings[property_name] = path
 	control.set_meta("cascade_bindings", bindings)
 	return true
+
+
+static func _binding_path(raw_value: String) -> String:
+	var normalized := raw_value.strip_edges()
+	if normalized.length() < 3 or not normalized.begins_with("{") or not normalized.ends_with("}"):
+		return ""
+	return normalized.substr(1, normalized.length() - 2).strip_edges()
 
 
 static func _apply_edges(

@@ -13,6 +13,7 @@ const CASCADE_LABEL_SCRIPT := preload("res://addons/godot_cascade/components/cas
 const CASCADE_PANEL_SCRIPT := preload("res://addons/godot_cascade/components/cascade_panel.gd")
 const CASCADE_PROGRESS_SCRIPT := preload("res://addons/godot_cascade/components/cascade_progress.gd")
 const CASCADE_SLIDER_SCRIPT := preload("res://addons/godot_cascade/components/cascade_slider.gd")
+const CASCADE_TEXT_INPUT_SCRIPT := preload("res://addons/godot_cascade/components/cascade_text_input.gd")
 const CASCADE_IMAGE_SCRIPT := preload("res://addons/godot_cascade/components/cascade_image.gd")
 const CASCADE_DOCUMENT_SCRIPT := preload("res://addons/godot_cascade/runtime/cascade_document.gd")
 const GXML_IMPORTER_SCRIPT := preload("res://addons/godot_cascade/editor/gxml_importer.gd")
@@ -48,11 +49,13 @@ func _enter_tree() -> void:
 	add_custom_type("CascadePanel", "Container", CASCADE_PANEL_SCRIPT, null)
 	add_custom_type("CascadeProgress", "Control", CASCADE_PROGRESS_SCRIPT, null)
 	add_custom_type("CascadeSlider", "Range", CASCADE_SLIDER_SCRIPT, null)
+	add_custom_type("CascadeTextInput", "LineEdit", CASCADE_TEXT_INPUT_SCRIPT, null)
 	add_custom_type("CascadeImage", "Control", CASCADE_IMAGE_SCRIPT, null)
 	add_custom_type("CascadeDocument", "Control", CASCADE_DOCUMENT_SCRIPT, null)
 
 
 func _exit_tree() -> void:
+	remove_custom_type("CascadeTextInput")
 	remove_custom_type("CascadeDocument")
 	remove_custom_type("CascadeImage")
 	remove_custom_type("CascadeSlider")

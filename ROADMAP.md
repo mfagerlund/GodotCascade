@@ -4,9 +4,11 @@ The roadmap favors end-to-end slices over isolated subsystems. Each milestone sh
 
 ## Status snapshot
 
-The roadmap is not empty. The executable foundation now covers flex/box layout, owned button/label/panel/progress controls, GXML and focused GCSS parsing, native-tree construction, keyed hot reload, last-valid diagnostics, one-way property-path bindings, automated captures, and the HTML parity report.
+The executable foundation now covers flex/grid/stack layout, owned and adapted form controls, GXML and focused GCSS parsing, native-tree construction, keyed hot reload, last-valid diagnostics, one-way and explicit writable property-path bindings, automated captures, and the HTML parity report.
 
 All planned 0.1 milestones and every first-public-preview acceptance item are complete. The source-generated settings-menu slice includes shared interactive-state precedence, a native mouse/keyboard/controller test matrix, and owned checkbox, grouped radio-button, switch, select, and slider components. The layout foundation includes native grid tracks, automatic and explicit placement, stack overlays, absolute insets, media, responsive rules, and viewport values. The editor and performance release gates are executable.
+
+Version 0.1.0 is tagged and published through the reproducible release gate. The 0.2 interactive-forms slice is complete on `main`: an adapted native text input, explicit writable bindings, validation state, input-modality-aware focus styling, and a live settings workflow are exercised in both native and HTML showcase views.
 
 The reproduced findings in the [2026-08-05 code review](docs/artifacts/review.md) are part of this roadmap. Blocking correctness fixes take priority when they touch the same runtime layer as an active vertical slice.
 
@@ -147,3 +149,24 @@ The first public preview should build a small settings menu from `.gxml` and a s
 - [x] Headless layout, component, and source-pipeline tests
 - [x] Accessibility pass and documented keyboard navigation
 - [x] Public-preview API and source-format stability notes
+
+## Phase 6 — 0.2 interactive forms — complete
+
+- [x] Adapted single-line `CascadeTextInput` on native `LineEdit` editing semantics
+- [x] GXML text-input attributes for placeholder, read-only, disabled, secret, max length, and accessibility
+- [x] Required and regular-expression validation with accessible messages and `:invalid`
+- [x] Explicit `bind-text`, `bind-checked`, `bind-value`, and `bind-selected` writable paths
+- [x] Writable Dictionary, Array, and Godot object property assignment without expressions or method calls
+- [x] Dependent one-way binding refresh after native edits
+- [x] `:focus-visible` border styling driven by keyboard/controller versus pointer modality
+- [x] Text-input hover, focused, disabled, and invalid adapted appearance states
+- [x] Preserve text, caret, and selection across compatible keyed hot reloads
+- [x] Interactive settings-menu Apply workflow in native Godot and HTML parity views
+- [x] Component, pipeline, validation, writable-binding, and clean-install regression coverage
+
+### Deferred beyond the 0.2 slice
+
+- [ ] Multiline `TextInput` adapter on native `TextEdit`
+- [ ] Cross-platform manual IME, screen-reader, touch selection, and clipboard certification matrix
+- [ ] Writable bindings inside repeated-item scopes
+- [ ] General pseudo-state adapters for non-interactive layout containers

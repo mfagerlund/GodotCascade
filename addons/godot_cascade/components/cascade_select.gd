@@ -124,6 +124,18 @@ func selected_value() -> String:
 	return str(options[selected_index].get("value", ""))
 
 
+## Selects an authored option value. Returns false when no option matches.
+func select_value(value: Variant, notify: bool = false) -> bool:
+	var index := _index_for_value(str(value))
+	if index < 0:
+		return false
+	var changed := selected_index != index
+	selected_index = index
+	if changed and notify:
+		selection_changed.emit(selected_value(), selected_index)
+	return true
+
+
 ## Opens the native option popup below the closed control.
 func open_popup() -> void:
 	if disabled or options.is_empty():

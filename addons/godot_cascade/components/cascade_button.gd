@@ -6,6 +6,7 @@ extends BaseButton
 
 const BoxPainter := preload("res://addons/godot_cascade/components/box_painter.gd")
 const InteractiveStateAdapter := preload("res://addons/godot_cascade/components/interactive_state_adapter.gd")
+const FocusVisibilityTracker := preload("res://addons/godot_cascade/components/focus_visibility_tracker.gd")
 
 @export_group("Content")
 @export var text := "Button":
@@ -78,8 +79,21 @@ const InteractiveStateAdapter := preload("res://addons/godot_cascade/components/
 	set(value):
 		focus_ring_width = maxf(value, 0.0)
 		queue_redraw()
+@export var focus_visible_ring_color := Color("84adff"):
+	set(value):
+		focus_visible_ring_color = value
+		queue_redraw()
+@export_range(0.0, 32.0, 1.0, "or_greater") var focus_visible_ring_width := 2.0:
+	set(value):
+		focus_visible_ring_width = maxf(value, 0.0)
+		queue_redraw()
+@export var focus_visible_style_enabled := false:
+	set(value):
+		focus_visible_style_enabled = value
+		queue_redraw()
 
 var _state_adapter: RefCounted
+var _focus_tracker: RefCounted
 
 
 func _init() -> void:
@@ -101,6 +115,9 @@ func _ready() -> void:
 	_state_adapter = InteractiveStateAdapter.new()
 	_state_adapter.attach(self)
 	_state_adapter.changed.connect(queue_redraw)
+	_focus_tracker = FocusVisibilityTracker.new()
+	_focus_tracker.attach(self)
+	_focus_tracker.changed.connect(queue_redraw)
 	resized.connect(_on_visual_state_changed)
 
 
@@ -135,13 +152,16 @@ func _draw() -> void:
 		cascade_style.border_radius
 	)
 
-	if has_focus() and focus_ring_width > 0.0:
+	var ring_width := focus_visible_ring_width if focus_visible_style_enabled else focus_ring_width
+	var ring_color := focus_visible_ring_color if focus_visible_style_enabled else focus_ring_color
+	var show_ring: bool = has_focus() and (not focus_visible_style_enabled or _focus_tracker == null or bool(_focus_tracker.is_focus_visible()))
+	if show_ring and ring_width > 0.0:
 		BoxPainter.draw_box(
 			self,
 			box_rect,
 			Color.TRANSPARENT,
-			focus_ring_color,
-			focus_ring_width,
+			ring_color,
+			ring_width,
 			cascade_style.border_radius
 		)
 

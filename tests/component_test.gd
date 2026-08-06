@@ -11,6 +11,8 @@ const CascadeRadioButton := preload("res://addons/godot_cascade/components/casca
 const CascadeSwitch := preload("res://addons/godot_cascade/components/cascade_switch.gd")
 const CascadeSelect := preload("res://addons/godot_cascade/components/cascade_select.gd")
 const CascadeSlider := preload("res://addons/godot_cascade/components/cascade_slider.gd")
+const CascadeTextInput := preload("res://addons/godot_cascade/components/cascade_text_input.gd")
+const FocusVisibilityTracker := preload("res://addons/godot_cascade/components/focus_visibility_tracker.gd")
 const InteractiveStateAdapter := preload("res://addons/godot_cascade/components/interactive_state_adapter.gd")
 const CascadeLabel := preload("res://addons/godot_cascade/components/cascade_label.gd")
 const CascadePanel := preload("res://addons/godot_cascade/components/cascade_panel.gd")
@@ -50,6 +52,7 @@ func _run() -> void:
 	await _test_owned_switch()
 	await _test_owned_select()
 	await _test_owned_slider()
+	await _test_adapted_text_input()
 	await _test_native_input_matrix()
 
 	if _failures.is_empty():
@@ -592,6 +595,36 @@ func _test_native_input_matrix() -> void:
 	_expect_true("disabled checkbox ignores activation", checkbox.button_pressed)
 	InputMap.action_erase_event("ui_accept", joypad_mapping)
 	checkbox.queue_free()
+
+
+func _test_adapted_text_input() -> void:
+	var input := CascadeTextInput.new()
+	input.required = true
+	input.validation_message = "Profile name is required."
+	input.placeholder_text = "Profile name"
+	input.focus_visible_style_enabled = true
+	input.focus_visible_ring_color = Color("99bbff")
+	root.add_child(input)
+	await process_frame
+	_expect_true("required text input starts invalid", input.invalid)
+	_expect_true("text input exposes validation message", input.current_validation_message() == "Profile name is required.")
+	input.text = "Rhea"
+	_expect_true("native text satisfies validation", input.validate())
+	input.caret_column = 3
+	input.select(1, 3)
+	var state := input.capture_runtime_state()
+	input.text = "Changed"
+	input.restore_runtime_state(state)
+	_expect_true("text input runtime state restores text", input.text == "Rhea")
+	_expect_true("text input runtime state restores selection", input.has_selection() and input.get_selection_from_column() == 1 and input.get_selection_to_column() == 3)
+	FocusVisibilityTracker.set_keyboard_navigation(true)
+	input.grab_focus()
+	await process_frame
+	_expect_true("keyboard navigation exposes focus-visible state", input.cascade_focus_visible())
+	FocusVisibilityTracker.set_keyboard_navigation(false)
+	_expect_true("pointer modality suppresses focus-visible state", not input.cascade_focus_visible())
+	FocusVisibilityTracker.set_keyboard_navigation(true)
+	input.queue_free()
 
 
 func _send_action(action: StringName, pressed: bool) -> void:

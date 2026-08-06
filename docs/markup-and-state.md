@@ -17,6 +17,21 @@ Inside the template, `item` is the current value and `index` is its current zero
 
 Calling `refresh_bindings()` on a document containing `Repeat` rebuilds the candidate tree and performs keyed reconciliation. Non-repeated documents retain the lighter property-only refresh path.
 
+## Writable form bindings
+
+Ordinary `{path}` values are one-way. Form controls opt into write-back with a `bind-*` attribute:
+
+```xml
+<TextInput bind-text="{settings.profile}" required="true" />
+<Checkbox bind-checked="{settings.shadows}">Dynamic shadows</Checkbox>
+<Slider bind-value="{settings.scale}" />
+<Select bind-selected="{settings.quality}">…</Select>
+```
+
+The path must already resolve to a Dictionary key, Array index, or Godot object property. Native changes assign the value, emit `CascadeDocument.binding_value_changed(path, value, control)`, and refresh other one-way controls. The resolver does not create missing objects, evaluate expressions, call methods, or run converters. Writable paths inside `Repeat` item scopes are intentionally deferred because collection ownership and write identity need a separate contract.
+
+`CascadeDocument.validate()` asks generated adapted controls to validate and emits `validation_changed`. `TextInput` currently supports `required`, a Godot regular-expression `pattern`, and `error-message`; invalid controls expose the `:invalid` style state.
+
 ## Event bindings
 
 An `on-<signal>` attribute connects a native Godot signal to a method on `CascadeDocument.event_context`:

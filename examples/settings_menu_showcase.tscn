@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3]
 
-[ext_resource type="Script" path="res://addons/godot_cascade/runtime/cascade_document.gd" id="1_document"]
+[ext_resource type="Script" path="res://examples/showcase/settings_menu/settings_menu_document.gd" id="1_document"]
 
 [node name="SettingsMenuShowcase" type="Control"]
 layout_mode = 3

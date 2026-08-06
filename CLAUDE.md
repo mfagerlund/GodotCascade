@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-GodotCascade 0.1 is a public-preview retained-mode UI framework for Godot 4: a declarative markup
+GodotCascade is a public-preview retained-mode UI framework for Godot 4: a declarative markup
 language (`.gxml`), a CSS-inspired stylesheet subset (`.gcss`), and native flex/grid/stack layout that
 produce **native Godot `Control` nodes**. It is not a browser engine — see the "Non-goals" section of
 `README.md`.
@@ -146,8 +146,9 @@ The authoritative limits are in `docs/current-support.md`; do not duplicate its 
 the preview supports descendant and direct-child selectors, focused inheritance, box/border/gap and
 transition shorthands, width media conditions, and `px`/`vw`/`vh` lengths. Selector lists, arbitrary CSS,
 compound media queries, and browser-wide pseudo-state behavior remain unsupported. The settings-menu
-controls and their input matrix are complete. `TextInput` remains an explicitly adapted future boundary,
-documented in `docs/adapted-text-input-plan.md`.
+controls and their input matrix are complete. The 0.2 line adds an adapted single-line `TextInput`, explicit
+`bind-*` write-back, validation, and `:focus-visible`; multiline `TextEdit` remains deferred in
+`docs/adapted-text-input-plan.md`.
 
 ### GDScript style in this repo
 

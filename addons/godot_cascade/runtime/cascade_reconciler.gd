@@ -13,6 +13,7 @@ const COPIED_PROPERTIES: PackedStringArray = [
 	"autowrap_mode", "text_overrun_behavior", "max_lines_visible", "text_alignment",
 	"hover_background_color", "pressed_background_color", "checked_background_color", "open_background_color", "disabled_background_color",
 	"checked_text_color", "disabled_text_color", "focus_ring_color", "focus_ring_width", "disabled", "toggle_mode",
+	"focus_visible_ring_color", "focus_visible_ring_width", "focus_visible_style_enabled",
 	"button_group", "action_mode", "accessibility_name", "accessibility_description", "indicator_size", "indicator_gap",
 	"indicator_background_color", "indicator_border_color", "checked_indicator_color",
 	"checkmark_color", "disabled_indicator_color", "track_width", "track_height", "track_color",
@@ -22,6 +23,8 @@ const COPIED_PROPERTIES: PackedStringArray = [
 	"min_value", "max_value", "value", "fill_color", "fill_border_radius",
 	"step", "track_height", "thumb_size", "thumb_color", "disabled_thumb_color",
 	"texture", "fit",
+	"placeholder_text", "placeholder_color", "editable", "secret", "max_length", "required", "validation_pattern", "validation_message",
+	"focused_background_color", "invalid_background_color", "invalid_text_color", "invalid_border_color",
 ]
 
 
@@ -89,9 +92,10 @@ static func _reconcile_children(existing: Control, desired: Control, stats: Dict
 
 
 static func _copy_properties(existing: Control, desired: Control) -> void:
+	var runtime_state := existing.call("capture_runtime_state") if existing.has_method("capture_runtime_state") else {}
 	existing.name = desired.name
 	existing.visible = desired.visible
-	for metadata_name in ["cascade_element_type", "cascade_id", "cascade_classes", "cascade_key", "cascade_bindings", "cascade_events", "cascade_binding_scope", "cascade_source_path", "cascade_source_line", "cascade_source_column", "cascade_transition_properties", "cascade_transition_duration", "cascade_explicit_accessible_label", "cascade_compatibility_tier"]:
+	for metadata_name in ["cascade_element_type", "cascade_id", "cascade_classes", "cascade_key", "cascade_bindings", "cascade_writable_bindings", "cascade_events", "cascade_binding_scope", "cascade_source_path", "cascade_source_line", "cascade_source_column", "cascade_transition_properties", "cascade_transition_duration", "cascade_explicit_accessible_label", "cascade_authored_accessible_description", "cascade_compatibility_tier", "cascade_adapted_properties"]:
 		if desired.has_meta(metadata_name):
 			existing.set_meta(metadata_name, desired.get_meta(metadata_name))
 		elif existing.has_meta(metadata_name):
@@ -118,6 +122,8 @@ static func _copy_properties(existing: Control, desired: Control) -> void:
 			continue
 		if _has_property(existing, property_name) and _has_property(desired, property_name):
 			existing.set(property_name, desired.get(property_name))
+	if not runtime_state.is_empty() and existing.has_method("restore_runtime_state"):
+		existing.call("restore_runtime_state", runtime_state)
 
 
 static func _compatible(existing: Control, desired: Control) -> bool:

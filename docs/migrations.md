@@ -1,5 +1,16 @@
 # Migration notes
 
+## 0.2 development line
+
+The interactive-forms additions are backward-compatible with source format version 1:
+
+- ordinary `{path}` attribute bindings remain one-way;
+- write-back is opt-in through `bind-text`, `bind-checked`, `bind-value`, or `bind-selected`;
+- `TextInput` is an adapted native single-line editor; `multiline="true"` is an explicit error;
+- `:invalid` and `:focus-visible` add states without changing the existing `:focused` contract.
+
+No 0.1 source migration is required.
+
 ## 0.1.0 public preview
 
 This is the first versioned preview contract. Earlier prototype commits were intentionally unstable.

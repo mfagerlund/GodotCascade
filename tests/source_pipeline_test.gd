@@ -41,6 +41,7 @@ func _run() -> void:
 	_test_review_regressions()
 	_test_parser_recovery()
 	_test_binding_resolver()
+	await _test_writable_binding_pipeline()
 	await _test_markup_state_features()
 	await _test_identity_preserving_reload()
 	root.size = Vector2i(960, 540)
@@ -492,6 +493,79 @@ func _test_binding_resolver() -> void:
 	_expect_true("binding resolves array index", array_result["found"] and array_result["value"] == "map")
 	var missing_result := BindingResolver.resolve(context, "player.health")
 	_expect_true("missing binding path reports failure", not missing_result["found"])
+	var write_result := BindingResolver.assign(context, "player.name", "Nova")
+	_expect_true("binding assigns existing dictionary path", write_result["written"] and context["player"]["name"] == "Nova")
+	var array_write := BindingResolver.assign(context, "player.inventory.1", "atlas")
+	_expect_true("binding assigns existing array index", array_write["written"] and context["player"]["inventory"][1] == "atlas")
+	var missing_write := BindingResolver.assign(context, "player.health", 10)
+	_expect_true("binding refuses to invent missing path", not missing_write["written"])
+
+
+func _test_writable_binding_pipeline() -> void:
+	var markup_path := "user://cascade_writable_test.gxml"
+	var stylesheet_path := "user://cascade_writable_test.gcss"
+	var markup := """<Page>
+		<TextInput id="profile" bind-text="{settings.profile}" placeholder="Profile name" required="true" pattern="^.{2,16}$" error-message="Enter 2–16 characters." accessible-label="Profile name" />
+		<Checkbox id="shadows" bind-checked="{settings.shadows}">Dynamic shadows</Checkbox>
+		<Slider id="scale" min="75" max="125" bind-value="{settings.scale}" />
+		<Select id="quality" bind-selected="{settings.quality}"><Option value="low">Low</Option><Option value="high">High</Option><Option value="ultra">Ultra</Option></Select>
+		<Label id="profile-output" text="{settings.profile}" />
+		<Label id="scale-output" text="{settings.scale}" />
+	</Page>"""
+	var stylesheet := """Page { gap: 4px; }
+		TextInput:invalid { background: #331122; color: #ffeeee; border-color: #ff6677; }
+		TextInput:focus-visible { border-color: #88aaff; border-width: 3px; }
+		Button:focus-visible { border-color: #99bbff; border-width: 4px; }"""
+	_expect_true("write writable-binding markup", _write_text(markup_path, markup))
+	_expect_true("write writable-binding stylesheet", _write_text(stylesheet_path, stylesheet))
+	var context := {"settings": {"profile": "Rhea", "shadows": true, "scale": 100.0, "quality": "high"}}
+	var document: Control = CascadeDocument.new()
+	document.load_on_ready = false
+	document.log_diagnostics_to_console = false
+	document.watch_sources = false
+	document.binding_context = context
+	document.markup_path = markup_path
+	document.stylesheet_path = stylesheet_path
+	root.add_child(document)
+	_expect_true("writable-binding document loads", document.reload_document())
+	var input: LineEdit = _find_by_id(document.generated_root(), "profile")[0]
+	var checkbox: BaseButton = _find_by_id(document.generated_root(), "shadows")[0]
+	var slider: Range = _find_by_id(document.generated_root(), "scale")[0]
+	var select: Control = _find_by_id(document.generated_root(), "quality")[0]
+	_expect_true("writable text binding initializes native text", input.text == "Rhea")
+	_expect_true("writable checked binding initializes toggle", checkbox.button_pressed)
+	_expect_float("writable range binding initializes value", slider.value, 100.0)
+	_expect_true("writable selected binding initializes select", select.call("selected_value") == "high")
+	_expect_true("invalid pseudo applies adapted background", input.get("invalid_background_color") == Color("331122"))
+	_expect_true("focus-visible pseudo enables modality-aware ring", input.get("focus_visible_style_enabled") and input.get("focus_visible_ring_color") == Color("88aaff"))
+	input.text = "Nova"
+	input.text_changed.emit(input.text)
+	checkbox.button_pressed = false
+	slider.value = 115.0
+	select.call("select_value", "ultra", true)
+	await process_frame
+	_expect_true("text edit writes binding context", context["settings"]["profile"] == "Nova")
+	_expect_true("toggle writes binding context", not context["settings"]["shadows"])
+	_expect_float("slider writes binding context", context["settings"]["scale"], 115.0)
+	_expect_true("select writes binding context", context["settings"]["quality"] == "ultra")
+	_expect_true("writable update refreshes dependent text", _find_by_id(document.generated_root(), "profile-output")[0].get("text") == "Nova")
+	var input_instance := input.get_instance_id()
+	input.select(1, 3)
+	_expect_true("write text-input hot-reload markup", _write_text(markup_path, markup.replace("Profile name", "Display name")))
+	_expect_true("text-input source edit reloads", document.poll_sources())
+	input = _find_by_id(document.generated_root(), "profile")[0]
+	_expect_true("text-input reload preserves native identity", input.get_instance_id() == input_instance)
+	_expect_true("text-input reload preserves writable text", input.text == "Nova")
+	_expect_true("text-input reload preserves selection", input.has_selection() and input.get_selection_from_column() == 1 and input.get_selection_to_column() == 3)
+
+	input.text = ""
+	input.text_changed.emit(input.text)
+	_expect_true("document validation reports invalid field", not document.validate())
+	_expect_true("invalid field retains authored error state", input.get("invalid"))
+	document.queue_free()
+	await process_frame
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(markup_path))
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(stylesheet_path))
 
 
 func _test_markup_state_features() -> void:

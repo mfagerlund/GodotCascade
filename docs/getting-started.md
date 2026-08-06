@@ -12,7 +12,8 @@ Minimal markup:
 ```xml
 <Page class="settings">
     <Label class="title">Settings</Label>
-    <Checkbox checked="true">Enable shadows</Checkbox>
+    <TextInput bind-text="{settings.profile}" required="true" placeholder="Player name" />
+    <Checkbox bind-checked="{settings.shadows}">Enable shadows</Checkbox>
     <Button on-pressed="apply_settings">Apply</Button>
 </Page>
 ```
@@ -25,6 +26,6 @@ Minimal stylesheet:
 Button { padding: 8px 14px; background: #1c64d1; border-radius: 7px; }
 ```
 
-For bound data, assign `binding_context` before the document loads. Assign an object to `event_context` for `on-*` handlers. Use explicit IDs and repeat keys whenever identity must survive reorder or hot reload.
+For bound data, assign `binding_context` before the document loads. Exact `{path}` values are one-way; explicit `bind-*="{path}"` form attributes write native edits back to existing context paths and refresh dependent values. Assign an object to `event_context` for `on-*` handlers. Call `validate()` before applying a form. Use explicit IDs and repeat keys whenever identity must survive reorder or hot reload.
 
 Continue with the [current support reference](current-support.md), [style system](style-system.md), [markup/state guide](markup-and-state.md), and [editor tooling](editor-tooling.md). The [parity showcase](showcase/index.html) contains three executable projects with their HTML references, GXML/GCSS source, native scenes, and captures.

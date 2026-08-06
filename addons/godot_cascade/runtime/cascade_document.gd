@@ -4,6 +4,8 @@ extends Control
 ## Loads paired GXML/GCSS files and builds a native Godot Control tree.
 
 signal diagnostics_changed(diagnostics: Array[Dictionary])
+signal binding_value_changed(path: String, value: Variant, control: Control)
+signal validation_changed(valid: bool, diagnostics: Array[Dictionary])
 
 const GxmlParser := preload("res://addons/godot_cascade/markup/gxml_parser.gd")
 const GcssParser := preload("res://addons/godot_cascade/style/gcss_parser.gd")
@@ -50,6 +52,7 @@ var _watch_elapsed := 0.0
 var _source_signatures := {}
 var _published_diagnostic_keys := {}
 var _last_build_size := Vector2.ZERO
+var _applying_bindings := false
 
 
 func _ready() -> void:
@@ -125,6 +128,7 @@ func reload_document() -> bool:
 			_generated_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 			ComponentRegistry.mount_tree(_generated_root)
 	_refresh_bindings(false)
+	_refresh_writable_bindings(false)
 	_refresh_events(false)
 	AccessibilityAudit.apply_linear_navigation(_generated_root, wrap_focus_navigation)
 	if audit_accessibility:
@@ -162,6 +166,17 @@ func refresh_bindings() -> bool:
 ## Reconnects authored on-* signal bindings without disturbing user connections.
 func refresh_events() -> bool:
 	return _refresh_events(true)
+
+
+## Validates generated controls and publishes source-aware validation diagnostics.
+func validate() -> bool:
+	diagnostics = diagnostics.filter(func(diagnostic): return diagnostic.get("path", "") != "validation")
+	if _generated_root != null:
+		_validate_node(_generated_root)
+	var valid := not diagnostics.any(func(diagnostic): return diagnostic.get("path", "") == "validation")
+	validation_changed.emit(valid, diagnostics.filter(func(diagnostic): return diagnostic.get("path", "") == "validation"))
+	_publish_diagnostics()
+	return valid
 
 
 func _read_source(path: String, source_kind: String) -> String:
@@ -225,7 +240,9 @@ func _refresh_bindings(publish: bool) -> bool:
 		if publish:
 			_publish_diagnostics()
 		return _generated_root != null
+	_applying_bindings = true
 	_apply_bindings(_generated_root)
+	_applying_bindings = false
 	if publish:
 		_publish_diagnostics()
 	return not _has_errors()
@@ -266,8 +283,16 @@ func _apply_binding(control: Control, property_name: String, path: String) -> vo
 		))
 		return
 	var value: Variant = result["value"]
+	if property_name == "selected_value" and control.has_method("select_value"):
+		if not control.call("select_value", value):
+			diagnostics.append(_diagnostic("warning", "binding", "selected_value on %s has no option '%s'." % [control.get_meta("cascade_key", control.name), value]))
+		return
 	if property_name == "text":
-		control.set(property_name, str(value))
+		var rendered := str(value)
+		if str(control.get(property_name)) != rendered:
+			control.set(property_name, rendered)
+		if control.has_method("validate"):
+			control.call("validate")
 		return
 	if property_name in ["min_value", "max_value", "value"]:
 		var numeric := _resolve_numeric_binding(control, property_name, path)
@@ -275,6 +300,86 @@ func _apply_binding(control: Control, property_name: String, path: String) -> vo
 			control.set(property_name, numeric["value"])
 		return
 	control.set(property_name, value)
+
+
+func _refresh_writable_bindings(publish: bool) -> bool:
+	diagnostics = diagnostics.filter(func(diagnostic): return diagnostic.get("path", "") != "writable-binding")
+	if _generated_root == null:
+		if publish:
+			_publish_diagnostics()
+		return false
+	_apply_writable_bindings(_generated_root)
+	if publish:
+		_publish_diagnostics()
+	return not _has_errors()
+
+
+func _apply_writable_bindings(node: Node) -> void:
+	if node is Control:
+		var control := node as Control
+		var previous: Array = control.get_meta("cascade_writable_connections", [])
+		for connection in previous:
+			var signal_name := StringName(connection["signal"])
+			var callback: Callable = connection["callable"]
+			if control.has_signal(signal_name) and control.is_connected(signal_name, callback):
+				control.disconnect(signal_name, callback)
+		var connected: Array[Dictionary] = []
+		var bindings: Dictionary = control.get_meta("cascade_writable_bindings", {})
+		for property_name in bindings:
+			var definition: Dictionary = bindings[property_name]
+			var signal_name := StringName(definition["signal"])
+			var path := str(definition["path"])
+			var callback: Callable
+			if signal_name == &"selection_changed":
+				callback = _on_writable_selection_changed.bind(control, path)
+			else:
+				callback = _on_writable_value_changed.bind(control, str(property_name), path)
+			var error := control.connect(signal_name, callback)
+			if error != OK:
+				diagnostics.append(_diagnostic("warning", "writable-binding", "%s on %s could not observe native changes (error %s)." % [property_name, control.get_meta("cascade_key", control.name), error]))
+				continue
+			connected.append({"signal": signal_name, "callable": callback})
+		control.set_meta("cascade_writable_connections", connected)
+	for child in node.get_children():
+		_apply_writable_bindings(child)
+
+
+func _on_writable_value_changed(value: Variant, control: Control, property_name: String, path: String) -> void:
+	if _applying_bindings:
+		return
+	_write_binding(control, property_name, path, value)
+
+
+func _on_writable_selection_changed(value: String, _index: int, control: Control, path: String) -> void:
+	if _applying_bindings:
+		return
+	_write_binding(control, "selected_value", path, value)
+
+
+func _write_binding(control: Control, property_name: String, path: String, value: Variant) -> void:
+	diagnostics = diagnostics.filter(func(diagnostic): return diagnostic.get("path", "") != "writable-binding")
+	var result := BindingResolver.assign(_binding_context_for(control, path), path, value)
+	if not result["written"]:
+		diagnostics.append(_diagnostic("warning", "writable-binding", "%s on %s: %s" % [property_name, control.get_meta("cascade_key", control.name), result["message"]]))
+		_publish_diagnostics()
+		return
+	binding_value_changed.emit(path, value, control)
+	_refresh_bindings(false)
+	_publish_diagnostics()
+
+
+func _validate_node(control: Control) -> void:
+	if control.has_method("validate") and not control.call("validate"):
+		diagnostics.append({
+			"severity": "warning",
+			"path": "validation",
+			"message": "%s: %s" % [control.get_meta("cascade_key", control.name), control.call("current_validation_message")],
+			"line": int(control.get_meta("cascade_source_line", 1)),
+			"column": int(control.get_meta("cascade_source_column", 1)),
+		})
+	for child in control.get_children():
+		if child is Control:
+			_validate_node(child)
 
 
 func _resolve_numeric_binding(control: Control, property_name: String, path: String) -> Dictionary:
