@@ -105,11 +105,9 @@ def main() -> int:
             [
                 args.godot,
                 "--headless",
-                "--editor",
                 "--path",
                 str(project),
-                "--quit-after",
-                "3",
+                "--import",
             ],
             "Clean-project import scan",
         )

@@ -49,7 +49,7 @@ jobs:
         run: python tools/showcase/generate_showcase.py --check
 
       - name: Scan editor imports
-        run: godot --headless --editor --path . --quit-after 3
+        run: godot --headless --path . --import
 
       - name: Run headless suites
         shell: bash
