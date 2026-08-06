@@ -77,8 +77,24 @@ jobs:
             dist/*.sha256
           if-no-files-found: error
 
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: verify
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+
+      - name: Download verified addon artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: godot-cascade-${{ github.sha }}
+          path: dist
+
       - name: Publish tagged release
-        if: startsWith(github.ref, 'refs/tags/v')
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
