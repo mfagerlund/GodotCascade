@@ -71,9 +71,17 @@ func _verify_settings_page(app: Control) -> void:
 	var profile := _find_by_id(scene, "profile-name")
 	var select := _find_by_id(scene, "quality")
 	var apply_button := _find_by_id(scene, "apply")
-	_expect_true("settings interactive controls exist", profile != null and select != null and apply_button != null)
-	if profile == null or select == null or apply_button == null:
+	var shadows := _find_by_id(scene, "shadows") as BaseButton
+	var windowed := _find_by_id(scene, "windowed") as BaseButton
+	var borderless := _find_by_id(scene, "borderless") as BaseButton
+	_expect_true("settings interactive controls exist", profile != null and select != null and apply_button != null and shadows != null and windowed != null and borderless != null)
+	if profile == null or select == null or apply_button == null or shadows == null or windowed == null or borderless == null:
 		return
+	shadows.button_pressed = false
+	shadows.emit_signal("toggled", false)
+	windowed.button_pressed = true
+	_expect_true("settings checkbox writes through its connection", not scene.get("binding_context")["settings"]["shadows"])
+	_expect_true("settings native radio group selects one option", windowed.button_pressed and not borderless.button_pressed)
 	profile.set("text", "Nova")
 	profile.emit_signal("text_changed", "Nova")
 	select.call("select_value", "ultra", true)

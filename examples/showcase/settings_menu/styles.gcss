@@ -24,7 +24,6 @@
     border: 1px solid #2b3b57;
     border-radius: 14px;
 }
-.settings-card:hover { background: #172238; }
 .section-title { color: #f1f5ff; font-size: 20px; }
 .section-help { color: #7f91af; font-size: 13px; margin-bottom: 5px; }
 .profile-setting { min-height: 38px; display: flex; flex-direction: row; align-items: center; gap: 10px; }

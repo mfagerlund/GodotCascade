@@ -521,6 +521,10 @@ func _test_owned_select() -> void:
 	await process_frame
 	_expect_true("CascadeSelect opens native popup", select.is_open())
 	_expect_true("open select reports open state", select.cascade_visual_state() == "open")
+	var popup := select.get_node("_Popup") as PopupPanel
+	var option_buttons := popup.get_node("_Options").get_children()
+	_expect_true("select option rows honor compact authored height", option_buttons.all(func(button): return button.get_combined_minimum_size().y <= select.option_height))
+	_expect_true("select option rows do not inherit closed-control borders", option_buttons.all(func(button): return button.get("cascade_style").border_width == 0.0))
 	_send_action("ui_down", true)
 	_send_action("ui_down", false)
 	_send_action("ui_accept", true)

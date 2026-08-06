@@ -2,12 +2,97 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="refresh" content="0; url=settings-menu-8e908dc48275.html">
-  <link rel="canonical" href="settings-menu-8e908dc48275.html">
-  <title>GodotCascade showcase reference moved</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GodotCascade — Settings menu HTML reference</title>
+  <style>
+    :root { color-scheme:dark; font-family:Inter,ui-sans-serif,system-ui,sans-serif; background:#0a0f19; color:#f1f5ff; }
+    * { box-sizing:border-box; }
+    html,body { margin:0; min-height:100%; }
+    body { min-height:660px; background:#0a0f19; }
+    main { min-height:660px; padding:34px 52px; display:flex; flex-direction:column; gap:22px; }
+    header { display:flex; flex-direction:column; gap:6px; }
+    .eyebrow { margin:0; color:#7dbfff; font-size:12px; letter-spacing:.11em; }
+    h1 { margin:0; font-size:32px; font-weight:500; }
+    .subtitle { margin:0; color:#8d9bb5; font-size:15px; }
+    .content { display:flex; flex:1; gap:18px; }
+    section { flex:1; padding:22px; display:flex; flex-direction:column; gap:9px; background:#131b2a; border:1px solid #2b3b57; border-radius:14px; }
+    h2 { margin:0; font-size:20px; font-weight:500; }
+    .help { margin:0 0 5px; color:#7f91af; font-size:13px; }
+    .profile-setting { min-height:38px; display:flex; align-items:center; gap:10px; }
+    .profile-label { min-width:52px; color:#c9d5e9; font-size:14px; }
+    .profile-input { min-width:170px; min-height:38px; flex:1; padding:8px 11px; color:#f2f4f7; font:14px inherit; background:#101828; border:1px solid #405477; border-radius:7px; outline:none; }
+    .profile-input:hover { background:#182235; }
+    .profile-input:focus-visible { border:2px solid #84adff; }
+    .profile-input[aria-invalid=true] { color:#fff1f0; background:#2a1720; border-color:#f97066; }
+    label { min-height:35px; padding:4px; display:flex; align-items:center; gap:10px; color:#c9d5e9; border:2px solid transparent; border-radius:7px; }
+    label:hover { background:#1d2939; }
+    label:has(input:checked) { color:#fff; background:#16233a; }
+    label:has(input:disabled) { color:#667085; background:#111827; }
+    .channel-title { margin-top:5px; color:#8fa1bf; font-size:12px; }
+    .channel-setting { min-height:28px; display:flex; align-items:center; gap:8px; color:#c9d5e9; font-size:13px; }
+    .channel-setting input { width:18px; height:18px; margin:0; accent-color:#528bff; }
+    input[type=checkbox],input[type=radio] { width:18px; height:18px; margin:0; accent-color:#528bff; }
+    .switch input { position:absolute; width:1px; height:1px; opacity:0; }
+    .switch-track { position:relative; width:38px; height:20px; flex:none; border:1px solid #667085; border-radius:99px; background:#344054; }
+    .switch-thumb { position:absolute; top:2px; left:2px; width:14px; height:14px; border-radius:50%; background:#fff; transition:left .1s ease; }
+    .switch input:checked + .switch-track { background:#528bff; }
+    .switch input:checked + .switch-track .switch-thumb { left:20px; }
+    .switch input:focus-visible + .switch-track { outline:2px solid #84adff; outline-offset:2px; }
+    .range-setting { min-height:36px; margin-top:5px; display:flex; align-items:center; gap:10px; color:#c9d5e9; font-size:14px; }
+    .range-control { position:relative; min-width:150px; height:30px; flex:1; }
+    .range-control input { position:absolute; inset:0; z-index:2; width:100%; height:100%; margin:0; opacity:0; cursor:pointer; }
+    .range-track { position:absolute; left:9px; right:9px; top:12px; height:6px; border-radius:99px; background:#344054; }
+    .range-fill { position:absolute; inset:0 50% 0 0; border-radius:99px; background:#528bff; }
+    .range-thumb { position:absolute; top:50%; left:50%; width:18px; height:18px; border-radius:50%; background:#fff; transform:translate(-50%,-50%); }
+    .range-control input:focus-visible + .range-track { outline:2px solid #84adff; outline-offset:3px; }
+    .range-setting output { min-width:38px; color:#8fa1bf; font-size:13px; }
+    .notes-label { margin-top:5px; color:#c9d5e9; font-size:14px; }
+    textarea { width:100%; min-height:104px; resize:none; padding:9px 11px; color:#f2f4f7; font:14px inherit; background:#101828; border:1px solid #405477; border-radius:7px; outline:none; }
+    textarea:hover { background:#182235; }
+    textarea:focus-visible { border:2px solid #84adff; }
+    footer { display:flex; align-items:center; gap:16px; }
+    .hint { flex:1; color:#6f7f9b; font-size:13px; }
+    .select-label { color:#7f91af; font-size:11px; letter-spacing:.08em; }
+    .select-control { position:relative; width:178px; height:42px; flex:none; }
+    .select-control select { position:absolute; inset:0; z-index:2; width:100%; height:100%; margin:0; opacity:0; cursor:pointer; }
+    .select-face { position:absolute; inset:0; padding:9px 14px; display:flex; align-items:center; justify-content:space-between; color:#f2f4f7; background:#131b2a; border:1px solid #405477; border-radius:8px; }
+    .select-chevron { width:8px; height:8px; margin:0 3px 4px 12px; border-right:2px solid currentColor; border-bottom:2px solid currentColor; transform:rotate(45deg); }
+    .select-control select:focus-visible + .select-face { outline:2px solid #84adff; outline-offset:2px; }
+    button { min-width:148px; min-height:42px; padding:9px 14px; color:#f2f4f7; font:inherit; background:#1c64d1; border:1px solid #5aa7ff; border-radius:8px; }
+  </style>
 </head>
 <body>
-  <p>This cached showcase reference moved to <a href="settings-menu-8e908dc48275.html">settings-menu-8e908dc48275.html</a>.</p>
-  <script>location.replace("settings-menu-8e908dc48275.html");</script>
+  <main>
+    <header><p class="eyebrow">GAME SETTINGS</p><h1>Graphics &amp; display</h1><p class="subtitle">Native focus, toggle, and radio-group behavior with Cascade-owned drawing.</p></header>
+    <div class="content">
+      <section><h2>Effects</h2><p class="help">Tune visual features independently.</p><div class="profile-setting"><span class="profile-label">Profile</span><input id="profile-name" class="profile-input" value="Rhea" placeholder="Player name" required minlength="2" maxlength="16" aria-label="Player profile name"></div><label><input type="checkbox" checked>Dynamic shadows</label><label><input type="checkbox" checked>Bloom</label><label class="switch"><input type="checkbox" role="switch" checked><span class="switch-track" aria-hidden="true"><span class="switch-thumb"></span></span><span>Vertical sync</span></label><label><input type="checkbox" disabled>Ray tracing · unavailable</label><span class="channel-title">HUD channels</span><div class="channel-setting" data-repeat-scope="item.enabled"><input type="checkbox" checked>Damage numbers</div><div class="channel-setting" data-repeat-scope="item.enabled"><input type="checkbox">Team markers</div></section>
+      <section><h2>Window mode</h2><p class="help">Choose one native radio-group option.</p><label><input type="radio" name="window-mode">Windowed</label><label><input type="radio" name="window-mode" checked>Borderless</label><label><input type="radio" name="window-mode">Exclusive fullscreen</label><div class="range-setting"><span>UI scale</span><span class="range-control"><input id="ui-scale" type="range" min="75" max="125" value="100" step="5" aria-label="Interface scale"><span class="range-track" aria-hidden="true"><span class="range-fill"></span><span class="range-thumb"></span></span></span><output id="scale-value">100%</output></div><span class="notes-label">Session notes</span><textarea id="session-notes" maxlength="160" placeholder="Add notes for the next launch" aria-label="Session notes">Ready for the next match.</textarea></section>
+    </div>
+    <footer><span id="settings-status" class="hint" aria-live="polite">Change a setting, then apply</span><span class="select-label">QUALITY</span><span class="select-control"><select id="quality" aria-label="Graphics quality"><option value="low">Low quality</option><option value="medium">Medium quality</option><option value="high" selected>High quality</option><option value="ultra">Ultra quality</option></select><span class="select-face" aria-hidden="true"><span>High quality</span><span class="select-chevron"></span></span></span><button id="apply" type="button">Apply settings</button></footer>
+  </main>
+  <script>
+    const profile = document.querySelector('#profile-name');
+    const scale = document.querySelector('#ui-scale');
+    const scaleValue = document.querySelector('#scale-value');
+    const quality = document.querySelector('#quality');
+    const qualityFace = document.querySelector('.select-face span');
+    const status = document.querySelector('#settings-status');
+    const markChanged = () => { status.textContent = 'Unsaved changes'; };
+    document.querySelectorAll('input, select, textarea').forEach(control => control.addEventListener('input', markChanged));
+    profile.addEventListener('input', () => profile.setAttribute('aria-invalid', String(!profile.checkValidity())));
+    scale.addEventListener('input', () => {
+      const percent = (Number(scale.value) - Number(scale.min)) / (Number(scale.max) - Number(scale.min)) * 100;
+      scaleValue.textContent = `${scale.value}%`;
+      document.querySelector('.range-fill').style.right = `${100 - percent}%`;
+      document.querySelector('.range-thumb').style.left = `${percent}%`;
+    });
+    quality.addEventListener('change', () => { qualityFace.textContent = quality.selectedOptions[0].textContent; });
+    document.querySelector('#apply').addEventListener('click', () => {
+      const valid = profile.checkValidity();
+      profile.setAttribute('aria-invalid', String(!valid));
+      status.textContent = valid ? `Applied ${quality.value} quality for ${profile.value}` : 'Fix the highlighted profile name';
+      if (!valid) profile.focus();
+    });
+  </script>
 </body>
 </html>

@@ -52,6 +52,7 @@
     border: 1px solid #364561;
     border-radius: 10px;
 }
+.cards > .card:hover { background: #242b37; }
 
 .card-title { font-size: 20px; }
 .card-body { color: #b8c4db; font-size: 15px; flex-grow: 1; }

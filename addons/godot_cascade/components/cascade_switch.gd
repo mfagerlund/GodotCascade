@@ -51,4 +51,4 @@ func _draw_indicator(indicator_rect: Rect2) -> void:
 	var radius := maxf((indicator_rect.size.y - inset * 2.0) * 0.5, 1.0)
 	var center_x := indicator_rect.end.x - inset - radius if button_pressed else indicator_rect.position.x + inset + radius
 	var resolved_thumb := thumb_color.darkened(0.25) if disabled else thumb_color
-	draw_circle(Vector2(center_x, indicator_rect.get_center().y), radius, resolved_thumb)
+	draw_circle(Vector2(center_x, indicator_rect.get_center().y), radius, resolved_thumb, true, -1.0, true)

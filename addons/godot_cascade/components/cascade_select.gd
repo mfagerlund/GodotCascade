@@ -48,7 +48,7 @@ const CascadeOptionButton := preload("res://addons/godot_cascade/components/casc
 	set(value):
 		option_selected_text_color = value
 		_rebuild_popup()
-@export_range(24.0, 128.0, 1.0, "or_greater") var option_height := 36.0:
+@export_range(24.0, 128.0, 1.0, "or_greater") var option_height := 32.0:
 	set(value):
 		option_height = maxf(value, 24.0)
 		_rebuild_popup()
@@ -192,7 +192,15 @@ func _rebuild_popup() -> void:
 		var button := CascadeOptionButton.new()
 		button.text = str(option["label"])
 		button.text_alignment = HORIZONTAL_ALIGNMENT_LEFT
+		button.font_size = font_size
 		button.custom_minimum_size = Vector2(0.0, option_height)
+		button.cascade_style.padding_left = 12.0
+		button.cascade_style.padding_top = 0.0
+		button.cascade_style.padding_right = 12.0
+		button.cascade_style.padding_bottom = 0.0
+		button.cascade_style.border_color = Color.TRANSPARENT
+		button.cascade_style.border_width = 0.0
+		button.cascade_style.border_radius = 6.0
 		button.toggle_mode = true
 		button.disabled = bool(option.get("disabled", false))
 		button.cascade_style.background_color = option.get("background_color", option_background_color)

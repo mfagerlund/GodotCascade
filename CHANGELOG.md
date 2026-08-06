@@ -4,6 +4,11 @@ All notable changes to GodotCascade are documented here. Versions follow semanti
 
 ## [Unreleased]
 
+- Compacted select popup rows and removed inherited closed-control borders from options.
+- Added antialiasing to slider, switch, and radio circular drawing.
+- Kept settings-panel backgrounds stable while hovering form controls and moved container-hover coverage to the layout cards.
+- Extended the runnable showcase test to cover checkbox write-back and native radio grouping.
+
 ## [0.3.0] — 2026-08-06
 
 - Added `TextInput multiline="true"` as an adapted native `TextEdit`, including validation, writable binding, focus-visible styling, max length, and editing-state preservation.

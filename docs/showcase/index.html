@@ -86,9 +86,9 @@
 
       <div class="comparison">
         <section class="render-column">
-          <div class="render-label"><span>HTML reference</span><small><a href="references/layout-foundation-dfc2f49a9612.html" target="_blank" rel="noreferrer">Open reference</a></small></div>
+          <div class="render-label"><span>HTML reference</span><small><a href="references/layout-foundation-a64777d7390e.html" target="_blank" rel="noreferrer">Open reference</a></small></div>
           <div class="render-frame" data-viewport-width="960" data-viewport-height="540" style="--viewport-width:960px; --viewport-height:540px; aspect-ratio:960/540">
-            <iframe width="960" height="540" title="HTML rendering of Layout foundation" src="references/layout-foundation-dfc2f49a9612.html"></iframe>
+            <iframe width="960" height="540" title="HTML rendering of Layout foundation" src="references/layout-foundation-a64777d7390e.html"></iframe>
           </div>
         </section>
         <section class="render-column">
@@ -105,7 +105,7 @@
         </div>
         <table>
           <thead><tr><th>HTML/CSS</th><th>GodotCascade source</th><th>Runtime</th></tr></thead>
-          <tbody><tr><td><code>&lt;main&gt;</code></td><td><code>&lt;Page&gt;</code></td><td><code>CascadeBox (column)</code></td></tr><tr><td><code>display: grid</code></td><td><code>&lt;Grid&gt;</code></td><td><code>CascadeGrid track layout</code></td></tr><tr><td><code>1fr 1fr 1fr</code></td><td><code>grid-template-columns</code></td><td><code>Fractional track resolution</code></td></tr><tr><td><code>.cards &gt; .card</code></td><td><code>.cards &gt; .card</code></td><td><code>Direct-child selector matching</code></td></tr><tr><td><code>@media (max-width: 700px)</code></td><td><code>@media (max-width: 700px)</code></td><td><code>Viewport-conditional recomputation</code></td></tr><tr><td><code>7vh</code></td><td><code>7vh</code></td><td><code>Viewport-aware length resolution</code></td></tr><tr><td><code>position: absolute</code></td><td><code>&lt;Stack&gt; + right/top</code></td><td><code>Overlay inset placement</code></td></tr><tr><td><code>visual media</code></td><td><code>&lt;Image src=&quot;res://…&quot;&gt;</code></td><td><code>CascadeImage cover crop</code></td></tr><tr><td><code>padding / gap</code></td><td><code>padding / column-gap</code></td><td><code>CascadeStyle + layout request</code></td></tr><tr><td><code>button click</code></td><td><code>on-pressed=&quot;_on_inspect_layout&quot;</code></td><td><code>Event-to-method binding</code></td></tr><tr><td><code>:hover / :active</code></td><td><code>:hover / :pressed</code></td><td><code>Native button state drawing</code></td></tr></tbody>
+          <tbody><tr><td><code>&lt;main&gt;</code></td><td><code>&lt;Page&gt;</code></td><td><code>CascadeBox (column)</code></td></tr><tr><td><code>display: grid</code></td><td><code>&lt;Grid&gt;</code></td><td><code>CascadeGrid track layout</code></td></tr><tr><td><code>1fr 1fr 1fr</code></td><td><code>grid-template-columns</code></td><td><code>Fractional track resolution</code></td></tr><tr><td><code>.cards &gt; .card</code></td><td><code>.cards &gt; .card</code></td><td><code>Direct-child selector matching</code></td></tr><tr><td><code>@media (max-width: 700px)</code></td><td><code>@media (max-width: 700px)</code></td><td><code>Viewport-conditional recomputation</code></td></tr><tr><td><code>7vh</code></td><td><code>7vh</code></td><td><code>Viewport-aware length resolution</code></td></tr><tr><td><code>position: absolute</code></td><td><code>&lt;Stack&gt; + right/top</code></td><td><code>Overlay inset placement</code></td></tr><tr><td><code>visual media</code></td><td><code>&lt;Image src=&quot;res://…&quot;&gt;</code></td><td><code>CascadeImage cover crop</code></td></tr><tr><td><code>padding / gap</code></td><td><code>padding / column-gap</code></td><td><code>CascadeStyle + layout request</code></td></tr><tr><td><code>card hover</code></td><td><code>.cards &gt; .card:hover</code></td><td><code>Owned container hover adapter</code></td></tr><tr><td><code>button click</code></td><td><code>on-pressed=&quot;_on_inspect_layout&quot;</code></td><td><code>Event-to-method binding</code></td></tr><tr><td><code>:hover / :active</code></td><td><code>:hover / :pressed</code></td><td><code>Native button state drawing</code></td></tr></tbody>
         </table>
       </section>
 
@@ -198,6 +198,8 @@
       border-radius: 10px;
       background: #1b1f27;
     }
+
+    .card:hover { background: #242b37; }
 
     .card h2 {
       margin: 0;
@@ -422,6 +424,7 @@
     border: 1px solid #364561;
     border-radius: 10px;
 }
+.cards &gt; .card:hover { background: #242b37; }
 
 .card-title { font-size: 20px; }
 .card-body { color: #b8c4db; font-size: 15px; flex-grow: 1; }
@@ -745,9 +748,9 @@
 
       <div class="comparison">
         <section class="render-column">
-          <div class="render-label"><span>HTML reference</span><small><a href="references/settings-menu-8e908dc48275.html" target="_blank" rel="noreferrer">Open reference</a></small></div>
+          <div class="render-label"><span>HTML reference</span><small><a href="references/settings-menu-cf9e1c81b8b4.html" target="_blank" rel="noreferrer">Open reference</a></small></div>
           <div class="render-frame" data-viewport-width="960" data-viewport-height="660" style="--viewport-width:960px; --viewport-height:660px; aspect-ratio:960/660">
-            <iframe width="960" height="660" title="HTML rendering of Settings menu" src="references/settings-menu-8e908dc48275.html"></iframe>
+            <iframe width="960" height="660" title="HTML rendering of Settings menu" src="references/settings-menu-cf9e1c81b8b4.html"></iframe>
           </div>
         </section>
         <section class="render-column">
@@ -764,7 +767,7 @@
         </div>
         <table>
           <thead><tr><th>HTML/CSS</th><th>GodotCascade source</th><th>Runtime</th></tr></thead>
-          <tbody><tr><td><code>input[type=checkbox]</code></td><td><code>Checkbox</code></td><td><code>CascadeCheckbox (BaseButton toggle)</code></td></tr><tr><td><code>input[type=text]</code></td><td><code>TextInput</code></td><td><code>CascadeTextInput (native LineEdit adapter)</code></td></tr><tr><td><code>textarea</code></td><td><code>TextInput multiline=&quot;true&quot;</code></td><td><code>CascadeTextArea (native TextEdit adapter)</code></td></tr><tr><td><code>input/change</code></td><td><code>bind-*={path}</code></td><td><code>Validated writable binding + dependent refresh</code></td></tr><tr><td><code>repeated form rows</code></td><td><code>Repeat + bind-checked={item.enabled}</code></td><td><code>Keyed item-scope write-back</code></td></tr><tr><td><code>section:hover</code></td><td><code>.settings-card:hover</code></td><td><code>Owned container hover adapter</code></td></tr><tr><td><code>input[role=switch]</code></td><td><code>Switch</code></td><td><code>CascadeSwitch track/thumb drawing</code></td></tr><tr><td><code>select / option</code></td><td><code>Select / Option</code></td><td><code>CascadeSelect + PopupPanel</code></td></tr><tr><td><code>input[type=range]</code></td><td><code>Slider</code></td><td><code>CascadeSlider native range input</code></td></tr><tr><td><code>input[type=radio] name</code></td><td><code>RadioButton group</code></td><td><code>CascadeRadioButton + ButtonGroup</code></td></tr><tr><td><code>checked / disabled</code></td><td><code>checked / disabled</code></td><td><code>Native button state</code></td></tr><tr><td><code>:checked / :hover</code></td><td><code>:checked / :hover</code></td><td><code>Shared state adapter</code></td></tr><tr><td><code>:invalid / :focus-visible</code></td><td><code>:invalid / :focus-visible</code></td><td><code>Validation and input-modality styling</code></td></tr><tr><td><code>:open / option:checked</code></td><td><code>:open / Option:selected</code></td><td><code>Popup and option state</code></td></tr><tr><td><code>aria-label</code></td><td><code>accessible-label</code></td><td><code>Native accessibility name</code></td></tr><tr><td><code>fieldset-like cards</code></td><td><code>Panel + Column</code></td><td><code>CascadePanel flex layout</code></td></tr></tbody>
+          <tbody><tr><td><code>input[type=checkbox]</code></td><td><code>Checkbox</code></td><td><code>CascadeCheckbox (BaseButton toggle)</code></td></tr><tr><td><code>input[type=text]</code></td><td><code>TextInput</code></td><td><code>CascadeTextInput (native LineEdit adapter)</code></td></tr><tr><td><code>textarea</code></td><td><code>TextInput multiline=&quot;true&quot;</code></td><td><code>CascadeTextArea (native TextEdit adapter)</code></td></tr><tr><td><code>input/change</code></td><td><code>bind-*={path}</code></td><td><code>Validated writable binding + dependent refresh</code></td></tr><tr><td><code>repeated form rows</code></td><td><code>Repeat + bind-checked={item.enabled}</code></td><td><code>Keyed item-scope write-back</code></td></tr><tr><td><code>input[role=switch]</code></td><td><code>Switch</code></td><td><code>CascadeSwitch track/thumb drawing</code></td></tr><tr><td><code>select / option</code></td><td><code>Select / Option</code></td><td><code>CascadeSelect + PopupPanel</code></td></tr><tr><td><code>input[type=range]</code></td><td><code>Slider</code></td><td><code>CascadeSlider native range input</code></td></tr><tr><td><code>input[type=radio] name</code></td><td><code>RadioButton group</code></td><td><code>CascadeRadioButton + ButtonGroup</code></td></tr><tr><td><code>checked / disabled</code></td><td><code>checked / disabled</code></td><td><code>Native button state</code></td></tr><tr><td><code>:checked / :hover</code></td><td><code>:checked / :hover</code></td><td><code>Shared state adapter</code></td></tr><tr><td><code>:invalid / :focus-visible</code></td><td><code>:invalid / :focus-visible</code></td><td><code>Validation and input-modality styling</code></td></tr><tr><td><code>:open / option:checked</code></td><td><code>:open / Option:selected</code></td><td><code>Popup and option state</code></td></tr><tr><td><code>aria-label</code></td><td><code>accessible-label</code></td><td><code>Native accessibility name</code></td></tr><tr><td><code>fieldset-like cards</code></td><td><code>Panel + Column</code></td><td><code>CascadePanel flex layout</code></td></tr></tbody>
         </table>
       </section>
 
@@ -790,7 +793,6 @@
     .subtitle { margin:0; color:#8d9bb5; font-size:15px; }
     .content { display:flex; flex:1; gap:18px; }
     section { flex:1; padding:22px; display:flex; flex-direction:column; gap:9px; background:#131b2a; border:1px solid #2b3b57; border-radius:14px; }
-    section:hover { background:#172238; }
     h2 { margin:0; font-size:20px; font-weight:500; }
     .help { margin:0 0 5px; color:#7f91af; font-size:13px; }
     .profile-setting { min-height:38px; display:flex; align-items:center; gap:10px; }
@@ -964,7 +966,6 @@
     border: 1px solid #2b3b57;
     border-radius: 14px;
 }
-.settings-card:hover { background: #172238; }
 .section-title { color: #f1f5ff; font-size: 20px; }
 .section-help { color: #7f91af; font-size: 13px; margin-bottom: 5px; }
 .profile-setting { min-height: 38px; display: flex; flex-direction: row; align-items: center; gap: 10px; }

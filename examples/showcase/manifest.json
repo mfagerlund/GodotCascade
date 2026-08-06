@@ -23,6 +23,7 @@
         ["position: absolute", "<Stack> + right/top", "Overlay inset placement"],
         ["visual media", "<Image src=\"res://…\">", "CascadeImage cover crop"],
         ["padding / gap", "padding / column-gap", "CascadeStyle + layout request"],
+        ["card hover", ".cards > .card:hover", "Owned container hover adapter"],
         ["button click", "on-pressed=\"_on_inspect_layout\"", "Event-to-method binding"],
         [":hover / :active", ":hover / :pressed", "Native button state drawing"]
       ]
@@ -89,7 +90,6 @@
         {"label": "multiline text input", "html": "<textarea", "gxml": "multiline=\"true\""},
         {"label": "writable multiline binding", "html": "id=\"session-notes\"", "gxml": "bind-text=\"{settings.notes}\""},
         {"label": "repeated writable binding", "html": "data-repeat-scope=\"item.enabled\"", "gxml": "bind-checked=\"{item.enabled}\""},
-        {"label": "container hover", "html": "section:hover", "gxml": "class=\"settings-card\"", "gcss": ".settings-card:hover"},
         {"label": "switch", "html": "role=\"switch\"", "gxml": "<Switch"},
         {"label": "visible switch track", "html": "class=\"switch-track\"", "gxml": "<Switch"},
         {"label": "radio group", "html": "type=\"radio\"", "gxml": "<RadioButton"},
@@ -107,7 +107,6 @@
         ["textarea", "TextInput multiline=\"true\"", "CascadeTextArea (native TextEdit adapter)"],
         ["input/change", "bind-*={path}", "Validated writable binding + dependent refresh"],
         ["repeated form rows", "Repeat + bind-checked={item.enabled}", "Keyed item-scope write-back"],
-        ["section:hover", ".settings-card:hover", "Owned container hover adapter"],
         ["input[role=switch]", "Switch", "CascadeSwitch track/thumb drawing"],
         ["select / option", "Select / Option", "CascadeSelect + PopupPanel"],
         ["input[type=range]", "Slider", "CascadeSlider native range input"],

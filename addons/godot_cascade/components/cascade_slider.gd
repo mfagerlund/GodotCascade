@@ -101,7 +101,7 @@ func _draw() -> void:
 	fill.size.x *= ratio
 	BoxPainter.draw_box(self, fill, fill_color, Color.TRANSPARENT, 0.0, track_height * 0.5)
 	var thumb_center := Vector2(track.position.x + track.size.x * ratio, content.get_center().y)
-	draw_circle(thumb_center, thumb_size * 0.5, disabled_thumb_color if disabled else thumb_color)
+	draw_circle(thumb_center, thumb_size * 0.5, disabled_thumb_color if disabled else thumb_color, true, -1.0, true)
 	var show_ring: bool = has_focus() and (not focus_visible_style_enabled or _focus_tracker == null or bool(_focus_tracker.is_focus_visible()))
 	if show_ring:
 		var ring_color := focus_visible_ring_color if focus_visible_style_enabled else focus_ring_color
