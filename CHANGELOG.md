@@ -8,6 +8,7 @@ All notable changes to GodotCascade are documented here. Versions follow semanti
 - Added explicit writable `bind-text`, `bind-checked`, `bind-value`, and `bind-selected` property paths.
 - Added `:invalid` and input-modality-aware `:focus-visible` styling.
 - Made the native and HTML settings showcases interactive, including live scale/status output and Apply validation.
+- Preserved superseded hashed showcase references as redirects so cached reports do not break.
 
 ## [0.1.0] — 2026-08-06
 

@@ -53,6 +53,24 @@ def reference_output_name(demo: dict[str, object], html_source: str) -> str:
     return f"{demo['id']}-{revision}.html"
 
 
+def legacy_reference_redirect(target_name: str) -> str:
+    escaped_target = html.escape(target_name, quote=True)
+    return f"""<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="refresh" content="0; url={escaped_target}">
+  <link rel="canonical" href="{escaped_target}">
+  <title>GodotCascade showcase reference moved</title>
+</head>
+<body>
+  <p>This cached showcase reference moved to <a href="{escaped_target}">{escaped_target}</a>.</p>
+  <script>location.replace({json.dumps(target_name)});</script>
+</body>
+</html>
+"""
+
+
 def render_demo(demo: dict[str, object]) -> str:
     viewport_width, viewport_height = demo["viewport"]
     html_source = read_text(str(demo["html"]))
@@ -218,6 +236,23 @@ def generate(check: bool = False) -> None:
         REFERENCE_OUTPUT_DIR / reference_output_name(demo, read_text(str(demo["html"]))): read_text(str(demo["html"]))
         for demo in manifest["demos"]
     }
+    current_by_demo = {
+        str(demo["id"]): REFERENCE_OUTPUT_DIR / reference_output_name(demo, read_text(str(demo["html"])))
+        for demo in manifest["demos"]
+    }
+    legacy_references: dict[Path, str] = {}
+    if REFERENCE_OUTPUT_DIR.exists():
+        for candidate in REFERENCE_OUTPUT_DIR.glob("*.html"):
+            if candidate in references:
+                continue
+            matching_demo = next(
+                (demo_id for demo_id in current_by_demo if candidate.name.startswith(f"{demo_id}-")),
+                None,
+            )
+            if matching_demo is not None:
+                legacy_references[candidate] = legacy_reference_redirect(
+                    current_by_demo[matching_demo].name
+                )
     if check:
         if not OUTPUT_PATH.exists() or OUTPUT_PATH.read_text(encoding="utf-8") != document:
             raise SystemExit(
@@ -228,8 +263,13 @@ def generate(check: bool = False) -> None:
                 raise SystemExit(
                     f"{reference_path.relative_to(ROOT)} is stale; run tools/showcase/generate_showcase.py"
                 )
+        for reference_path, redirect_source in legacy_references.items():
+            if reference_path.read_text(encoding="utf-8") != redirect_source:
+                raise SystemExit(
+                    f"{reference_path.relative_to(ROOT)} has a stale compatibility redirect"
+                )
         generated_paths = set(REFERENCE_OUTPUT_DIR.glob("*.html")) if REFERENCE_OUTPUT_DIR.exists() else set()
-        if generated_paths != set(references):
+        if generated_paths != set(references) | set(legacy_references):
             raise SystemExit("docs/showcase/references contains stale generated files")
         print(f"Verified {OUTPUT_PATH.relative_to(ROOT)}")
         return
@@ -238,7 +278,9 @@ def generate(check: bool = False) -> None:
     OUTPUT_PATH.write_text(document, encoding="utf-8", newline="\n")
     REFERENCE_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     for old_reference in REFERENCE_OUTPUT_DIR.glob("*.html"):
-        if old_reference not in references:
+        if old_reference in legacy_references:
+            old_reference.write_text(legacy_references[old_reference], encoding="utf-8", newline="\n")
+        elif old_reference not in references:
             old_reference.unlink()
     for reference_path, reference_source in references.items():
         reference_path.write_text(reference_source, encoding="utf-8", newline="\n")
