@@ -5,6 +5,8 @@ All notable changes to GodotCascade are documented here. Versions follow semanti
 ## [Unreleased]
 
 - Added `TextInput multiline="true"` as an adapted native `TextEdit`, including validation, writable binding, focus-visible styling, max length, and editing-state preservation.
+- Added writable `item.<path>` bindings inside keyed `Repeat` templates, with explicit errors for index and whole-item writes.
+- Added `:hover` background adapters for owned Box/Panel, Grid, and Stack layout containers while keeping non-interactive states unsupported.
 - Made release archives byte-for-byte reproducible across Windows and Linux.
 - Made showcase capture honor each manifest viewport through an isolated `SubViewport`.
 

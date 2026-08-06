@@ -28,7 +28,9 @@ Ordinary `{path}` values are one-way. Form controls opt into write-back with a `
 <Select bind-selected="{settings.quality}">…</Select>
 ```
 
-The path must already resolve to a Dictionary key, Array index, or Godot object property. Native changes assign the value, emit `CascadeDocument.binding_value_changed(path, value, control)`, and refresh other one-way controls. The resolver does not create missing objects, evaluate expressions, call methods, or run converters. Writable paths inside `Repeat` item scopes are intentionally deferred because collection ownership and write identity need a separate contract.
+The path must already resolve to a Dictionary key, Array index, or Godot object property. Native changes assign the value, emit `CascadeDocument.binding_value_changed(path, value, control)`, and refresh other one-way controls. The resolver does not create missing objects, evaluate expressions, call methods, or run converters.
+
+Inside a `Repeat` template, writable bindings may target an existing nested item property such as `bind-checked="{item.enabled}"`. The control carries the current item scope through keyed reconciliation, so a reorder keeps native identity while later edits reach the correct backing item. `index` and bare `item` are read-only: replacing collection entries is an application-level operation rather than an implicit form write.
 
 `CascadeDocument.validate()` asks generated adapted controls to validate and emits `validation_changed`. `TextInput` currently supports `required`, a Godot regular-expression `pattern`, and `error-message`; invalid controls expose the `:invalid` style state.
 

@@ -38,6 +38,7 @@ func _run() -> void:
 	_test_grid_track_engine()
 	await _test_native_grid_layout()
 	await _test_shared_style_invalidation()
+	await _test_layout_container_hover_state()
 	await _test_overflow_and_align_self()
 	await _test_owned_label_box()
 	await _test_wrapped_label_row_minimum()
@@ -77,6 +78,23 @@ func _test_box_geometry() -> void:
 		BoxPainter.content_rect(Rect2(0.0, 0.0, 100.0, 50.0), Vector4(10.0, 5.0, 20.0, 7.0), 2.0),
 		Rect2(12.0, 7.0, 66.0, 34.0)
 	)
+
+
+func _test_layout_container_hover_state() -> void:
+	var containers: Array[Control] = [CascadeBox.new(), CascadeGrid.new(), CascadeStack.new()]
+	for index in containers.size():
+		var container := containers[index]
+		container.get("cascade_style").background_color = Color("101828")
+		container.set("hover_background_color", Color("1d2939"))
+		container.set("hover_style_enabled", true)
+		root.add_child(container)
+		await process_frame
+		_expect_true("layout container %s starts with base background" % index, container.call("cascade_background_color") == Color("101828"))
+		container.mouse_entered.emit()
+		_expect_true("layout container %s applies hover background" % index, container.call("cascade_background_color") == Color("1d2939"))
+		container.mouse_exited.emit()
+		_expect_true("layout container %s restores base background" % index, container.call("cascade_background_color") == Color("101828"))
+		container.queue_free()
 
 
 func _test_button_measurement() -> void:

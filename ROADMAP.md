@@ -164,16 +164,16 @@ The first public preview should build a small settings menu from `.gxml` and a s
 - [x] Interactive settings-menu Apply workflow in native Godot and HTML parity views
 - [x] Component, pipeline, validation, writable-binding, and clean-install regression coverage
 
-## Phase 7 — 0.3 scoped and multiline forms — in progress
+## Phase 7 — 0.3 scoped and multiline forms — automated scope complete
 
 - [x] Multiline `TextInput` adapter on native `TextEdit`
 - [x] Multiline validation, max length, read-only/disabled behavior, writable binding, and adapted pseudo states
 - [x] Preserve multiline text, primary caret, selection, and scroll across compatible keyed hot reloads
 - [x] Add multiline editing to the native and HTML settings showcase without removing existing form controls
-- [ ] Writable bindings inside repeated-item scopes
-- [ ] General pseudo-state adapters for non-interactive layout containers
+- [x] Writable bindings inside repeated-item scopes with keyed reorder regression coverage
+- [x] `:hover` background adapters for non-interactive Box/Panel, Grid, and Stack containers without changing focus/navigation semantics
 
-### Platform-dependent certification
+## Ongoing platform-dependent certification
 
 - [x] Publish the automated and platform-dependent [TextInput certification matrix](docs/text-input-certification.md)
 - [ ] Complete manual IME, screen-reader, touch selection, and clipboard certification on each supported platform

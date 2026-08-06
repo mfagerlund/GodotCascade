@@ -654,6 +654,9 @@ static func _apply_state_declaration(
 		var background_property := "%s_background_color" % normalized_state
 		if _has_property(control, background_property):
 			control.set(background_property, _parse_color(value, line, diagnostics))
+			var enabled_property := "%s_style_enabled" % normalized_state
+			if _has_property(control, enabled_property):
+				control.set(enabled_property, true)
 		else:
 			_diagnostic_unsupported_state(diagnostics, line, state, property_name)
 	elif property_name == "color":
@@ -750,6 +753,11 @@ static func _apply_writable_binding_attributes(control: Control, attributes: Dic
 		var path := _binding_path(raw_value)
 		if path.is_empty():
 			diagnostics.append(_diagnostic("error", "Writable binding '%s' requires an exact {dot.separated.path}." % attribute_name))
+			continue
+		var binding_scope: Dictionary = control.get_meta("cascade_binding_scope", {})
+		var first_segment := path.get_slice(".", 0)
+		if binding_scope.has(first_segment) and (first_segment == "index" or path == "item"):
+			diagnostics.append(_diagnostic("error", "Writable bindings in Repeat must target an existing item property through '{item.path}'; index and whole-item replacement are read-only."))
 			continue
 		var property_name := str(definition["property"])
 		var bindings: Dictionary = control.get_meta("cascade_bindings", {})

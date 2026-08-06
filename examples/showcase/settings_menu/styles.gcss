@@ -24,6 +24,7 @@
     border: 1px solid #2b3b57;
     border-radius: 14px;
 }
+.settings-card:hover { background: #172238; }
 .section-title { color: #f1f5ff; font-size: 20px; }
 .section-help { color: #7f91af; font-size: 13px; margin-bottom: 5px; }
 .profile-setting { min-height: 38px; display: flex; flex-direction: row; align-items: center; gap: 10px; }
@@ -39,6 +40,10 @@
 .setting-option:checked { background: #16233a; color: #ffffff; }
 .setting-option:focused { border-color: #84adff; border-width: 2px; }
 .setting-option:disabled { background: #111827; color: #667085; }
+.channel-title { color: #8fa1bf; font-size: 12px; margin-top: 5px; }
+.channel-setting { min-height: 28px; display: flex; flex-direction: row; align-items: center; gap: 8px; }
+.channel-toggle { width: 24px; height: 24px; }
+.channel-label { min-width: 130px; color: #c9d5e9; font-size: 13px; }
 .scale-setting { min-height: 36px; display: flex; flex-direction: row; align-items: center; gap: 10px; margin-top: 5px; }
 .scale-label { min-width: 58px; color: #c9d5e9; font-size: 14px; }
 .scale-value { min-width: 38px; color: #8fa1bf; font-size: 13px; }

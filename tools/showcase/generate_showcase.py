@@ -33,7 +33,9 @@ def code_panel(label: str, source_path: str, language: str) -> str:
       </details>"""
 
 
-def validate_source_parity(demo: dict[str, object], html_source: str, gxml_source: str) -> None:
+def validate_source_parity(
+    demo: dict[str, object], html_source: str, gxml_source: str, gcss_source: str
+) -> None:
     demo_id = str(demo["id"])
     for marker in demo.get("shared_copy", []):
         if marker not in html_source or marker not in gxml_source:
@@ -46,6 +48,8 @@ def validate_source_parity(demo: dict[str, object], html_source: str, gxml_sourc
             raise SystemExit(f"{demo_id}: HTML source is missing parity feature {label!r}")
         if assertion["gxml"] not in gxml_source:
             raise SystemExit(f"{demo_id}: GXML source is missing parity feature {label!r}")
+        if "gcss" in assertion and assertion["gcss"] not in gcss_source:
+            raise SystemExit(f"{demo_id}: GCSS source is missing parity feature {label!r}")
 
 
 def reference_output_name(demo: dict[str, object], html_source: str) -> str:
@@ -75,7 +79,8 @@ def render_demo(demo: dict[str, object]) -> str:
     viewport_width, viewport_height = demo["viewport"]
     html_source = read_text(str(demo["html"]))
     gxml_source = read_text(str(demo["gxml"]))
-    validate_source_parity(demo, html_source, gxml_source)
+    gcss_source = read_text(str(demo["gcss"]))
+    validate_source_parity(demo, html_source, gxml_source, gcss_source)
     html_reference_relative = f"references/{reference_output_name(demo, html_source)}"
     screenshot_path = ROOT / str(demo["godot_screenshot"])
     screenshot_relative = relative_to_output(str(demo["godot_screenshot"]))

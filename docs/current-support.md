@@ -56,7 +56,7 @@ Form write-back is explicit and reuses the same exact path grammar:
 <Select bind-selected="{settings.quality}">…</Select>
 ```
 
-`bind-text`, `bind-checked`, `bind-value`, and `bind-selected` initialize from the context and assign native changes back to an existing Dictionary key, Array index, or Godot object property. Successful writes emit `binding_value_changed` and refresh dependent one-way bindings. Missing paths produce diagnostics and are never created implicitly. Writable bindings inside a repeated item scope are deferred.
+`bind-text`, `bind-checked`, `bind-value`, and `bind-selected` initialize from the context and assign native changes back to an existing Dictionary key, Array index, or Godot object property. Successful writes emit `binding_value_changed` and refresh dependent one-way bindings. Missing paths produce diagnostics and are never created implicitly. Inside `Repeat`, nested `item.<path>` targets the current backing item and follows keyed reorders; `index` and whole-item replacement are intentionally read-only.
 
 `on-<signal>="method_name"` connects a native signal to `CascadeDocument.event_context`, an object-valued binding context, or the document itself. Authored connections are refreshed without disturbing user signal connections. See [markup and state](markup-and-state.md).
 
@@ -85,7 +85,7 @@ The parser recognizes `:hover`, `:pressed`, `:checked`, `:focused`, `:focus-visi
 
 | Selector | Supported declarations | Runtime source |
 | --- | --- | --- |
-| `:hover` | `background`, `background-color` | Native pointer hover |
+| `:hover` | `background`, `background-color` | Native pointer hover on interactive controls and owned layout containers |
 | `:pressed` | `background`, `background-color` | Native activation press |
 | `:checked` / `:selected` | `background`, `background-color`, `color` | Native toggle selection; `:selected` is the style alias |
 | `:focused` | `border-color`, `border-width` | Native focus state |
@@ -97,7 +97,7 @@ The parser recognizes `:hover`, `:pressed`, `:checked`, `:focused`, `:focus-visi
 
 Unlike a browser, state rules are resolved into typed component state properties during the build. Native Godot state changes then select the appropriate drawing dynamically. State precedence is `disabled` → `pressed` → `checked`/`selected` → `hover` → `focus` → base; focus-ring drawing remains visible alongside other states. `:pressed` is the GodotCascade equivalent of HTML `:active`.
 
-There is no general `Panel:hover` or pseudo-state animation support. Reconciliation-time style transitions are documented below. Pseudo-state declarations on unsupported controls warn.
+`Page`/`Row`/`Column`/`Panel`, `Grid`, and `Stack` accept `:hover` background declarations without becoming focusable or clickable. Other pseudo states on non-interactive containers remain unsupported. There is no pseudo-state animation support; reconciliation-time style transitions are documented below. Pseudo-state declarations on unsupported controls warn.
 
 ### Input behavior
 

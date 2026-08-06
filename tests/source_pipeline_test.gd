@@ -36,6 +36,7 @@ func _run() -> void:
 	_test_select_pipeline()
 	_test_slider_pipeline()
 	_test_text_input_attribute_contract()
+	_test_layout_container_state_styles()
 	_test_image_pipeline()
 	_test_stack_pipeline()
 	_test_grid_pipeline()
@@ -43,6 +44,7 @@ func _run() -> void:
 	_test_parser_recovery()
 	_test_binding_resolver()
 	await _test_writable_binding_pipeline()
+	await _test_repeated_writable_binding_pipeline()
 	await _test_markup_state_features()
 	await _test_identity_preserving_reload()
 	root.size = Vector2i(960, 540)
@@ -401,6 +403,26 @@ func _test_text_input_attribute_contract() -> void:
 		secret_multiline_build["root"].free()
 
 
+func _test_layout_container_state_styles() -> void:
+	var markup := GxmlParser.parse("<Page><Panel class=\"hover-surface\" /><Grid class=\"hover-surface\" /><Stack class=\"hover-surface\" /></Page>")
+	var stylesheet := GcssParser.parse(".hover-surface { background: #101828; } .hover-surface:hover { background: #1d2939; }")
+	var build := CascadeBuilder.build(markup["root"], stylesheet["rules"])
+	_expect_true("layout hover styles build without errors", not _has_error_diagnostics(build["diagnostics"]))
+	var surfaces := _find_by_class(build["root"], "hover-surface")
+	_expect_int("layout hover style surface count", surfaces.size(), 3)
+	for index in surfaces.size():
+		_expect_true("layout hover style is enabled %s" % index, surfaces[index].get("hover_style_enabled"))
+		_expect_true("layout hover style color %s" % index, surfaces[index].get("hover_background_color") == Color("1d2939"))
+	if build["root"] != null:
+		build["root"].free()
+	var unsupported_style := GcssParser.parse("Panel:pressed { background: #ff0000; }")
+	var unsupported_markup := GxmlParser.parse("<Panel />")
+	var unsupported_build := CascadeBuilder.build(unsupported_markup["root"], unsupported_style["rules"])
+	_expect_true("unsupported container pressed state remains a warning", not _has_error_diagnostics(unsupported_build["diagnostics"]) and not unsupported_build["diagnostics"].is_empty())
+	if unsupported_build["root"] != null:
+		unsupported_build["root"].free()
+
+
 func _test_stack_pipeline() -> void:
 	var markup := GxmlParser.parse("<Stack><Panel id=\"back\"/><Button id=\"badge\">New</Button></Stack>")
 	var stylesheet := GcssParser.parse("Stack { width: 200px; height: 100px; padding: 10px; } #badge { position: absolute; right: 5px; top: 7px; width: 50px; height: 24px; }")
@@ -619,6 +641,65 @@ func _test_writable_binding_pipeline() -> void:
 	await process_frame
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(markup_path))
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(stylesheet_path))
+
+
+func _test_repeated_writable_binding_pipeline() -> void:
+	var markup_path := "user://cascade_repeated_writable_test.gxml"
+	var stylesheet_path := "user://cascade_repeated_writable_test.gcss"
+	var markup := """<Page>
+		<Repeat items="{entries}" key="id">
+			<Row class="entry-row">
+				<Checkbox class="entry-enabled" bind-checked="{item.enabled}" accessible-label="Toggle entry" />
+				<TextInput class="entry-name" bind-text="{item.name}" accessible-label="Entry name" />
+				<Label class="entry-output" text="{item.enabled}" />
+			</Row>
+		</Repeat>
+	</Page>"""
+	_expect_true("write repeated writable markup", _write_text(markup_path, markup))
+	_expect_true("write repeated writable stylesheet", _write_text(stylesheet_path, "Page { gap: 4px; } .entry-row { gap: 4px; }"))
+	var first := {"id": "alpha", "name": "Alpha", "enabled": true}
+	var second := {"id": "beta", "name": "Beta", "enabled": false}
+	var context := {"entries": [first, second]}
+	var document: Control = CascadeDocument.new()
+	document.load_on_ready = false
+	document.log_diagnostics_to_console = false
+	document.watch_sources = false
+	document.binding_context = context
+	document.markup_path = markup_path
+	document.stylesheet_path = stylesheet_path
+	root.add_child(document)
+	_expect_true("repeated writable document loads", document.reload_document())
+	var toggles := _find_by_class(document.generated_root(), "entry-enabled")
+	var names := _find_by_class(document.generated_root(), "entry-name")
+	_expect_int("repeated writable toggle count", toggles.size(), 2)
+	_expect_int("repeated writable text count", names.size(), 2)
+	var alpha_toggle_id := toggles[0].get_instance_id()
+	toggles[0].set("button_pressed", false)
+	toggles[0].emit_signal("toggled", false)
+	names[0].set("text", "Alpha Prime")
+	names[0].emit_signal("text_changed", "Alpha Prime")
+	await process_frame
+	_expect_true("repeated toggle writes backing item", not first["enabled"])
+	_expect_true("repeated text writes backing item", first["name"] == "Alpha Prime")
+	_expect_true("repeated write refreshes same-scope dependent label", _find_by_class(document.generated_root(), "entry-output")[0].get("text") == "false")
+	context["entries"] = [second, first]
+	_expect_true("repeated writable reorder refreshes", document.refresh_bindings())
+	toggles = _find_by_class(document.generated_root(), "entry-enabled")
+	_expect_true("keyed repeated writable control follows its item", toggles[1].get_instance_id() == alpha_toggle_id)
+	toggles[0].set("button_pressed", true)
+	toggles[0].emit_signal("toggled", true)
+	await process_frame
+	_expect_true("reordered repeated write targets current keyed item", second["enabled"])
+	document.queue_free()
+	await process_frame
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(markup_path))
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(stylesheet_path))
+
+	var invalid_markup := GxmlParser.parse("<Repeat items=\"{entries}\"><TextInput bind-text=\"{index}\" /></Repeat>")
+	var invalid_build := CascadeBuilder.build(invalid_markup["root"], [], context)
+	_expect_true("repeat index writable binding is an explicit error", _has_error_diagnostics(invalid_build["diagnostics"]))
+	if invalid_build["root"] != null:
+		invalid_build["root"].free()
 
 
 func _test_markup_state_features() -> void:

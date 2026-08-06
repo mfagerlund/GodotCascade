@@ -18,6 +18,13 @@
             <Checkbox id="bloom" class="setting-option" bind-checked="{settings.bloom}" accessible-label="Enable bloom">Bloom</Checkbox>
             <Switch id="vsync" class="setting-option" bind-checked="{settings.vsync}" accessible-label="Enable vertical sync">Vertical sync</Switch>
             <Checkbox id="ray-tracing" class="setting-option" disabled="true" accessible-label="Ray tracing unavailable">Ray tracing · unavailable</Checkbox>
+            <Label class="channel-title">HUD channels</Label>
+            <Repeat items="{settings.hud_channels}" key="id">
+                <Row class="channel-setting">
+                    <Checkbox class="channel-toggle" bind-checked="{item.enabled}" accessible-label="Toggle HUD channel" />
+                    <Label class="channel-label" text="{item.label}" />
+                </Row>
+            </Repeat>
         </Panel>
 
         <Panel class="settings-card">

@@ -4,6 +4,10 @@
 
 `TextInput multiline="true"` now selects an adapted native `TextEdit`. It supports the existing text, placeholder, read-only, disabled, max-length, required, pattern, error-message, accessibility, state-style, and `bind-text` surface. `secret="true"` remains single-line-only and is an explicit error on the multiline adapter.
 
+Writable bindings inside `Repeat` may now use `item.<path>`. Bare `item` replacement and `index` writes remain explicit errors.
+
+Owned layout containers now accept `:hover` background styling. They remain non-focusable and do not gain pressed, disabled, or activation semantics.
+
 ## 0.2.0 interactive forms
 
 The interactive-forms additions are backward-compatible with source format version 1:

@@ -75,6 +75,18 @@ var _arrange_dirty := true
 		_connect_style()
 		_on_style_invalidated(CascadeStyle.Invalidation.ALL)
 
+@export_group("State Appearance")
+@export var hover_background_color := Color.TRANSPARENT:
+	set(value):
+		hover_background_color = value
+		queue_redraw()
+@export var hover_style_enabled := false:
+	set(value):
+		hover_style_enabled = value
+		queue_redraw()
+
+var _mouse_inside := false
+
 
 func _ready() -> void:
 	_connect_style()
@@ -82,6 +94,8 @@ func _ready() -> void:
 	resized.connect(_on_resized)
 	child_entered_tree.connect(_on_child_entered)
 	child_exiting_tree.connect(_on_child_exiting)
+	mouse_entered.connect(_on_mouse_entered)
+	mouse_exited.connect(_on_mouse_exited)
 	for child in get_children():
 		_track_child(child)
 	queue_sort()
@@ -311,8 +325,22 @@ func _draw_box() -> void:
 	BoxPainter.draw_box(
 		self,
 		Rect2(Vector2.ZERO, size),
-		cascade_style.background_color,
+		cascade_background_color(),
 		cascade_style.border_color,
 		cascade_style.border_width,
 		cascade_style.border_radius
 	)
+
+
+func cascade_background_color() -> Color:
+	return hover_background_color if hover_style_enabled and _mouse_inside else cascade_style.background_color
+
+
+func _on_mouse_entered() -> void:
+	_mouse_inside = true
+	queue_redraw()
+
+
+func _on_mouse_exited() -> void:
+	_mouse_inside = false
+	queue_redraw()

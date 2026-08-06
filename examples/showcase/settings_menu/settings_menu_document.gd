@@ -13,6 +13,10 @@ func _ready() -> void:
 			"ui_scale": 100.0,
 			"quality": "high",
 			"notes": "Ready for the next match.",
+			"hud_channels": [
+				{"id": "damage", "label": "Damage numbers", "enabled": true},
+				{"id": "team", "label": "Team markers", "enabled": false},
+			],
 		},
 		"ui": {
 			"scale_label": "100%",
