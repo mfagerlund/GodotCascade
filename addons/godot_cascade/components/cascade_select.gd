@@ -63,6 +63,19 @@ func _init() -> void:
 	super()
 	text = placeholder
 	text_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	cascade_style.padding_right = 34.0
+
+
+func _draw() -> void:
+	super()
+	var center := Vector2(size.x - 17.0, size.y * 0.5)
+	var direction := -1.0 if is_open() else 1.0
+	var points := PackedVector2Array([
+		center + Vector2(-4.0, -2.0 * direction),
+		center + Vector2(0.0, 2.0 * direction),
+		center + Vector2(4.0, -2.0 * direction),
+	])
+	draw_polyline(points, _current_text_color(), 2.0, true)
 
 
 func _ready() -> void:

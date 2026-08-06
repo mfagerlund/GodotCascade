@@ -18,15 +18,21 @@
 
         <Panel class="settings-card">
             <Label class="section-title">Window mode</Label>
-            <Label class="section-help">Choose one native ButtonGroup option.</Label>
+            <Label class="section-help">Choose one native radio-group option.</Label>
             <RadioButton id="windowed" class="setting-option" group="window-mode">Windowed</RadioButton>
             <RadioButton id="borderless" class="setting-option" group="window-mode" checked="true">Borderless</RadioButton>
             <RadioButton id="fullscreen" class="setting-option" group="window-mode">Exclusive fullscreen</RadioButton>
+            <Row class="scale-setting">
+                <Label class="scale-label">UI scale</Label>
+                <Slider id="ui-scale" min="75" max="125" value="100" step="5" accessible-label="Interface scale" />
+                <Label class="scale-value">100%</Label>
+            </Row>
         </Panel>
     </Row>
 
     <Row class="settings-footer">
         <Label class="hint">Tab to move focus · Space or controller accept to toggle</Label>
+        <Label class="select-label">QUALITY</Label>
         <Select id="quality" selected="high" accessible-label="Graphics quality">
             <Option value="low">Low quality</Option>
             <Option value="medium">Medium quality</Option>
