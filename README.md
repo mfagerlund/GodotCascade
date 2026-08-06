@@ -5,7 +5,7 @@ GodotCascade is an experimental retained-mode UI framework for Godot 4. It bring
 The goal is to make game UI faster to build and easier to maintain without embedding a browser or replacing Godot's renderer. A GodotCascade interface remains a tree of native controls, so it can continue to use Godot's signals, themes, input, rendering, and editor tooling.
 
 > [!IMPORTANT]
-> GodotCascade 0.2.0 is the current public preview for Godot 4.7. The `main` branch is the 0.3 development line, adding adapted multiline editing without becoming a browser engine; APIs outside the documented preview references remain unstable.
+> GodotCascade 0.3.0 is the current public preview for Godot 4.7, adding adapted multiline editing and scoped forms without becoming a browser engine. APIs outside the documented preview references remain unstable.
 
 ## Why GodotCascade?
 
@@ -92,16 +92,25 @@ The repository currently contains several working vertical slices:
 - keyed `Repeat` collections, `on-*` event methods, and registered custom-component lifecycle hooks;
 - three source-generated parity scenes covering layout, media, components, form controls, and bound telemetry data.
 
-Version 0.2 adds native single-line text editing, validation, and explicit `bind-*` write-back while retaining the 0.1 source surface. The 0.3 development line also adapts native `TextEdit` through `TextInput multiline="true"`. Browser-wide property coverage remains out of scope.
+Version 0.2 adds native single-line text editing, validation, and explicit `bind-*` write-back while retaining the 0.1 source surface. Version 0.3 also adapts native `TextEdit` through `TextInput multiline="true"`, adds keyed repeated-item write-back, and supports hover backgrounds on owned layout containers. Browser-wide property coverage remains out of scope.
 
 ## Trying the preview
 
 1. Open this folder with Godot 4.7, the currently tested editor version.
 2. Enable **GodotCascade** under **Project → Project Settings → Plugins**.
-3. Run the project. The configured main scene is `examples/generated_showcase.tscn`, built at runtime from the showcase `.gxml` and `.gcss` files.
+3. Run the project. The configured main scene is `examples/showcase_app.tscn`, a manifest-driven browser for every native showcase page.
 4. Add a **CascadeBox** from the Create New Node dialog to experiment in your own scene.
 
 No external runtime dependencies are required.
+
+You can also launch the same app from a terminal and optionally open one page directly:
+
+```powershell
+python tools/showcase/run_showcase.py --godot "C:\path\to\godot.exe"
+python tools/showcase/run_showcase.py --godot "C:\path\to\godot.exe" --page settings-menu
+```
+
+Use Previous, Next, or the page picker to exercise each manifest entry. Reload rebuilds the current document, and the toolbar reports live document diagnostics. See the [runnable showcase guide](docs/showcase-app.md) for the connection checks on each page.
 
 ### Live source editing
 
@@ -168,6 +177,7 @@ godot --headless --path . --script res://tests/layout_smoke_test.gd
 godot --headless --path . --script res://tests/flex_layout_engine_test.gd
 godot --headless --path . --script res://tests/component_test.gd
 godot --headless --path . --script res://tests/source_pipeline_test.gd
+godot --headless --path . --script res://tests/showcase_app_test.gd
 ```
 
 ## Using `CascadeBox`
@@ -207,7 +217,7 @@ Add a **CascadeButton** from the Create New Node dialog after enabling the addon
 
 ## HTML parity showcase
 
-The generated [parity showcase](docs/showcase/index.html) presents each demo as a fixed-viewport HTML reference beside an actual capture of its source-generated GodotCascade scene. It includes the executable `.gxml` and `.gcss` translation and a semantic mapping table. The current demos cover flex/box, grid/stack overlays, a telemetry dashboard, and native form controls.
+The generated [parity showcase](docs/showcase/index.html) presents each demo as a fixed-viewport HTML reference beside an actual capture of its source-generated GodotCascade scene. It includes the executable `.gxml` and `.gcss` translation and a semantic mapping table. The current demos cover flex/box, grid/stack overlays, a telemetry dashboard, and native form controls. The [runnable Godot app](docs/showcase-app.md) loads those same manifest entries for direct interaction testing.
 
 Showcases are registered in `examples/showcase/manifest.json`. A demo keeps four artifacts together:
 
@@ -244,7 +254,7 @@ python tools/release/package_addon.py
 python tools/release/clean_install_smoke.py --godot path/to/godot
 ```
 
-See the [changelog](CHANGELOG.md), [0.2.0 release notes](docs/releases/0.2.0.md), [TextInput certification matrix](docs/text-input-certification.md), and [release process](docs/release-process.md). CI runs the same headless suites, benchmark, editor import scan, generated-showcase check, deterministic packaging step, and clean-project installation smoke test.
+See the [changelog](CHANGELOG.md), [0.3.0 release notes](docs/releases/0.3.0.md), [TextInput certification matrix](docs/text-input-certification.md), and [release process](docs/release-process.md). CI runs the same headless suites, benchmark, editor import scan, generated-showcase check, deterministic packaging step, and clean-project installation smoke test.
 
 ## Architecture
 

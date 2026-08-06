@@ -29,4 +29,4 @@ The accessibility audit warns when a button/range has no accessible name or an i
 
 ## Verification gates
 
-The public-preview gate consists of all four headless suites, the 500-item [performance benchmark](performance.md), a plugin-enabled editor import scan, native showcase recapture, generated report validation, relative documentation links, formatting checks, deterministic addon packaging, and a clean-project installation smoke test. The [release process](release-process.md) defines the executable commands and tag-publishing contract.
+The public-preview gate consists of all five headless suites, including the manifest-page connection test, the 500-item [performance benchmark](performance.md), a plugin-enabled editor import scan, native showcase recapture, generated report validation, relative documentation links, formatting checks, deterministic addon packaging, and a clean-project installation smoke test. The [release process](release-process.md) defines the executable commands and tag-publishing contract.

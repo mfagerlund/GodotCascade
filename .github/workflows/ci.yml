@@ -58,6 +58,7 @@ jobs:
           godot --headless --path . --script res://tests/layout_smoke_test.gd
           godot --headless --path . --script res://tests/component_test.gd
           godot --headless --path . --script res://tests/source_pipeline_test.gd
+          godot --headless --path . --script res://tests/showcase_app_test.gd
 
       - name: Run performance gate
         run: godot --headless --path . --script res://benchmarks/pipeline_benchmark.gd

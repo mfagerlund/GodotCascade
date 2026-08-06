@@ -111,6 +111,8 @@ func reload_document() -> bool:
 
 	var desired_root: Control = build_result["root"]
 	_stamp_source_path(desired_root)
+	var was_applying_bindings := _applying_bindings
+	_applying_bindings = true
 	if _generated_root == null:
 		_generated_root = desired_root
 		add_child(_generated_root)
@@ -128,6 +130,7 @@ func reload_document() -> bool:
 			_generated_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 			ComponentRegistry.mount_tree(_generated_root)
 	_refresh_bindings(false)
+	_applying_bindings = was_applying_bindings
 	_refresh_writable_bindings(false)
 	_refresh_events(false)
 	AccessibilityAudit.apply_linear_navigation(_generated_root, wrap_focus_navigation)
@@ -240,9 +243,10 @@ func _refresh_bindings(publish: bool) -> bool:
 		if publish:
 			_publish_diagnostics()
 		return _generated_root != null
+	var was_applying_bindings := _applying_bindings
 	_applying_bindings = true
 	_apply_bindings(_generated_root)
-	_applying_bindings = false
+	_applying_bindings = was_applying_bindings
 	if publish:
 		_publish_diagnostics()
 	return not _has_errors()

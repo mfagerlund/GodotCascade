@@ -4,11 +4,15 @@ All notable changes to GodotCascade are documented here. Versions follow semanti
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-08-06
+
 - Added `TextInput multiline="true"` as an adapted native `TextEdit`, including validation, writable binding, focus-visible styling, max length, and editing-state preservation.
 - Added writable `item.<path>` bindings inside keyed `Repeat` templates, with explicit errors for index and whole-item writes.
 - Added `:hover` background adapters for owned Box/Panel, Grid, and Stack layout containers while keeping non-interactive states unsupported.
 - Made release archives byte-for-byte reproducible across Windows and Linux.
 - Made showcase capture honor each manifest viewport through an isolated `SubViewport`.
+- Added a runnable manifest-driven showcase app with navigation, reload, diagnostics, and connection checks for every page.
+- Prevented source reconciliation from publishing synthetic writable-control changes.
 
 ## [0.2.0] — 2026-08-06
 
@@ -31,6 +35,7 @@ The first public preview provides:
 
 See the [0.1.0 release notes](docs/releases/0.1.0.md) for installation and known boundaries.
 
-[Unreleased]: https://github.com/mfagerlund/GodotCascade/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/mfagerlund/GodotCascade/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/mfagerlund/GodotCascade/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/mfagerlund/GodotCascade/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/mfagerlund/GodotCascade/releases/tag/v0.1.0

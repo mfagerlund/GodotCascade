@@ -1,6 +1,6 @@
 # GodotCascade documentation
 
-GodotCascade 0.2.0 is the current public preview; `main` documents the 0.3 development surface, including adapted multiline editing. Documentation distinguishes the supported focused surface from intentionally unsupported browser features.
+GodotCascade 0.3.0 is the current public preview, including adapted multiline editing and scoped repeated forms. Documentation distinguishes the supported focused surface from intentionally unsupported browser features.
 
 ## Start here
 
@@ -20,7 +20,8 @@ GodotCascade 0.2.0 is the current public preview; `main` documents the 0.3 devel
 - [Performance budgets](performance.md) — executable 500-item benchmark and allocation ceilings
 - [Migration notes](migrations.md) — source/API compatibility and upgrade instructions
 - [Public preview stability policy](api-stability.md) — current guarantees, unstable surfaces, and change process
-- [Roadmap](../ROADMAP.md) — completed 0.1/0.2 milestones and the active 0.3 scoped/multiline forms slice
+- [Roadmap](../ROADMAP.md) — completed 0.1, 0.2, and 0.3 milestones plus ongoing platform certification
+- [Runnable showcase app](showcase-app.md) — launch and manually verify every manifest page and event connection
 - [HTML parity showcase](showcase/index.html) — live HTML references beside captured native Godot output
 
 ## Decisions

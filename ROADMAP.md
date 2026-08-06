@@ -4,11 +4,11 @@ The roadmap favors end-to-end slices over isolated subsystems. Each milestone sh
 
 ## Status snapshot
 
-The executable foundation now covers flex/grid/stack layout, owned and adapted form controls, GXML and focused GCSS parsing, native-tree construction, keyed hot reload, last-valid diagnostics, one-way and explicit writable property-path bindings, automated captures, and the HTML parity report.
+The executable foundation now covers flex/grid/stack layout, owned and adapted form controls, GXML and focused GCSS parsing, native-tree construction, keyed hot reload, last-valid diagnostics, one-way and explicit writable property-path bindings, automated captures, the HTML parity report, and a manifest-driven runnable Godot showcase app.
 
 All planned 0.1 milestones and every first-public-preview acceptance item are complete. The source-generated settings-menu slice includes shared interactive-state precedence, a native mouse/keyboard/controller test matrix, and owned checkbox, grouped radio-button, switch, select, and slider components. The layout foundation includes native grid tracks, automatic and explicit placement, stack overlays, absolute insets, media, responsive rules, and viewport values. The editor and performance release gates are executable.
 
-Versions 0.1.0 and 0.2.0 are tagged and published through the reproducible release gate. The 0.2 interactive-forms slice adds an adapted native single-line text input, explicit writable bindings, validation state, input-modality-aware focus styling, and a live settings workflow exercised in both native and HTML showcase views. The 0.3 development line now includes the corresponding native multiline adapter.
+Versions 0.1.0, 0.2.0, and 0.3.0 are tagged and published through the reproducible release gate. The 0.2 interactive-forms slice adds an adapted native single-line text input, explicit writable bindings, validation state, input-modality-aware focus styling, and a live settings workflow exercised in both native and HTML showcase views. Version 0.3 adds the corresponding native multiline adapter, repeated-item write-back, and owned-container hover backgrounds.
 
 The reproduced findings in the [2026-08-05 code review](docs/artifacts/review.md) are part of this roadmap. Blocking correctness fixes take priority when they touch the same runtime layer as an active vertical slice.
 
@@ -164,7 +164,7 @@ The first public preview should build a small settings menu from `.gxml` and a s
 - [x] Interactive settings-menu Apply workflow in native Godot and HTML parity views
 - [x] Component, pipeline, validation, writable-binding, and clean-install regression coverage
 
-## Phase 7 — 0.3 scoped and multiline forms — automated scope complete
+## Phase 7 — 0.3 scoped and multiline forms — complete
 
 - [x] Multiline `TextInput` adapter on native `TextEdit`
 - [x] Multiline validation, max length, read-only/disabled behavior, writable binding, and adapted pseudo states
@@ -172,6 +172,7 @@ The first public preview should build a small settings menu from `.gxml` and a s
 - [x] Add multiline editing to the native and HTML settings showcase without removing existing form controls
 - [x] Writable bindings inside repeated-item scopes with keyed reorder regression coverage
 - [x] `:hover` background adapters for non-interactive Box/Panel, Grid, and Stack containers without changing focus/navigation semantics
+- [x] Runnable manifest-driven Godot showcase with page navigation, reload, live diagnostics, and automated connection checks
 
 ## Ongoing platform-dependent certification
 

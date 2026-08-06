@@ -4,7 +4,7 @@ GodotCascade releases are built from the exact tagged tree and are never assembl
 
 ## Local release gate
 
-Run the four headless suites and benchmark documented in the project README, then run:
+Run the five headless suites and benchmark documented in the project README, then run:
 
 ```powershell
 python tools/ci/verify_repo.py

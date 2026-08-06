@@ -620,6 +620,8 @@ func _test_writable_binding_pipeline() -> void:
 	_expect_true("multiline writable update refreshes dependent text", _find_by_id(document.generated_root(), "notes-output")[0].get("text") == "Launch\nconfirmed")
 	var input_instance := input.get_instance_id()
 	var notes_instance := notes.get_instance_id()
+	var refresh_writes: Array[String] = []
+	document.binding_value_changed.connect(func(path: String, _value: Variant, _control: Control): refresh_writes.append(path))
 	input.select(1, 3)
 	notes.select(0, 1, 1, 4)
 	_expect_true("write text-input hot-reload markup", _write_text(markup_path, markup.replace("Profile name", "Display name")))
@@ -632,6 +634,7 @@ func _test_writable_binding_pipeline() -> void:
 	_expect_true("multiline reload preserves native identity", notes.get_instance_id() == notes_instance)
 	_expect_true("multiline reload preserves writable text", notes.text == "Launch\nconfirmed")
 	_expect_true("multiline reload preserves selection", notes.has_selection() and notes.get_selection_from_line() == 0 and notes.get_selection_to_line() == 1)
+	_expect_true("source reconciliation does not publish synthetic writable changes", refresh_writes.is_empty())
 
 	input.text = ""
 	input.text_changed.emit(input.text)

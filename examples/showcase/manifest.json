@@ -23,7 +23,7 @@
         ["position: absolute", "<Stack> + right/top", "Overlay inset placement"],
         ["visual media", "<Image src=\"res://…\">", "CascadeImage cover crop"],
         ["padding / gap", "padding / column-gap", "CascadeStyle + layout request"],
-        ["<button>", "<Button>", "CascadeButton (BaseButton)"],
+        ["button click", "on-pressed=\"_on_inspect_layout\"", "Event-to-method binding"],
         [":hover / :active", ":hover / :pressed", "Native button state drawing"]
       ]
     },

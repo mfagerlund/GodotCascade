@@ -31,7 +31,7 @@
     </Grid>
 
     <Row class="actions">
-        <Label class="status">Phase 1 · Layout foundation</Label>
-        <Button id="inspect">Inspect layout</Button>
+        <Label class="status" text="{ui.status}" />
+        <Button id="inspect" on-pressed="_on_inspect_layout">Inspect layout</Button>
     </Row>
 </Page>

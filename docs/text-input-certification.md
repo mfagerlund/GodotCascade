@@ -1,8 +1,8 @@
 # TextInput certification matrix
 
-GodotCascade 0.2.0 adapts Godot 4.7 `LineEdit`; the 0.3 development line also adapts `TextEdit` for multiline input. Neither replaces the native editing engine. The release gate verifies the adapter boundary while platform services remain Godot's responsibility.
+GodotCascade 0.3.0 adapts Godot 4.7 `LineEdit` and `TextEdit` for single-line and multiline input. Neither replaces the native editing engine. The release gate verifies the adapter boundary while platform services remain Godot's responsibility.
 
-| Behavior | Automated evidence | 0.2.0 status |
+| Behavior | Automated evidence | 0.3.0 status |
 | --- | --- | --- |
 | Text, placeholder, read-only, disabled, secret, and max length | Component and source-pipeline suites | Verified |
 | Required and regular-expression validation | Component and writable-binding pipeline suites | Verified |
@@ -12,8 +12,8 @@ GodotCascade 0.2.0 adapts Godot 4.7 `LineEdit`; the 0.3 development line also ad
 | Pointer versus keyboard/controller focus ring | Component suite | Verified |
 | Accessible name, description, and validation message mapping | Source-pipeline and accessibility audit suites | Verified |
 | Native selection, context menu, and password-mode availability | Component suite | Verified |
-| Multiline newlines, max length, writable binding, and validation | Component and source-pipeline suites | Verified on `main` |
-| Multiline primary caret, selection, and scroll preservation | Component and keyed hot-reload suites | Verified on `main` |
+| Multiline newlines, max length, writable binding, and validation | Component and source-pipeline suites | Verified |
+| Multiline primary caret, selection, and scroll preservation | Component and keyed hot-reload suites | Verified |
 | Clipboard shortcuts and OS clipboard integration | Native `LineEdit`/`TextEdit`; not intercepted by the adapters | Platform-dependent; not certified headlessly |
 | Undo/redo shortcut variants | Native `LineEdit`/`TextEdit`; not intercepted by the adapters | Platform-dependent; not certified headlessly |
 | IME composition and candidate-window placement | Native `LineEdit`/`TextEdit` and Godot display server | Platform-dependent; not certified headlessly |
