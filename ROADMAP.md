@@ -8,7 +8,7 @@ The executable foundation now covers flex/grid/stack layout, owned and adapted f
 
 All planned 0.1 milestones and every first-public-preview acceptance item are complete. The source-generated settings-menu slice includes shared interactive-state precedence, a native mouse/keyboard/controller test matrix, and owned checkbox, grouped radio-button, switch, select, and slider components. The layout foundation includes native grid tracks, automatic and explicit placement, stack overlays, absolute insets, media, responsive rules, and viewport values. The editor and performance release gates are executable.
 
-Version 0.1.0 is tagged and published through the reproducible release gate. The 0.2 interactive-forms slice is complete on `main`: an adapted native text input, explicit writable bindings, validation state, input-modality-aware focus styling, and a live settings workflow are exercised in both native and HTML showcase views.
+Versions 0.1.0 and 0.2.0 are tagged and published through the reproducible release gate. The 0.2 interactive-forms slice adds an adapted native text input, explicit writable bindings, validation state, input-modality-aware focus styling, and a live settings workflow exercised in both native and HTML showcase views.
 
 The reproduced findings in the [2026-08-05 code review](docs/artifacts/review.md) are part of this roadmap. Blocking correctness fixes take priority when they touch the same runtime layer as an active vertical slice.
 
@@ -167,6 +167,7 @@ The first public preview should build a small settings menu from `.gxml` and a s
 ### Deferred beyond the 0.2 slice
 
 - [ ] Multiline `TextInput` adapter on native `TextEdit`
-- [ ] Cross-platform manual IME, screen-reader, touch selection, and clipboard certification matrix
+- [x] Publish the automated and platform-dependent [TextInput certification matrix](docs/text-input-certification.md)
+- [ ] Complete manual IME, screen-reader, touch selection, and clipboard certification on each supported platform
 - [ ] Writable bindings inside repeated-item scopes
 - [ ] General pseudo-state adapters for non-interactive layout containers

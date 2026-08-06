@@ -610,6 +610,13 @@ func _test_adapted_text_input() -> void:
 	_expect_true("text input exposes validation message", input.current_validation_message() == "Profile name is required.")
 	input.text = "Rhea"
 	_expect_true("native text satisfies validation", input.validate())
+	input.text = "Rhea אבג"
+	_expect_true("native text input retains mixed-direction Unicode", input.text == "Rhea אבג")
+	input.text = "Rhea"
+	input.secret = true
+	_expect_true("native password masking mode remains available", input.secret)
+	input.secret = false
+	_expect_true("native context menu and selection remain enabled", input.context_menu_enabled and input.selecting_enabled)
 	input.caret_column = 3
 	input.select(1, 3)
 	var state := input.capture_runtime_state()

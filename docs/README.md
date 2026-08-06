@@ -1,6 +1,6 @@
 # GodotCascade documentation
 
-GodotCascade 0.1.0 is the published public preview; `main` documents the 0.2 development surface. Documentation distinguishes the supported focused surface from intentionally unsupported browser features.
+GodotCascade 0.2.0 is the current public preview. Documentation distinguishes the supported focused surface from intentionally unsupported browser features.
 
 ## Start here
 
@@ -9,6 +9,7 @@ GodotCascade 0.1.0 is the published public preview; `main` documents the 0.2 dev
 - [Current support reference](current-support.md) — exact GXML elements, GCSS properties, selectors, pseudo states, and known limits
 - [Architecture](architecture.md) — runtime boundaries, reconciliation, binding, layout, and invalidation
 - [Adapted text input plan](adapted-text-input-plan.md) — native editing boundary and required behavior matrix
+- [TextInput certification matrix](text-input-certification.md) — automated evidence and platform-dependent limits
 - [Native control compatibility tiers](compatibility-tiers.md) — exact, adapted, and layout-only classification and diagnostics
 - [Style system](style-system.md) — token spans, typed values, selectors, inheritance, computed caching, and theme adapters
 - [Markup and state](markup-and-state.md) — keyed repeats, scoped bindings, event methods, and custom component lifecycle

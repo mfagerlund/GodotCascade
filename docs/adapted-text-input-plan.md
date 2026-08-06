@@ -23,6 +23,8 @@ GodotCascade 0.2 adapts native `LineEdit` for single-line text entry rather than
 
 ## Remaining certification matrix
 
+The tracked release status is in the [TextInput certification matrix](text-input-certification.md). Headless automation cannot certify OS input methods, touch hardware, or assistive technology.
+
 Before the adapter enters the public component set, automated and manual checks must cover:
 
 1. Mouse, touch, keyboard, and controller focus entry and exit.

@@ -4,6 +4,8 @@ All notable changes to GodotCascade are documented here. Versions follow semanti
 
 ## [Unreleased]
 
+## [0.2.0] — 2026-08-06
+
 - Added an adapted native single-line `TextInput` with validation and editing-state preservation.
 - Added explicit writable `bind-text`, `bind-checked`, `bind-value`, and `bind-selected` property paths.
 - Added `:invalid` and input-modality-aware `:focus-visible` styling.
@@ -23,5 +25,6 @@ The first public preview provides:
 
 See the [0.1.0 release notes](docs/releases/0.1.0.md) for installation and known boundaries.
 
-[Unreleased]: https://github.com/mfagerlund/GodotCascade/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/mfagerlund/GodotCascade/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/mfagerlund/GodotCascade/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/mfagerlund/GodotCascade/releases/tag/v0.1.0

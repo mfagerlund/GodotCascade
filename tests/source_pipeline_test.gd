@@ -35,6 +35,7 @@ func _run() -> void:
 	_test_form_controls_pipeline()
 	_test_select_pipeline()
 	_test_slider_pipeline()
+	_test_text_input_attribute_contract()
 	_test_image_pipeline()
 	_test_stack_pipeline()
 	_test_grid_pipeline()
@@ -360,6 +361,35 @@ func _test_slider_pipeline() -> void:
 	_expect_true("slider GCSS fill", slider.get("fill_color") == Color("55aaff"))
 	_expect_true("slider accessibility name", slider.get("accessibility_name") == "Master volume")
 	slider.free()
+
+
+func _test_text_input_attribute_contract() -> void:
+	var markup := GxmlParser.parse("""<TextInput text="secret" placeholder="Access code" read-only="true" disabled="true" secret="true" max-length="12" required="true" pattern="^[a-z]+$" error-message="Lowercase letters only." accessible-label="Access code" accessible-description="Used to join the session." />""")
+	var stylesheet := GcssParser.parse("""TextInput { background: #101828; color: #f2f4f7; font-size: 17px; padding: 7px 11px; border: 1px solid #405477; }
+		TextInput:hover { background: #182235; }
+		TextInput:focused { background: #131b2a; border-color: #84adff; border-width: 2px; }
+		TextInput:disabled { background: #111827; color: #667085; }
+		TextInput:invalid { background: #2a1720; color: #fff1f0; border-color: #f97066; }""")
+	var build := CascadeBuilder.build(markup["root"], stylesheet["rules"])
+	_expect_int("text-input attribute parser diagnostics", markup["diagnostics"].size(), 0)
+	_expect_int("text-input style parser diagnostics", stylesheet["diagnostics"].size(), 0)
+	_expect_int("text-input builder diagnostics", build["diagnostics"].size(), 0)
+	var input: Control = build["root"]
+	_expect_true("TextInput builds a native LineEdit adapter", input is LineEdit)
+	_expect_true("TextInput is classified as adapted", input.get_meta("cascade_compatibility_tier") == "adapted")
+	_expect_true("TextInput applies visible and placeholder text", input.get("text") == "secret" and input.get("placeholder_text") == "Access code")
+	_expect_true("TextInput applies read-only and disabled semantics", not input.get("editable") and input.get("disabled"))
+	_expect_true("TextInput applies secret and max-length attributes", input.get("secret") and input.get("max_length") == 12)
+	_expect_true("TextInput applies accessibility metadata", input.get("accessibility_name") == "Access code" and input.get_meta("cascade_authored_accessible_description") == "Used to join the session.")
+	_expect_true("TextInput applies adapted text style", input.get("font_size") == 17 and input.get("text_color") == Color("f2f4f7"))
+	_expect_true("TextInput applies invalid appearance", input.get("invalid_border_color") == Color("f97066") and input.get("invalid_text_color") == Color("fff1f0"))
+	if input != null:
+		input.free()
+	var multiline_markup := GxmlParser.parse("<TextInput multiline=\"true\" />")
+	var multiline_build := CascadeBuilder.build(multiline_markup["root"], [])
+	_expect_true("multiline TextInput is an explicit build error", _has_error_diagnostics(multiline_build["diagnostics"]))
+	if multiline_build["root"] != null:
+		multiline_build["root"].free()
 
 
 func _test_stack_pipeline() -> void:

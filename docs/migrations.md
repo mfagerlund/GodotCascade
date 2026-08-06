@@ -1,6 +1,6 @@
 # Migration notes
 
-## 0.2 development line
+## 0.2.0 interactive forms
 
 The interactive-forms additions are backward-compatible with source format version 1:
 
