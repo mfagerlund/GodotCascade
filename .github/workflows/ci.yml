@@ -35,8 +35,8 @@ jobs:
           archive="Godot_v${GODOT_RELEASE}_linux.x86_64.zip"
           base="https://github.com/godotengine/godot-builds/releases/download/${GODOT_RELEASE}"
           curl --fail --location --retry 3 "${base}/${archive}" --output "${archive}"
-          curl --fail --location --retry 3 "${base}/${archive}.sha256" --output "${archive}.sha256"
-          sha256sum --check "${archive}.sha256"
+          curl --fail --location --retry 3 "${base}/SHA512-SUMS.txt" --output SHA512-SUMS.txt
+          grep "  ${archive}$" SHA512-SUMS.txt | sha512sum --check
           unzip -q "${archive}"
           chmod +x "Godot_v${GODOT_RELEASE}_linux.x86_64"
           mv "Godot_v${GODOT_RELEASE}_linux.x86_64" "${RUNNER_TEMP}/godot"
