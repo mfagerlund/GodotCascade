@@ -748,9 +748,9 @@
 
       <div class="comparison">
         <section class="render-column">
-          <div class="render-label"><span>HTML reference</span><small><a href="references/settings-menu-cf9e1c81b8b4.html" target="_blank" rel="noreferrer">Open reference</a></small></div>
+          <div class="render-label"><span>HTML reference</span><small><a href="references/settings-menu-859b9b77dbc8.html" target="_blank" rel="noreferrer">Open reference</a></small></div>
           <div class="render-frame" data-viewport-width="960" data-viewport-height="660" style="--viewport-width:960px; --viewport-height:660px; aspect-ratio:960/660">
-            <iframe width="960" height="660" title="HTML rendering of Settings menu" src="references/settings-menu-cf9e1c81b8b4.html"></iframe>
+            <iframe width="960" height="660" title="HTML rendering of Settings menu" src="references/settings-menu-859b9b77dbc8.html"></iframe>
           </div>
         </section>
         <section class="render-column">
@@ -767,7 +767,7 @@
         </div>
         <table>
           <thead><tr><th>HTML/CSS</th><th>GodotCascade source</th><th>Runtime</th></tr></thead>
-          <tbody><tr><td><code>input[type=checkbox]</code></td><td><code>Checkbox</code></td><td><code>CascadeCheckbox (BaseButton toggle)</code></td></tr><tr><td><code>input[type=text]</code></td><td><code>TextInput</code></td><td><code>CascadeTextInput (native LineEdit adapter)</code></td></tr><tr><td><code>textarea</code></td><td><code>TextInput multiline=&quot;true&quot;</code></td><td><code>CascadeTextArea (native TextEdit adapter)</code></td></tr><tr><td><code>input/change</code></td><td><code>bind-*={path}</code></td><td><code>Validated writable binding + dependent refresh</code></td></tr><tr><td><code>repeated form rows</code></td><td><code>Repeat + bind-checked={item.enabled}</code></td><td><code>Keyed item-scope write-back</code></td></tr><tr><td><code>input[role=switch]</code></td><td><code>Switch</code></td><td><code>CascadeSwitch track/thumb drawing</code></td></tr><tr><td><code>select / option</code></td><td><code>Select / Option</code></td><td><code>CascadeSelect + PopupPanel</code></td></tr><tr><td><code>input[type=range]</code></td><td><code>Slider</code></td><td><code>CascadeSlider native range input</code></td></tr><tr><td><code>input[type=radio] name</code></td><td><code>RadioButton group</code></td><td><code>CascadeRadioButton + ButtonGroup</code></td></tr><tr><td><code>checked / disabled</code></td><td><code>checked / disabled</code></td><td><code>Native button state</code></td></tr><tr><td><code>:checked / :hover</code></td><td><code>:checked / :hover</code></td><td><code>Shared state adapter</code></td></tr><tr><td><code>:invalid / :focus-visible</code></td><td><code>:invalid / :focus-visible</code></td><td><code>Validation and input-modality styling</code></td></tr><tr><td><code>:open / option:checked</code></td><td><code>:open / Option:selected</code></td><td><code>Popup and option state</code></td></tr><tr><td><code>aria-label</code></td><td><code>accessible-label</code></td><td><code>Native accessibility name</code></td></tr><tr><td><code>fieldset-like cards</code></td><td><code>Panel + Column</code></td><td><code>CascadePanel flex layout</code></td></tr></tbody>
+          <tbody><tr><td><code>input[type=checkbox]</code></td><td><code>Checkbox</code></td><td><code>CascadeCheckbox (BaseButton toggle)</code></td></tr><tr><td><code>input[type=text]</code></td><td><code>TextInput</code></td><td><code>CascadeTextInput (native LineEdit adapter)</code></td></tr><tr><td><code>textarea</code></td><td><code>TextInput multiline=&quot;true&quot;</code></td><td><code>CascadeTextArea (native TextEdit adapter)</code></td></tr><tr><td><code>input/change</code></td><td><code>bind-*={path}</code></td><td><code>Validated writable binding + dependent refresh</code></td></tr><tr><td><code>repeated form rows</code></td><td><code>Repeat + bind-checked={item.enabled}</code></td><td><code>Keyed item-scope write-back</code></td></tr><tr><td><code>input[role=switch]</code></td><td><code>Switch</code></td><td><code>CascadeSwitch track/thumb drawing</code></td></tr><tr><td><code>select / option</code></td><td><code>Select / Option</code></td><td><code>CascadeSelect + PopupPanel</code></td></tr><tr><td><code>input[type=range]</code></td><td><code>Slider</code></td><td><code>CascadeSlider native range input</code></td></tr><tr><td><code>range hover</code></td><td><code>#ui-scale:hover</code></td><td><code>Native slider track hover state</code></td></tr><tr><td><code>input[type=radio] name</code></td><td><code>RadioButton group</code></td><td><code>CascadeRadioButton + ButtonGroup</code></td></tr><tr><td><code>checked / disabled</code></td><td><code>checked / disabled</code></td><td><code>Native button state</code></td></tr><tr><td><code>:checked / :hover</code></td><td><code>:checked / :hover</code></td><td><code>Shared state adapter</code></td></tr><tr><td><code>:invalid / :focus-visible</code></td><td><code>:invalid / :focus-visible</code></td><td><code>Validation and input-modality styling</code></td></tr><tr><td><code>:open / option:checked</code></td><td><code>:open / Option:selected</code></td><td><code>Popup and option state</code></td></tr><tr><td><code>aria-label</code></td><td><code>accessible-label</code></td><td><code>Native accessibility name</code></td></tr><tr><td><code>fieldset-like cards</code></td><td><code>Panel + Column</code></td><td><code>CascadePanel flex layout</code></td></tr></tbody>
         </table>
       </section>
 
@@ -806,7 +806,7 @@
     label:has(input:checked) { color:#fff; background:#16233a; }
     label:has(input:disabled) { color:#667085; background:#111827; }
     .channel-title { margin-top:5px; color:#8fa1bf; font-size:12px; }
-    .channel-setting { min-height:28px; display:flex; align-items:center; gap:8px; color:#c9d5e9; font-size:13px; }
+    .channel-setting { min-height:28px; padding:2px 4px; display:flex; align-items:center; gap:8px; color:#c9d5e9; font-size:13px; }
     .channel-setting input { width:18px; height:18px; margin:0; accent-color:#528bff; }
     input[type=checkbox],input[type=radio] { width:18px; height:18px; margin:0; accent-color:#528bff; }
     .switch input { position:absolute; width:1px; height:1px; opacity:0; }
@@ -819,6 +819,7 @@
     .range-control { position:relative; min-width:150px; height:30px; flex:1; }
     .range-control input { position:absolute; inset:0; z-index:2; width:100%; height:100%; margin:0; opacity:0; cursor:pointer; }
     .range-track { position:absolute; left:9px; right:9px; top:12px; height:6px; border-radius:99px; background:#344054; }
+    .range-control:hover .range-track { background:#475467; }
     .range-fill { position:absolute; inset:0 50% 0 0; border-radius:99px; background:#528bff; }
     .range-thumb { position:absolute; top:50%; left:50%; width:18px; height:18px; border-radius:50%; background:#fff; transform:translate(-50%,-50%); }
     .range-control input:focus-visible + .range-track { outline:2px solid #84adff; outline-offset:3px; }
@@ -842,7 +843,7 @@
   &lt;main&gt;
     &lt;header&gt;&lt;p class=&quot;eyebrow&quot;&gt;GAME SETTINGS&lt;/p&gt;&lt;h1&gt;Graphics &amp;amp; display&lt;/h1&gt;&lt;p class=&quot;subtitle&quot;&gt;Native focus, toggle, and radio-group behavior with Cascade-owned drawing.&lt;/p&gt;&lt;/header&gt;
     &lt;div class=&quot;content&quot;&gt;
-      &lt;section&gt;&lt;h2&gt;Effects&lt;/h2&gt;&lt;p class=&quot;help&quot;&gt;Tune visual features independently.&lt;/p&gt;&lt;div class=&quot;profile-setting&quot;&gt;&lt;span class=&quot;profile-label&quot;&gt;Profile&lt;/span&gt;&lt;input id=&quot;profile-name&quot; class=&quot;profile-input&quot; value=&quot;Rhea&quot; placeholder=&quot;Player name&quot; required minlength=&quot;2&quot; maxlength=&quot;16&quot; aria-label=&quot;Player profile name&quot;&gt;&lt;/div&gt;&lt;label&gt;&lt;input type=&quot;checkbox&quot; checked&gt;Dynamic shadows&lt;/label&gt;&lt;label&gt;&lt;input type=&quot;checkbox&quot; checked&gt;Bloom&lt;/label&gt;&lt;label class=&quot;switch&quot;&gt;&lt;input type=&quot;checkbox&quot; role=&quot;switch&quot; checked&gt;&lt;span class=&quot;switch-track&quot; aria-hidden=&quot;true&quot;&gt;&lt;span class=&quot;switch-thumb&quot;&gt;&lt;/span&gt;&lt;/span&gt;&lt;span&gt;Vertical sync&lt;/span&gt;&lt;/label&gt;&lt;label&gt;&lt;input type=&quot;checkbox&quot; disabled&gt;Ray tracing · unavailable&lt;/label&gt;&lt;span class=&quot;channel-title&quot;&gt;HUD channels&lt;/span&gt;&lt;div class=&quot;channel-setting&quot; data-repeat-scope=&quot;item.enabled&quot;&gt;&lt;input type=&quot;checkbox&quot; checked&gt;Damage numbers&lt;/div&gt;&lt;div class=&quot;channel-setting&quot; data-repeat-scope=&quot;item.enabled&quot;&gt;&lt;input type=&quot;checkbox&quot;&gt;Team markers&lt;/div&gt;&lt;/section&gt;
+      &lt;section&gt;&lt;h2&gt;Effects&lt;/h2&gt;&lt;p class=&quot;help&quot;&gt;Tune visual features independently.&lt;/p&gt;&lt;div class=&quot;profile-setting&quot;&gt;&lt;span class=&quot;profile-label&quot;&gt;Profile&lt;/span&gt;&lt;input id=&quot;profile-name&quot; class=&quot;profile-input&quot; value=&quot;Rhea&quot; placeholder=&quot;Player name&quot; required minlength=&quot;2&quot; maxlength=&quot;16&quot; aria-label=&quot;Player profile name&quot;&gt;&lt;/div&gt;&lt;label&gt;&lt;input type=&quot;checkbox&quot; checked&gt;Dynamic shadows&lt;/label&gt;&lt;label&gt;&lt;input type=&quot;checkbox&quot; checked&gt;Bloom&lt;/label&gt;&lt;label class=&quot;switch&quot;&gt;&lt;input type=&quot;checkbox&quot; role=&quot;switch&quot; checked&gt;&lt;span class=&quot;switch-track&quot; aria-hidden=&quot;true&quot;&gt;&lt;span class=&quot;switch-thumb&quot;&gt;&lt;/span&gt;&lt;/span&gt;&lt;span&gt;Vertical sync&lt;/span&gt;&lt;/label&gt;&lt;label&gt;&lt;input type=&quot;checkbox&quot; disabled&gt;Ray tracing · unavailable&lt;/label&gt;&lt;span class=&quot;channel-title&quot;&gt;HUD channels&lt;/span&gt;&lt;label class=&quot;channel-setting&quot; data-repeat-scope=&quot;item.enabled&quot;&gt;&lt;input type=&quot;checkbox&quot; checked&gt;Damage numbers&lt;/label&gt;&lt;label class=&quot;channel-setting&quot; data-repeat-scope=&quot;item.enabled&quot;&gt;&lt;input type=&quot;checkbox&quot;&gt;Team markers&lt;/label&gt;&lt;/section&gt;
       &lt;section&gt;&lt;h2&gt;Window mode&lt;/h2&gt;&lt;p class=&quot;help&quot;&gt;Choose one native radio-group option.&lt;/p&gt;&lt;label&gt;&lt;input type=&quot;radio&quot; name=&quot;window-mode&quot;&gt;Windowed&lt;/label&gt;&lt;label&gt;&lt;input type=&quot;radio&quot; name=&quot;window-mode&quot; checked&gt;Borderless&lt;/label&gt;&lt;label&gt;&lt;input type=&quot;radio&quot; name=&quot;window-mode&quot;&gt;Exclusive fullscreen&lt;/label&gt;&lt;div class=&quot;range-setting&quot;&gt;&lt;span&gt;UI scale&lt;/span&gt;&lt;span class=&quot;range-control&quot;&gt;&lt;input id=&quot;ui-scale&quot; type=&quot;range&quot; min=&quot;75&quot; max=&quot;125&quot; value=&quot;100&quot; step=&quot;5&quot; aria-label=&quot;Interface scale&quot;&gt;&lt;span class=&quot;range-track&quot; aria-hidden=&quot;true&quot;&gt;&lt;span class=&quot;range-fill&quot;&gt;&lt;/span&gt;&lt;span class=&quot;range-thumb&quot;&gt;&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;output id=&quot;scale-value&quot;&gt;100%&lt;/output&gt;&lt;/div&gt;&lt;span class=&quot;notes-label&quot;&gt;Session notes&lt;/span&gt;&lt;textarea id=&quot;session-notes&quot; maxlength=&quot;160&quot; placeholder=&quot;Add notes for the next launch&quot; aria-label=&quot;Session notes&quot;&gt;Ready for the next match.&lt;/textarea&gt;&lt;/section&gt;
     &lt;/div&gt;
     &lt;footer&gt;&lt;span id=&quot;settings-status&quot; class=&quot;hint&quot; aria-live=&quot;polite&quot;&gt;Change a setting, then apply&lt;/span&gt;&lt;span class=&quot;select-label&quot;&gt;QUALITY&lt;/span&gt;&lt;span class=&quot;select-control&quot;&gt;&lt;select id=&quot;quality&quot; aria-label=&quot;Graphics quality&quot;&gt;&lt;option value=&quot;low&quot;&gt;Low quality&lt;/option&gt;&lt;option value=&quot;medium&quot;&gt;Medium quality&lt;/option&gt;&lt;option value=&quot;high&quot; selected&gt;High quality&lt;/option&gt;&lt;option value=&quot;ultra&quot;&gt;Ultra quality&lt;/option&gt;&lt;/select&gt;&lt;span class=&quot;select-face&quot; aria-hidden=&quot;true&quot;&gt;&lt;span&gt;High quality&lt;/span&gt;&lt;span class=&quot;select-chevron&quot;&gt;&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;button id=&quot;apply&quot; type=&quot;button&quot;&gt;Apply settings&lt;/button&gt;&lt;/footer&gt;
@@ -900,10 +901,7 @@
             &lt;Checkbox id=&quot;ray-tracing&quot; class=&quot;setting-option&quot; disabled=&quot;true&quot; accessible-label=&quot;Ray tracing unavailable&quot;&gt;Ray tracing · unavailable&lt;/Checkbox&gt;
             &lt;Label class=&quot;channel-title&quot;&gt;HUD channels&lt;/Label&gt;
             &lt;Repeat items=&quot;{settings.hud_channels}&quot; key=&quot;id&quot;&gt;
-                &lt;Row class=&quot;channel-setting&quot;&gt;
-                    &lt;Checkbox class=&quot;channel-toggle&quot; bind-checked=&quot;{item.enabled}&quot; accessible-label=&quot;Toggle HUD channel&quot; /&gt;
-                    &lt;Label class=&quot;channel-label&quot; text=&quot;{item.label}&quot; /&gt;
-                &lt;/Row&gt;
+                &lt;Checkbox class=&quot;channel-setting&quot; text=&quot;{item.label}&quot; bind-checked=&quot;{item.enabled}&quot; accessible-label=&quot;Toggle HUD channel&quot; /&gt;
             &lt;/Repeat&gt;
         &lt;/Panel&gt;
 
@@ -982,13 +980,14 @@
 .setting-option:focused { border-color: #84adff; border-width: 2px; }
 .setting-option:disabled { background: #111827; color: #667085; }
 .channel-title { color: #8fa1bf; font-size: 12px; margin-top: 5px; }
-.channel-setting { min-height: 28px; display: flex; flex-direction: row; align-items: center; gap: 8px; }
-.channel-toggle { width: 24px; height: 24px; }
-.channel-label { min-width: 130px; color: #c9d5e9; font-size: 13px; }
+.channel-setting { min-height: 28px; padding: 2px 4px; color: #c9d5e9; font-size: 13px; border-radius: 7px; }
+.channel-setting:hover { background: #1d2939; }
+.channel-setting:checked { background: #16233a; color: #ffffff; }
 .scale-setting { min-height: 36px; display: flex; flex-direction: row; align-items: center; gap: 10px; margin-top: 5px; }
 .scale-label { min-width: 58px; color: #c9d5e9; font-size: 14px; }
 .scale-value { min-width: 38px; color: #8fa1bf; font-size: 13px; }
 #ui-scale { min-width: 150px; height: 30px; flex-grow: 1; background: #344054; fill-color: #528bff; }
+#ui-scale:hover { background: #475467; }
 .notes-label { color: #c9d5e9; font-size: 14px; margin-top: 5px; }
 #session-notes { min-height: 104px; padding: 9px 11px; color: #f2f4f7; font-size: 14px; background: #101828; border: 1px solid #405477; border-radius: 7px; }
 #session-notes:hover { background: #182235; }

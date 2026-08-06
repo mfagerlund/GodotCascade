@@ -40,13 +40,14 @@
 .setting-option:focused { border-color: #84adff; border-width: 2px; }
 .setting-option:disabled { background: #111827; color: #667085; }
 .channel-title { color: #8fa1bf; font-size: 12px; margin-top: 5px; }
-.channel-setting { min-height: 28px; display: flex; flex-direction: row; align-items: center; gap: 8px; }
-.channel-toggle { width: 24px; height: 24px; }
-.channel-label { min-width: 130px; color: #c9d5e9; font-size: 13px; }
+.channel-setting { min-height: 28px; padding: 2px 4px; color: #c9d5e9; font-size: 13px; border-radius: 7px; }
+.channel-setting:hover { background: #1d2939; }
+.channel-setting:checked { background: #16233a; color: #ffffff; }
 .scale-setting { min-height: 36px; display: flex; flex-direction: row; align-items: center; gap: 10px; margin-top: 5px; }
 .scale-label { min-width: 58px; color: #c9d5e9; font-size: 14px; }
 .scale-value { min-width: 38px; color: #8fa1bf; font-size: 13px; }
 #ui-scale { min-width: 150px; height: 30px; flex-grow: 1; background: #344054; fill-color: #528bff; }
+#ui-scale:hover { background: #475467; }
 .notes-label { color: #c9d5e9; font-size: 14px; margin-top: 5px; }
 #session-notes { min-height: 104px; padding: 9px 11px; color: #f2f4f7; font-size: 14px; background: #101828; border: 1px solid #405477; border-radius: 7px; }
 #session-notes:hover { background: #182235; }

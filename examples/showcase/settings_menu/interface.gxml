@@ -20,10 +20,7 @@
             <Checkbox id="ray-tracing" class="setting-option" disabled="true" accessible-label="Ray tracing unavailable">Ray tracing · unavailable</Checkbox>
             <Label class="channel-title">HUD channels</Label>
             <Repeat items="{settings.hud_channels}" key="id">
-                <Row class="channel-setting">
-                    <Checkbox class="channel-toggle" bind-checked="{item.enabled}" accessible-label="Toggle HUD channel" />
-                    <Label class="channel-label" text="{item.label}" />
-                </Row>
+                <Checkbox class="channel-setting" text="{item.label}" bind-checked="{item.enabled}" accessible-label="Toggle HUD channel" />
             </Repeat>
         </Panel>
 

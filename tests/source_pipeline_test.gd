@@ -350,7 +350,7 @@ func _test_select_pipeline() -> void:
 
 func _test_slider_pipeline() -> void:
 	var markup := GxmlParser.parse("<Slider id=\"volume\" min=\"0\" max=\"10\" value=\"4\" step=\"0.5\" accessible-label=\"Master volume\" />")
-	var stylesheet := GcssParser.parse("Slider { width: 220px; fill-color: #55aaff; }")
+	var stylesheet := GcssParser.parse("Slider { width: 220px; fill-color: #55aaff; } Slider:hover { background: #475467; }")
 	var build := CascadeBuilder.build(markup["root"], stylesheet["rules"])
 	_expect_int("slider builder diagnostics", build["diagnostics"].size(), 0)
 	var slider: Control = build["root"]
@@ -361,6 +361,7 @@ func _test_slider_pipeline() -> void:
 	_expect_float("slider markup value", slider.get("value"), 4.0)
 	_expect_float("slider markup step", slider.get("step"), 0.5)
 	_expect_true("slider GCSS fill", slider.get("fill_color") == Color("55aaff"))
+	_expect_true("slider hover background maps to owned track", slider.get("hover_background_color") == Color("475467"))
 	_expect_true("slider accessibility name", slider.get("accessibility_name") == "Master volume")
 	slider.free()
 

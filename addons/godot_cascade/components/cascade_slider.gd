@@ -18,6 +18,10 @@ const FocusVisibilityTracker := preload("res://addons/godot_cascade/components/f
 	set(next):
 		fill_color = next
 		queue_redraw()
+@export var hover_background_color := Color("475467"):
+	set(next):
+		hover_background_color = next
+		queue_redraw()
 @export var thumb_color := Color.WHITE:
 	set(next):
 		thumb_color = next
@@ -59,6 +63,7 @@ var disabled := false:
 		mouse_filter = Control.MOUSE_FILTER_IGNORE if disabled else Control.MOUSE_FILTER_STOP
 		queue_redraw()
 var _dragging := false
+var _hovered := false
 var _focus_tracker: RefCounted
 
 
@@ -75,6 +80,8 @@ func _init() -> void:
 
 func _ready() -> void:
 	value_changed.connect(_on_value_changed)
+	mouse_entered.connect(_on_mouse_entered)
+	mouse_exited.connect(_on_mouse_exited)
 	_focus_tracker = FocusVisibilityTracker.new()
 	_focus_tracker.attach(self)
 	_focus_tracker.changed.connect(queue_redraw)
@@ -96,7 +103,7 @@ func _draw() -> void:
 		maxf(content.size.x - thumb_size, 0.0),
 		track_height
 	)
-	BoxPainter.draw_box(self, track, cascade_style.background_color, cascade_style.border_color, cascade_style.border_width, track_height * 0.5)
+	BoxPainter.draw_box(self, track, cascade_track_color(), cascade_style.border_color, cascade_style.border_width, track_height * 0.5)
 	var fill := track
 	fill.size.x *= ratio
 	BoxPainter.draw_box(self, fill, fill_color, Color.TRANSPARENT, 0.0, track_height * 0.5)
@@ -135,6 +142,10 @@ func set_range_values(next_min: float, next_max: float, next_value: float) -> vo
 	value = clampf(next_value, min_value, max_value)
 
 
+func cascade_track_color() -> Color:
+	return hover_background_color if _hovered and not disabled else cascade_style.background_color
+
+
 func _set_value_from_position(local_x: float) -> void:
 	var content := BoxPainter.content_rect(Rect2(Vector2.ZERO, size), cascade_style.padding(), cascade_style.border_width)
 	var usable_width := maxf(content.size.x - thumb_size, 1.0)
@@ -143,4 +154,14 @@ func _set_value_from_position(local_x: float) -> void:
 
 
 func _on_value_changed(_value: float) -> void:
+	queue_redraw()
+
+
+func _on_mouse_entered() -> void:
+	_hovered = true
+	queue_redraw()
+
+
+func _on_mouse_exited() -> void:
+	_hovered = false
 	queue_redraw()

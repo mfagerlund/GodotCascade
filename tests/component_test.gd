@@ -550,6 +550,11 @@ func _test_owned_slider() -> void:
 	root.add_child(slider)
 	await process_frame
 	_expect_float("CascadeSlider native ratio", slider.ratio, 0.25)
+	var base_track_color := slider.cascade_style.background_color
+	slider.emit_signal("mouse_entered")
+	_expect_true("CascadeSlider hover changes track color", slider.cascade_track_color() == slider.hover_background_color and slider.cascade_track_color() != base_track_color)
+	slider.emit_signal("mouse_exited")
+	_expect_true("CascadeSlider mouse exit restores track color", slider.cascade_track_color() == base_track_color)
 	var click := InputEventMouseButton.new()
 	click.button_index = MOUSE_BUTTON_LEFT
 	click.pressed = true

@@ -110,6 +110,7 @@
         ["input[role=switch]", "Switch", "CascadeSwitch track/thumb drawing"],
         ["select / option", "Select / Option", "CascadeSelect + PopupPanel"],
         ["input[type=range]", "Slider", "CascadeSlider native range input"],
+        ["range hover", "#ui-scale:hover", "Native slider track hover state"],
         ["input[type=radio] name", "RadioButton group", "CascadeRadioButton + ButtonGroup"],
         ["checked / disabled", "checked / disabled", "Native button state"],
         [":checked / :hover", ":checked / :hover", "Shared state adapter"],
