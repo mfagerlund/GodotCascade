@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import html
 import json
 import os
@@ -12,6 +13,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 MANIFEST_PATH = ROOT / "examples" / "showcase" / "manifest.json"
 OUTPUT_PATH = ROOT / "docs" / "showcase" / "index.html"
+REFERENCE_OUTPUT_DIR = OUTPUT_PATH.parent / "references"
 
 
 def read_text(relative_path: str) -> str:
@@ -46,11 +48,17 @@ def validate_source_parity(demo: dict[str, object], html_source: str, gxml_sourc
             raise SystemExit(f"{demo_id}: GXML source is missing parity feature {label!r}")
 
 
+def reference_output_name(demo: dict[str, object], html_source: str) -> str:
+    revision = hashlib.sha256(html_source.encode("utf-8")).hexdigest()[:12]
+    return f"{demo['id']}-{revision}.html"
+
+
 def render_demo(demo: dict[str, object]) -> str:
     viewport_width, viewport_height = demo["viewport"]
     html_source = read_text(str(demo["html"]))
     gxml_source = read_text(str(demo["gxml"]))
     validate_source_parity(demo, html_source, gxml_source)
+    html_reference_relative = f"references/{reference_output_name(demo, html_source)}"
     screenshot_path = ROOT / str(demo["godot_screenshot"])
     screenshot_relative = relative_to_output(str(demo["godot_screenshot"]))
 
@@ -87,9 +95,9 @@ def render_demo(demo: dict[str, object]) -> str:
 
       <div class="comparison">
         <section class="render-column">
-          <div class="render-label"><span>HTML reference</span><small>Live browser rendering</small></div>
+          <div class="render-label"><span>HTML reference</span><small><a href="{html.escape(html_reference_relative)}" target="_blank" rel="noreferrer">Open reference</a></small></div>
           <div class="render-frame" data-viewport-width="{viewport_width}" data-viewport-height="{viewport_height}" style="--viewport-width:{viewport_width}px; --viewport-height:{viewport_height}px; aspect-ratio:{viewport_width}/{viewport_height}">
-            <iframe width="{viewport_width}" height="{viewport_height}" title="HTML rendering of {html.escape(str(demo['title']))}" srcdoc="{html.escape(html_source, quote=True)}"></iframe>
+            <iframe width="{viewport_width}" height="{viewport_height}" title="HTML rendering of {html.escape(str(demo['title']))}" src="{html.escape(html_reference_relative)}"></iframe>
           </div>
         </section>
         <section class="render-column">
@@ -157,7 +165,7 @@ def generate(check: bool = False) -> None:
     .comparison {{ padding:30px; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:24px; background:#090d16; }}
     .render-column {{ min-width:0; }}
     .render-label {{ height:44px; display:flex; justify-content:space-between; align-items:center; color:#dce6fa; }}
-    .render-label span {{ font-weight:700; }} .render-label small {{ color:#7e8da9; }}
+    .render-label span {{ font-weight:700; }} .render-label small, .render-label a {{ color:#7e8da9; }}
     .render-frame {{ position:relative; width:100%; overflow:hidden; border:1px solid #304160; border-radius:12px; background:#0e1014; }}
     .render-frame iframe, .render-frame img {{ position:absolute; inset:0 auto auto 0; display:block; width:var(--viewport-width); height:var(--viewport-height); max-width:none; border:0; transform:scale(var(--render-scale,1)); transform-origin:top left; }}
     .missing-capture {{ height:100%; display:grid; place-items:center; color:#f6b86b; background:repeating-linear-gradient(135deg,#111827,#111827 16px,#151d2d 16px,#151d2d 32px); }}
@@ -206,16 +214,34 @@ def generate(check: bool = False) -> None:
 </html>
 """
     document = "\n".join(line.rstrip() for line in document.splitlines()) + "\n"
+    references = {
+        REFERENCE_OUTPUT_DIR / reference_output_name(demo, read_text(str(demo["html"]))): read_text(str(demo["html"]))
+        for demo in manifest["demos"]
+    }
     if check:
         if not OUTPUT_PATH.exists() or OUTPUT_PATH.read_text(encoding="utf-8") != document:
             raise SystemExit(
                 f"{OUTPUT_PATH.relative_to(ROOT)} is stale; run tools/showcase/generate_showcase.py"
             )
+        for reference_path, reference_source in references.items():
+            if not reference_path.exists() or reference_path.read_text(encoding="utf-8") != reference_source:
+                raise SystemExit(
+                    f"{reference_path.relative_to(ROOT)} is stale; run tools/showcase/generate_showcase.py"
+                )
+        generated_paths = set(REFERENCE_OUTPUT_DIR.glob("*.html")) if REFERENCE_OUTPUT_DIR.exists() else set()
+        if generated_paths != set(references):
+            raise SystemExit("docs/showcase/references contains stale generated files")
         print(f"Verified {OUTPUT_PATH.relative_to(ROOT)}")
         return
 
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT_PATH.write_text(document, encoding="utf-8", newline="\n")
+    REFERENCE_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    for old_reference in REFERENCE_OUTPUT_DIR.glob("*.html"):
+        if old_reference not in references:
+            old_reference.unlink()
+    for reference_path, reference_source in references.items():
+        reference_path.write_text(reference_source, encoding="utf-8", newline="\n")
     print(f"Generated {OUTPUT_PATH.relative_to(ROOT)}")
 
 

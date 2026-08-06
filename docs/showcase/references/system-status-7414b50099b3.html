@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GodotCascade — System status HTML reference</title>
+  <style>
+    :root { color-scheme:dark; font-family:Inter,ui-sans-serif,system-ui,sans-serif; background:#0a0f19; color:#f1f5ff; }
+    * { box-sizing:border-box; }
+    html,body { margin:0; min-height:100%; }
+    body { min-height:540px; background:#0a0f19; }
+    .dashboard { min-height:540px; padding:34px 52px; display:flex; flex-direction:column; gap:20px; }
+    .header { display:flex; flex-direction:column; gap:6px; }
+    .eyebrow { margin:0; color:#6ea8fe; font-size:12px; letter-spacing:.11em; }
+    .title-row { display:flex; align-items:center; gap:16px; }
+    h1 { margin:0; flex:1; font-size:32px; line-height:1.2; font-weight:500; }
+    .subtitle { margin:0; color:#8d9bb5; font-size:15px; }
+    .status-pill { min-width:180px; padding:8px 12px; color:#74d6ad; font-size:13px; background:#122a24; border:1px solid #245c4b; border-radius:99px; }
+    .content { min-height:285px; display:flex; flex:1; gap:18px; }
+    .overview { width:390px; padding:24px; display:flex; flex-direction:column; gap:14px; background:#131b2a; border:1px solid #2b3b57; border-radius:14px; }
+    .section-label { margin:0; color:#7f91af; font-size:12px; letter-spacing:.09em; }
+    .metric-row { display:flex; align-items:center; gap:14px; flex:1; }
+    .metric { min-width:130px; margin:0; color:#f6f8ff; font-size:52px; font-weight:500; }
+    .delta { min-width:135px; color:#74d6ad; font-size:14px; }
+    .detail { margin:0; color:#8d9bb5; font-size:13px; }
+    .systems { display:flex; flex:1; flex-direction:column; gap:12px; }
+    .system-card { padding:16px 18px; display:flex; flex:1; flex-direction:column; gap:10px; background:#111827; border:1px solid #263650; border-radius:11px; }
+    .system-heading { display:flex; align-items:center; gap:12px; }
+    .system-name { flex:1; color:#c9d5e9; font-size:15px; }
+    .system-value { min-width:42px; color:#f1f5ff; font-size:15px; }
+    progress { display:block; width:100%; height:10px; overflow:hidden; border:0; border-radius:99px; appearance:none; background:#263249; }
+    progress::-webkit-progress-bar { background:#263249; border-radius:99px; }
+    progress::-webkit-progress-value { border-radius:99px; background:var(--fill); }
+    progress::-moz-progress-bar { border-radius:99px; background:var(--fill); }
+    .primary-progress { height:18px; --fill:#5aa7ff; }
+    .reactor progress { --fill:#b18cff; }
+    .life-support progress { --fill:#65d6a7; }
+    .navigation progress { --fill:#ffb665; }
+    footer { display:flex; align-items:center; gap:16px; }
+    .sync { flex:1; color:#6f7f9b; font-size:13px; }
+    .tags { display:flex; gap:6px; }
+    .tag { padding:4px 7px; color:#74d6ad; font-size:10px; background:#122a24; border:1px solid #245c4b; border-radius:99px; }
+    button { min-width:142px; min-height:40px; padding:9px 14px; color:#f2f4f7; font:inherit; background:#1c64d1; border:1px solid #5aa7ff; border-radius:8px; cursor:pointer; }
+    button:hover { background:#2878e5; } button:active { background:#174fa5; }
+  </style>
+</head>
+<body>
+  <main class="dashboard">
+    <header class="header">
+      <p class="eyebrow">EXPEDITION 07 · LIVE TELEMETRY</p>
+      <div class="title-row"><h1>Helios systems</h1><span class="status-pill">● All systems nominal</span></div>
+      <p class="subtitle">Resource allocation across the current deep-space route.</p>
+    </header>
+    <section class="content">
+      <article class="overview">
+        <p class="section-label">POWER RESERVE</p>
+        <div class="metric-row"><p class="metric">72%</p><span class="delta">+4.8% this cycle</span></div>
+        <progress class="primary-progress" value="72" max="100">72%</progress>
+        <p class="detail">18h 42m estimated endurance at current draw</p>
+      </article>
+      <div class="systems">
+        <article class="system-card reactor"><div class="system-heading"><span class="system-name">Reactor output</span><span class="system-value">84%</span></div><progress value="84" max="100">84%</progress></article>
+        <article class="system-card life-support"><div class="system-heading"><span class="system-name">Life support</span><span class="system-value">96%</span></div><progress value="96" max="100">96%</progress></article>
+        <article class="system-card navigation"><div class="system-heading"><span class="system-name">Navigation array</span><span class="system-value">63%</span></div><progress value="63" max="100">63%</progress></article>
+      </div>
+    </section>
+    <footer><span class="sync">Last synchronized 14 seconds ago</span><span class="tags"><span class="tag">LIVE</span><span class="tag">LINKED</span></span><button type="button">Review route</button></footer>
+  </main>
+</body>
+</html>

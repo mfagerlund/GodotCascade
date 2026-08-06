@@ -87,7 +87,8 @@
         {"label": "radio group", "html": "type=\"radio\"", "gxml": "<RadioButton"},
         {"label": "range slider", "html": "type=\"range\"", "gxml": "<Slider"},
         {"label": "visible range track", "html": "class=\"range-track\"", "gxml": "<Slider"},
-        {"label": "select dropdown", "html": "<select", "gxml": "<Select"}
+        {"label": "select dropdown", "html": "<select", "gxml": "<Select"},
+        {"label": "visible select face", "html": "class=\"select-face\"", "gxml": "<Select"}
       ],
       "mappings": [
         ["input[type=checkbox]", "Checkbox", "CascadeCheckbox (BaseButton toggle)"],

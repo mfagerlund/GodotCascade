@@ -34,7 +34,7 @@
     .comparison { padding:30px; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:24px; background:#090d16; }
     .render-column { min-width:0; }
     .render-label { height:44px; display:flex; justify-content:space-between; align-items:center; color:#dce6fa; }
-    .render-label span { font-weight:700; } .render-label small { color:#7e8da9; }
+    .render-label span { font-weight:700; } .render-label small, .render-label a { color:#7e8da9; }
     .render-frame { position:relative; width:100%; overflow:hidden; border:1px solid #304160; border-radius:12px; background:#0e1014; }
     .render-frame iframe, .render-frame img { position:absolute; inset:0 auto auto 0; display:block; width:var(--viewport-width); height:var(--viewport-height); max-width:none; border:0; transform:scale(var(--render-scale,1)); transform-origin:top left; }
     .missing-capture { height:100%; display:grid; place-items:center; color:#f6b86b; background:repeating-linear-gradient(135deg,#111827,#111827 16px,#151d2d 16px,#151d2d 32px); }
@@ -85,212 +85,9 @@
 
       <div class="comparison">
         <section class="render-column">
-          <div class="render-label"><span>HTML reference</span><small>Live browser rendering</small></div>
+          <div class="render-label"><span>HTML reference</span><small><a href="references/layout-foundation-47cbd1684928.html" target="_blank" rel="noreferrer">Open reference</a></small></div>
           <div class="render-frame" data-viewport-width="960" data-viewport-height="540" style="--viewport-width:960px; --viewport-height:540px; aspect-ratio:960/540">
-            <iframe width="960" height="540" title="HTML rendering of Layout foundation" srcdoc="&lt;!doctype html&gt;
-&lt;html lang=&quot;en&quot;&gt;
-&lt;head&gt;
-  &lt;meta charset=&quot;utf-8&quot;&gt;
-  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
-  &lt;title&gt;GodotCascade — Layout foundation HTML reference&lt;/title&gt;
-  &lt;style&gt;
-    :root {
-      color-scheme: dark;
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;
-      background: #0e1014;
-      color: #dbe8ff;
-    }
-
-    * { box-sizing: border-box; }
-
-    html, body { margin: 0; min-height: 100%; }
-
-    body {
-      min-height: 540px;
-      background: #0e1014;
-    }
-
-    .page {
-      width: 100%;
-      min-height: 540px;
-      padding: 56px 80px;
-      display: flex;
-      flex-direction: column;
-      gap: 24px;
-    }
-
-    .hero {
-      position: relative;
-      height: 7vh;
-    }
-
-    h1 {
-      margin: 0;
-      color: #dbe8ff;
-      font-size: 30px;
-      font-weight: 500;
-      line-height: 1.2;
-    }
-
-    .layout-badge {
-      position: absolute;
-      right: 0;
-      top: 2px;
-      width: 112px;
-      height: 28px;
-      padding: 5px 8px;
-      color: #7dbfff;
-      font-size: 12px;
-      background: #17253a;
-      border: 1px solid #315a89;
-      border-radius: 6px;
-    }
-
-    .lede {
-      margin: -10px 0 0;
-      color: #9eacc7;
-      font-size: 17px;
-      line-height: 1.35;
-    }
-
-    .cards {
-      min-height: 230px;
-      display: grid;
-      flex: 1;
-      grid-template-columns: 1fr 1fr 1fr;
-      grid-template-rows: minmax(210px, 1fr);
-      column-gap: 18px;
-    }
-
-    .card {
-      min-height: 210px;
-      padding: 20px 22px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      border: 1px solid #364561;
-      border-radius: 10px;
-      background: #1b1f27;
-    }
-
-    .card h2 {
-      margin: 0;
-      font-size: 20px;
-      font-weight: 500;
-    }
-
-    .card p {
-      margin: 0;
-      flex: 1;
-      color: #b8c4db;
-      font-size: 15px;
-      line-height: 1.45;
-    }
-
-    .card-image {
-      position: relative;
-      width: 100%;
-      height: 56px;
-      flex: none;
-      overflow: hidden;
-      border: 1px solid #315a89;
-      border-radius: 6px;
-      background: linear-gradient(145deg, #193a64, #111827 65%);
-    }
-
-    .card-image::before {
-      content: &quot;&quot;;
-      position: absolute;
-      right: 38px;
-      top: 8px;
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      background: #78c8ff;
-      box-shadow: 0 0 14px #4da3ff;
-    }
-
-    .card-image::after {
-      content: &quot;&quot;;
-      position: absolute;
-      left: -10%;
-      right: -10%;
-      bottom: -28px;
-      height: 54px;
-      border-radius: 50%;
-      background: #1d5b5a;
-    }
-
-    .card:nth-child(1) h2 { color: #7dbfff; }
-    .card:nth-child(2) h2 { color: #a8e08c; }
-    .card:nth-child(3) h2 { color: #ffb064; }
-
-    .actions {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .status {
-      flex: 1;
-      color: #7dbfff;
-      font-size: 16px;
-    }
-
-    button {
-      min-width: 150px;
-      min-height: 42px;
-      padding: 9px 14px;
-      border: 1px solid #667085;
-      border-radius: 7px;
-      background: #344054;
-      color: #f2f4f7;
-      font: inherit;
-      cursor: pointer;
-    }
-
-    button:hover { background: #475467; }
-    button:active { background: #1d2939; }
-    button:focus-visible { outline: 2px solid #84adff; outline-offset: -2px; }
-
-    @media (max-width: 700px) {
-      .page { padding: 24px; gap: 16px; }
-      .cards { grid-template-columns: 1fr; grid-template-rows: auto auto auto; row-gap: 12px; }
-    }
-  &lt;/style&gt;
-&lt;/head&gt;
-&lt;body&gt;
-  &lt;main class=&quot;page&quot;&gt;
-    &lt;div class=&quot;hero&quot;&gt;
-      &lt;h1&gt;GodotCascade&lt;/h1&gt;
-      &lt;span class=&quot;layout-badge&quot;&gt;GRID + STACK&lt;/span&gt;
-    &lt;/div&gt;
-    &lt;p class=&quot;lede&quot;&gt;Native controls. A predictable box model. Far fewer wrappers.&lt;/p&gt;
-
-    &lt;section class=&quot;cards&quot; aria-label=&quot;Features&quot;&gt;
-      &lt;article class=&quot;card&quot;&gt;
-        &lt;h2&gt;Box model&lt;/h2&gt;
-        &lt;p&gt;Padding, margins, gaps, borders, and size constraints live in one layout system.&lt;/p&gt;
-      &lt;/article&gt;
-      &lt;article class=&quot;card&quot;&gt;
-        &lt;h2&gt;Flex flow&lt;/h2&gt;
-        &lt;p&gt;Rows and columns support growth, alignment, distribution, and wrapping.&lt;/p&gt;
-      &lt;/article&gt;
-      &lt;article class=&quot;card&quot;&gt;
-        &lt;div class=&quot;card-image&quot; role=&quot;img&quot; aria-label=&quot;Stylized blue orbital landscape&quot;&gt;&lt;/div&gt;
-        &lt;h2&gt;Godot native&lt;/h2&gt;
-        &lt;p&gt;Every element remains a real Control with Godot rendering, input, themes, and signals.&lt;/p&gt;
-      &lt;/article&gt;
-    &lt;/section&gt;
-
-    &lt;footer class=&quot;actions&quot;&gt;
-      &lt;span class=&quot;status&quot;&gt;Phase 1 · Layout foundation&lt;/span&gt;
-      &lt;button type=&quot;button&quot;&gt;Inspect layout&lt;/button&gt;
-    &lt;/footer&gt;
-  &lt;/main&gt;
-&lt;/body&gt;
-&lt;/html&gt;
-"></iframe>
+            <iframe width="960" height="540" title="HTML rendering of Layout foundation" src="references/layout-foundation-47cbd1684928.html"></iframe>
           </div>
         </section>
         <section class="render-column">
@@ -683,79 +480,9 @@
 
       <div class="comparison">
         <section class="render-column">
-          <div class="render-label"><span>HTML reference</span><small>Live browser rendering</small></div>
+          <div class="render-label"><span>HTML reference</span><small><a href="references/system-status-7414b50099b3.html" target="_blank" rel="noreferrer">Open reference</a></small></div>
           <div class="render-frame" data-viewport-width="960" data-viewport-height="540" style="--viewport-width:960px; --viewport-height:540px; aspect-ratio:960/540">
-            <iframe width="960" height="540" title="HTML rendering of System status" srcdoc="&lt;!doctype html&gt;
-&lt;html lang=&quot;en&quot;&gt;
-&lt;head&gt;
-  &lt;meta charset=&quot;utf-8&quot;&gt;
-  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
-  &lt;title&gt;GodotCascade — System status HTML reference&lt;/title&gt;
-  &lt;style&gt;
-    :root { color-scheme:dark; font-family:Inter,ui-sans-serif,system-ui,sans-serif; background:#0a0f19; color:#f1f5ff; }
-    * { box-sizing:border-box; }
-    html,body { margin:0; min-height:100%; }
-    body { min-height:540px; background:#0a0f19; }
-    .dashboard { min-height:540px; padding:34px 52px; display:flex; flex-direction:column; gap:20px; }
-    .header { display:flex; flex-direction:column; gap:6px; }
-    .eyebrow { margin:0; color:#6ea8fe; font-size:12px; letter-spacing:.11em; }
-    .title-row { display:flex; align-items:center; gap:16px; }
-    h1 { margin:0; flex:1; font-size:32px; line-height:1.2; font-weight:500; }
-    .subtitle { margin:0; color:#8d9bb5; font-size:15px; }
-    .status-pill { min-width:180px; padding:8px 12px; color:#74d6ad; font-size:13px; background:#122a24; border:1px solid #245c4b; border-radius:99px; }
-    .content { min-height:285px; display:flex; flex:1; gap:18px; }
-    .overview { width:390px; padding:24px; display:flex; flex-direction:column; gap:14px; background:#131b2a; border:1px solid #2b3b57; border-radius:14px; }
-    .section-label { margin:0; color:#7f91af; font-size:12px; letter-spacing:.09em; }
-    .metric-row { display:flex; align-items:center; gap:14px; flex:1; }
-    .metric { min-width:130px; margin:0; color:#f6f8ff; font-size:52px; font-weight:500; }
-    .delta { min-width:135px; color:#74d6ad; font-size:14px; }
-    .detail { margin:0; color:#8d9bb5; font-size:13px; }
-    .systems { display:flex; flex:1; flex-direction:column; gap:12px; }
-    .system-card { padding:16px 18px; display:flex; flex:1; flex-direction:column; gap:10px; background:#111827; border:1px solid #263650; border-radius:11px; }
-    .system-heading { display:flex; align-items:center; gap:12px; }
-    .system-name { flex:1; color:#c9d5e9; font-size:15px; }
-    .system-value { min-width:42px; color:#f1f5ff; font-size:15px; }
-    progress { display:block; width:100%; height:10px; overflow:hidden; border:0; border-radius:99px; appearance:none; background:#263249; }
-    progress::-webkit-progress-bar { background:#263249; border-radius:99px; }
-    progress::-webkit-progress-value { border-radius:99px; background:var(--fill); }
-    progress::-moz-progress-bar { border-radius:99px; background:var(--fill); }
-    .primary-progress { height:18px; --fill:#5aa7ff; }
-    .reactor progress { --fill:#b18cff; }
-    .life-support progress { --fill:#65d6a7; }
-    .navigation progress { --fill:#ffb665; }
-    footer { display:flex; align-items:center; gap:16px; }
-    .sync { flex:1; color:#6f7f9b; font-size:13px; }
-    .tags { display:flex; gap:6px; }
-    .tag { padding:4px 7px; color:#74d6ad; font-size:10px; background:#122a24; border:1px solid #245c4b; border-radius:99px; }
-    button { min-width:142px; min-height:40px; padding:9px 14px; color:#f2f4f7; font:inherit; background:#1c64d1; border:1px solid #5aa7ff; border-radius:8px; cursor:pointer; }
-    button:hover { background:#2878e5; } button:active { background:#174fa5; }
-  &lt;/style&gt;
-&lt;/head&gt;
-&lt;body&gt;
-  &lt;main class=&quot;dashboard&quot;&gt;
-    &lt;header class=&quot;header&quot;&gt;
-      &lt;p class=&quot;eyebrow&quot;&gt;EXPEDITION 07 · LIVE TELEMETRY&lt;/p&gt;
-      &lt;div class=&quot;title-row&quot;&gt;&lt;h1&gt;Helios systems&lt;/h1&gt;&lt;span class=&quot;status-pill&quot;&gt;● All systems nominal&lt;/span&gt;&lt;/div&gt;
-      &lt;p class=&quot;subtitle&quot;&gt;Resource allocation across the current deep-space route.&lt;/p&gt;
-    &lt;/header&gt;
-    &lt;section class=&quot;content&quot;&gt;
-      &lt;article class=&quot;overview&quot;&gt;
-        &lt;p class=&quot;section-label&quot;&gt;POWER RESERVE&lt;/p&gt;
-        &lt;div class=&quot;metric-row&quot;&gt;&lt;p class=&quot;metric&quot;&gt;72%&lt;/p&gt;&lt;span class=&quot;delta&quot;&gt;+4.8% this cycle&lt;/span&gt;&lt;/div&gt;
-        &lt;progress class=&quot;primary-progress&quot; value=&quot;72&quot; max=&quot;100&quot;&gt;72%&lt;/progress&gt;
-        &lt;p class=&quot;detail&quot;&gt;18h 42m estimated endurance at current draw&lt;/p&gt;
-      &lt;/article&gt;
-      &lt;div class=&quot;systems&quot;&gt;
-        &lt;article class=&quot;system-card reactor&quot;&gt;&lt;div class=&quot;system-heading&quot;&gt;&lt;span class=&quot;system-name&quot;&gt;Reactor output&lt;/span&gt;&lt;span class=&quot;system-value&quot;&gt;84%&lt;/span&gt;&lt;/div&gt;&lt;progress value=&quot;84&quot; max=&quot;100&quot;&gt;84%&lt;/progress&gt;&lt;/article&gt;
-        &lt;article class=&quot;system-card life-support&quot;&gt;&lt;div class=&quot;system-heading&quot;&gt;&lt;span class=&quot;system-name&quot;&gt;Life support&lt;/span&gt;&lt;span class=&quot;system-value&quot;&gt;96%&lt;/span&gt;&lt;/div&gt;&lt;progress value=&quot;96&quot; max=&quot;100&quot;&gt;96%&lt;/progress&gt;&lt;/article&gt;
-        &lt;article class=&quot;system-card navigation&quot;&gt;&lt;div class=&quot;system-heading&quot;&gt;&lt;span class=&quot;system-name&quot;&gt;Navigation array&lt;/span&gt;&lt;span class=&quot;system-value&quot;&gt;63%&lt;/span&gt;&lt;/div&gt;&lt;progress value=&quot;63&quot; max=&quot;100&quot;&gt;63%&lt;/progress&gt;&lt;/article&gt;
-      &lt;/div&gt;
-    &lt;/section&gt;
-    &lt;footer&gt;&lt;span class=&quot;sync&quot;&gt;Last synchronized 14 seconds ago&lt;/span&gt;&lt;span class=&quot;tags&quot;&gt;&lt;span class=&quot;tag&quot;&gt;LIVE&lt;/span&gt;&lt;span class=&quot;tag&quot;&gt;LINKED&lt;/span&gt;&lt;/span&gt;&lt;button type=&quot;button&quot;&gt;Review route&lt;/button&gt;&lt;/footer&gt;
-  &lt;/main&gt;
-&lt;/body&gt;
-&lt;/html&gt;
-"></iframe>
+            <iframe width="960" height="540" title="HTML rendering of System status" src="references/system-status-7414b50099b3.html"></iframe>
           </div>
         </section>
         <section class="render-column">
@@ -1012,66 +739,9 @@
 
       <div class="comparison">
         <section class="render-column">
-          <div class="render-label"><span>HTML reference</span><small>Live browser rendering</small></div>
+          <div class="render-label"><span>HTML reference</span><small><a href="references/settings-menu-cfe152579fd1.html" target="_blank" rel="noreferrer">Open reference</a></small></div>
           <div class="render-frame" data-viewport-width="960" data-viewport-height="540" style="--viewport-width:960px; --viewport-height:540px; aspect-ratio:960/540">
-            <iframe width="960" height="540" title="HTML rendering of Settings menu" srcdoc="&lt;!doctype html&gt;
-&lt;html lang=&quot;en&quot;&gt;
-&lt;head&gt;
-  &lt;meta charset=&quot;utf-8&quot;&gt;
-  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
-  &lt;title&gt;GodotCascade — Settings menu HTML reference&lt;/title&gt;
-  &lt;style&gt;
-    :root { color-scheme:dark; font-family:Inter,ui-sans-serif,system-ui,sans-serif; background:#0a0f19; color:#f1f5ff; }
-    * { box-sizing:border-box; }
-    html,body { margin:0; min-height:100%; }
-    body { min-height:540px; background:#0a0f19; }
-    main { min-height:540px; padding:34px 52px; display:flex; flex-direction:column; gap:22px; }
-    header { display:flex; flex-direction:column; gap:6px; }
-    .eyebrow { margin:0; color:#7dbfff; font-size:12px; letter-spacing:.11em; }
-    h1 { margin:0; font-size:32px; font-weight:500; }
-    .subtitle { margin:0; color:#8d9bb5; font-size:15px; }
-    .content { display:flex; flex:1; gap:18px; }
-    section { flex:1; padding:22px; display:flex; flex-direction:column; gap:9px; background:#131b2a; border:1px solid #2b3b57; border-radius:14px; }
-    h2 { margin:0; font-size:20px; font-weight:500; }
-    .help { margin:0 0 5px; color:#7f91af; font-size:13px; }
-    label { min-height:35px; padding:4px; display:flex; align-items:center; gap:10px; color:#c9d5e9; border:2px solid transparent; border-radius:7px; }
-    label:hover { background:#1d2939; }
-    label:has(input:checked) { color:#fff; background:#16233a; }
-    label:has(input:disabled) { color:#667085; background:#111827; }
-    input[type=checkbox],input[type=radio] { width:18px; height:18px; margin:0; accent-color:#528bff; }
-    .switch input { position:absolute; width:1px; height:1px; opacity:0; }
-    .switch-track { position:relative; width:38px; height:20px; flex:none; border:1px solid #667085; border-radius:99px; background:#344054; }
-    .switch-thumb { position:absolute; top:2px; left:2px; width:14px; height:14px; border-radius:50%; background:#fff; transition:left .1s ease; }
-    .switch input:checked + .switch-track { background:#528bff; }
-    .switch input:checked + .switch-track .switch-thumb { left:20px; }
-    .switch input:focus-visible + .switch-track { outline:2px solid #84adff; outline-offset:2px; }
-    .range-setting { min-height:36px; margin-top:5px; display:flex; align-items:center; gap:10px; color:#c9d5e9; font-size:14px; }
-    .range-control { position:relative; min-width:150px; height:30px; flex:1; }
-    .range-control input { position:absolute; inset:0; z-index:2; width:100%; height:100%; margin:0; opacity:0; cursor:pointer; }
-    .range-track { position:absolute; left:9px; right:9px; top:12px; height:6px; border-radius:99px; background:#344054; }
-    .range-fill { position:absolute; inset:0 50% 0 0; border-radius:99px; background:#528bff; }
-    .range-thumb { position:absolute; top:50%; left:50%; width:18px; height:18px; border-radius:50%; background:#fff; transform:translate(-50%,-50%); }
-    .range-control input:focus-visible + .range-track { outline:2px solid #84adff; outline-offset:3px; }
-    .range-setting output { min-width:38px; color:#8fa1bf; font-size:13px; }
-    footer { display:flex; align-items:center; gap:16px; }
-    .hint { flex:1; color:#6f7f9b; font-size:13px; }
-    .select-label { color:#7f91af; font-size:11px; letter-spacing:.08em; }
-    select { min-width:178px; min-height:42px; padding:9px 14px; color:#f2f4f7; font:inherit; background:#131b2a; border:1px solid #405477; border-radius:8px; }
-    button { min-width:148px; min-height:42px; padding:9px 14px; color:#f2f4f7; font:inherit; background:#1c64d1; border:1px solid #5aa7ff; border-radius:8px; }
-  &lt;/style&gt;
-&lt;/head&gt;
-&lt;body&gt;
-  &lt;main&gt;
-    &lt;header&gt;&lt;p class=&quot;eyebrow&quot;&gt;GAME SETTINGS&lt;/p&gt;&lt;h1&gt;Graphics &amp;amp; display&lt;/h1&gt;&lt;p class=&quot;subtitle&quot;&gt;Native focus, toggle, and radio-group behavior with Cascade-owned drawing.&lt;/p&gt;&lt;/header&gt;
-    &lt;div class=&quot;content&quot;&gt;
-      &lt;section&gt;&lt;h2&gt;Effects&lt;/h2&gt;&lt;p class=&quot;help&quot;&gt;Tune visual features independently.&lt;/p&gt;&lt;label&gt;&lt;input type=&quot;checkbox&quot; checked&gt;Dynamic shadows&lt;/label&gt;&lt;label&gt;&lt;input type=&quot;checkbox&quot; checked&gt;Bloom&lt;/label&gt;&lt;label class=&quot;switch&quot;&gt;&lt;input type=&quot;checkbox&quot; role=&quot;switch&quot; checked&gt;&lt;span class=&quot;switch-track&quot; aria-hidden=&quot;true&quot;&gt;&lt;span class=&quot;switch-thumb&quot;&gt;&lt;/span&gt;&lt;/span&gt;&lt;span&gt;Vertical sync&lt;/span&gt;&lt;/label&gt;&lt;label&gt;&lt;input type=&quot;checkbox&quot; disabled&gt;Ray tracing · unavailable&lt;/label&gt;&lt;/section&gt;
-      &lt;section&gt;&lt;h2&gt;Window mode&lt;/h2&gt;&lt;p class=&quot;help&quot;&gt;Choose one native radio-group option.&lt;/p&gt;&lt;label&gt;&lt;input type=&quot;radio&quot; name=&quot;window-mode&quot;&gt;Windowed&lt;/label&gt;&lt;label&gt;&lt;input type=&quot;radio&quot; name=&quot;window-mode&quot; checked&gt;Borderless&lt;/label&gt;&lt;label&gt;&lt;input type=&quot;radio&quot; name=&quot;window-mode&quot;&gt;Exclusive fullscreen&lt;/label&gt;&lt;div class=&quot;range-setting&quot;&gt;&lt;span&gt;UI scale&lt;/span&gt;&lt;span class=&quot;range-control&quot;&gt;&lt;input type=&quot;range&quot; min=&quot;75&quot; max=&quot;125&quot; value=&quot;100&quot; step=&quot;5&quot; aria-label=&quot;Interface scale&quot;&gt;&lt;span class=&quot;range-track&quot; aria-hidden=&quot;true&quot;&gt;&lt;span class=&quot;range-fill&quot;&gt;&lt;/span&gt;&lt;span class=&quot;range-thumb&quot;&gt;&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;output&gt;100%&lt;/output&gt;&lt;/div&gt;&lt;/section&gt;
-    &lt;/div&gt;
-    &lt;footer&gt;&lt;span class=&quot;hint&quot;&gt;Tab to move focus · Space or controller accept to toggle&lt;/span&gt;&lt;span class=&quot;select-label&quot;&gt;QUALITY&lt;/span&gt;&lt;select aria-label=&quot;Graphics quality&quot;&gt;&lt;option&gt;Low quality&lt;/option&gt;&lt;option&gt;Medium quality&lt;/option&gt;&lt;option selected&gt;High quality&lt;/option&gt;&lt;option&gt;Ultra quality&lt;/option&gt;&lt;/select&gt;&lt;button type=&quot;button&quot;&gt;Apply settings&lt;/button&gt;&lt;/footer&gt;
-  &lt;/main&gt;
-&lt;/body&gt;
-&lt;/html&gt;
-"></iframe>
+            <iframe width="960" height="540" title="HTML rendering of Settings menu" src="references/settings-menu-cfe152579fd1.html"></iframe>
           </div>
         </section>
         <section class="render-column">
@@ -1138,7 +808,11 @@
     footer { display:flex; align-items:center; gap:16px; }
     .hint { flex:1; color:#6f7f9b; font-size:13px; }
     .select-label { color:#7f91af; font-size:11px; letter-spacing:.08em; }
-    select { min-width:178px; min-height:42px; padding:9px 14px; color:#f2f4f7; font:inherit; background:#131b2a; border:1px solid #405477; border-radius:8px; }
+    .select-control { position:relative; width:178px; height:42px; flex:none; }
+    .select-control select { position:absolute; inset:0; z-index:2; width:100%; height:100%; margin:0; opacity:0; cursor:pointer; }
+    .select-face { position:absolute; inset:0; padding:9px 14px; display:flex; align-items:center; justify-content:space-between; color:#f2f4f7; background:#131b2a; border:1px solid #405477; border-radius:8px; }
+    .select-chevron { width:8px; height:8px; margin:0 3px 4px 12px; border-right:2px solid currentColor; border-bottom:2px solid currentColor; transform:rotate(45deg); }
+    .select-control select:focus-visible + .select-face { outline:2px solid #84adff; outline-offset:2px; }
     button { min-width:148px; min-height:42px; padding:9px 14px; color:#f2f4f7; font:inherit; background:#1c64d1; border:1px solid #5aa7ff; border-radius:8px; }
   &lt;/style&gt;
 &lt;/head&gt;
@@ -1149,7 +823,7 @@
       &lt;section&gt;&lt;h2&gt;Effects&lt;/h2&gt;&lt;p class=&quot;help&quot;&gt;Tune visual features independently.&lt;/p&gt;&lt;label&gt;&lt;input type=&quot;checkbox&quot; checked&gt;Dynamic shadows&lt;/label&gt;&lt;label&gt;&lt;input type=&quot;checkbox&quot; checked&gt;Bloom&lt;/label&gt;&lt;label class=&quot;switch&quot;&gt;&lt;input type=&quot;checkbox&quot; role=&quot;switch&quot; checked&gt;&lt;span class=&quot;switch-track&quot; aria-hidden=&quot;true&quot;&gt;&lt;span class=&quot;switch-thumb&quot;&gt;&lt;/span&gt;&lt;/span&gt;&lt;span&gt;Vertical sync&lt;/span&gt;&lt;/label&gt;&lt;label&gt;&lt;input type=&quot;checkbox&quot; disabled&gt;Ray tracing · unavailable&lt;/label&gt;&lt;/section&gt;
       &lt;section&gt;&lt;h2&gt;Window mode&lt;/h2&gt;&lt;p class=&quot;help&quot;&gt;Choose one native radio-group option.&lt;/p&gt;&lt;label&gt;&lt;input type=&quot;radio&quot; name=&quot;window-mode&quot;&gt;Windowed&lt;/label&gt;&lt;label&gt;&lt;input type=&quot;radio&quot; name=&quot;window-mode&quot; checked&gt;Borderless&lt;/label&gt;&lt;label&gt;&lt;input type=&quot;radio&quot; name=&quot;window-mode&quot;&gt;Exclusive fullscreen&lt;/label&gt;&lt;div class=&quot;range-setting&quot;&gt;&lt;span&gt;UI scale&lt;/span&gt;&lt;span class=&quot;range-control&quot;&gt;&lt;input type=&quot;range&quot; min=&quot;75&quot; max=&quot;125&quot; value=&quot;100&quot; step=&quot;5&quot; aria-label=&quot;Interface scale&quot;&gt;&lt;span class=&quot;range-track&quot; aria-hidden=&quot;true&quot;&gt;&lt;span class=&quot;range-fill&quot;&gt;&lt;/span&gt;&lt;span class=&quot;range-thumb&quot;&gt;&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;output&gt;100%&lt;/output&gt;&lt;/div&gt;&lt;/section&gt;
     &lt;/div&gt;
-    &lt;footer&gt;&lt;span class=&quot;hint&quot;&gt;Tab to move focus · Space or controller accept to toggle&lt;/span&gt;&lt;span class=&quot;select-label&quot;&gt;QUALITY&lt;/span&gt;&lt;select aria-label=&quot;Graphics quality&quot;&gt;&lt;option&gt;Low quality&lt;/option&gt;&lt;option&gt;Medium quality&lt;/option&gt;&lt;option selected&gt;High quality&lt;/option&gt;&lt;option&gt;Ultra quality&lt;/option&gt;&lt;/select&gt;&lt;button type=&quot;button&quot;&gt;Apply settings&lt;/button&gt;&lt;/footer&gt;
+    &lt;footer&gt;&lt;span class=&quot;hint&quot;&gt;Tab to move focus · Space or controller accept to toggle&lt;/span&gt;&lt;span class=&quot;select-label&quot;&gt;QUALITY&lt;/span&gt;&lt;span class=&quot;select-control&quot;&gt;&lt;select aria-label=&quot;Graphics quality&quot;&gt;&lt;option&gt;Low quality&lt;/option&gt;&lt;option&gt;Medium quality&lt;/option&gt;&lt;option selected&gt;High quality&lt;/option&gt;&lt;option&gt;Ultra quality&lt;/option&gt;&lt;/select&gt;&lt;span class=&quot;select-face&quot; aria-hidden=&quot;true&quot;&gt;&lt;span&gt;High quality&lt;/span&gt;&lt;span class=&quot;select-chevron&quot;&gt;&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;button type=&quot;button&quot;&gt;Apply settings&lt;/button&gt;&lt;/footer&gt;
   &lt;/main&gt;
 &lt;/body&gt;
 &lt;/html&gt;
