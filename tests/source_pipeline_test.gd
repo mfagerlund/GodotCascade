@@ -830,6 +830,7 @@ func _test_one_way_state_bindings() -> void:
 	var markup := """<Page>
 		<Panel id="card" class="{ui.classes}">
 			<Label id="conditional" visible="{ui.visible}">Conditional detail</Label>
+			<Label id="conditional-content" if="{ui.include}">Included branch</Label>
 			<Button id="action" disabled="{ui.disabled}">Apply</Button>
 			<Checkbox id="toggle" checked="{ui.checked}">Enabled</Checkbox>
 			<Select id="quality" selected="{ui.quality}"><Option value="low">Low</Option><Option value="high">High</Option></Select>
@@ -842,6 +843,7 @@ func _test_one_way_state_bindings() -> void:
 	var state := {"ui": {
 		"classes": PackedStringArray(["cold"]),
 		"visible": true,
+		"include": false,
 		"disabled": false,
 		"checked": true,
 		"quality": "low",
@@ -868,6 +870,13 @@ func _test_one_way_state_bindings() -> void:
 	_expect_true("bound checked initializes", toggle.button_pressed)
 	_expect_true("bound selected value initializes", select.call("selected_value") == "low")
 	_expect_true("bound image source initializes", preview.get("texture") is Texture2D)
+	_expect_true("false conditional omits native branch", _find_by_id(document.generated_root(), "conditional-content").is_empty())
+	state["ui"]["include"] = true
+	_expect_true("conditional path refresh reconciles", document.refresh_binding_paths(PackedStringArray(["ui.include"])))
+	_expect_int("true conditional creates native branch", _find_by_id(document.generated_root(), "conditional-content").size(), 1)
+	state["ui"]["include"] = false
+	_expect_true("conditional false refresh reconciles", document.refresh_binding_paths(PackedStringArray(["ui.include"])))
+	_expect_true("false conditional removes native branch", _find_by_id(document.generated_root(), "conditional-content").is_empty())
 	state["ui"]["visible"] = false
 	state["ui"]["disabled"] = true
 	state["ui"]["checked"] = false
@@ -893,6 +902,12 @@ func _test_one_way_state_bindings() -> void:
 	await process_frame
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(markup_path))
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(stylesheet_path))
+
+	var invalid_condition := GxmlParser.parse("<Page><Label if=\"ui.show\">Invalid</Label></Page>")
+	var invalid_condition_build := CascadeBuilder.build(invalid_condition["root"], [], {"ui": {"show": true}})
+	_expect_true("conditional requires exact path syntax", _has_error_diagnostics(invalid_condition_build["diagnostics"]))
+	if invalid_condition_build["root"] != null:
+		invalid_condition_build["root"].free()
 
 
 func _test_observable_binding_context() -> void:

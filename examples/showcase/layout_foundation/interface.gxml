@@ -32,6 +32,7 @@
 
     <Row class="{ui.action_classes}">
         <Label class="status" text="{ui.status}" />
+        <Label class="inspection-note" if="{ui.inspected}">CONDITION RECONCILED</Label>
         <Button id="inspect" disabled="{ui.inspected}" on-pressed="_on_inspect_layout">Inspect layout</Button>
     </Row>
 </Page>

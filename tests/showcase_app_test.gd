@@ -55,6 +55,7 @@ func _verify_layout_page(app: Control) -> void:
 		_expect_true("layout bound class reload preserves button identity", inspect_button != null and inspect_button.get_instance_id() == inspect_instance)
 		_expect_true("layout bound disabled state updates", inspect_button != null and inspect_button.get("disabled"))
 		_expect_true("layout bound class rematches descendant style", status != null and status.get("text_color") == Color("65d6a7"))
+		_expect_true("layout conditional creates native branch", _find_by_class(scene, "inspection-note") != null)
 
 
 func _verify_system_status_page(app: Control) -> void:

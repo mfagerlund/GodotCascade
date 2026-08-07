@@ -89,6 +89,8 @@ The one-way property-binding surface is:
 
 State booleans are not string-coerced. A bound class change rematches selectors through an off-tree candidate and keyed reconciliation; ordinary state changes update matching native properties in place.
 
+Non-root elements accept `if="{boolean.path}"`. False conditions omit the native branch; true conditions build it. The grammar is an exact path only—there are no comparisons, negation, truthy coercion, method calls, general expressions, or implicit `else`. Conditional path changes rebuild a candidate and reconcile stable siblings. Removed branch controls are freed and newly created if the condition later becomes true.
+
 `BindingResolver` traverses typed Godot object properties, Arrays using numeric path segments, and Dictionaries. Typed `RefCounted` or `Resource` models are recommended for application state; Dictionaries remain useful for JSON-shaped data and prototypes. The resolver does not execute expressions or call methods. Assigning a new `CascadeDocument.binding_context` refreshes automatically. After nested mutations, call `refresh_bindings()` or wrap the model in `ObservableBindingContext` and call `invalidate("named.path")`; exact, parent, and child dependencies are refreshed without polling. Repeated documents still reconcile when a named path is invalidated because collection topology may have changed.
 
 `Repeat` accepts an array path through `items="{path}"`; its template can bind through local `item` and `index` scopes while retaining access to root paths. A `key` path relative to each item enables identity-preserving reorder/add/remove reconciliation.

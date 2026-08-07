@@ -246,7 +246,7 @@ The first public preview should build a small settings menu from `.gxml` and a s
 
 - [x] Add an observable adapter that can invalidate named paths without polling or a general expression runtime
 - [x] Extend one-way targets to documented state such as visibility, disabled state, classes, image source, and selected values
-- [ ] Design explicit conditional rendering that remains diagnosable and does not evaluate arbitrary code
+- [x] Design explicit conditional rendering that remains diagnosable and does not evaluate arbitrary code
 - [ ] Add reusable GXML components with typed parameters, slots, scoped IDs, and source-aware diagnostics
 - [ ] Preserve keyed identity and native editing state across conditional/component boundaries
 - [ ] Add dependency and invalidation traces to the layout debugger

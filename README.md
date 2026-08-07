@@ -208,7 +208,7 @@ Choose GodotCascade when you want a reviewable source format, native controls, C
 ### Capabilities the alternatives currently have that GodotCascade lacks
 
 - automatic dependency-tracked reactivity; mutations still require an explicit full or named-path invalidation;
-- general expressions, conditionals, dynamic class/visibility attributes, and Vue/JSX-style control flow;
+- general expressions and Vue/JSX-style control flow beyond exact boolean path conditions;
 - reusable markup components with typed parameters rather than native factory registration;
 - an open vocabulary covering every built-in `Control` or arbitrary `Node`;
 - broad CSS features such as variables, `calc()`, opacity, transforms, gradients, custom fonts, and inline SVG;

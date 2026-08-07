@@ -35,9 +35,12 @@ const INHERITED_PROPERTIES: PackedStringArray = ["color", "font-size"]
 static func build(root_element, rules: Array, binding_context: Variant = null, viewport_size: Vector2 = Vector2.ZERO) -> Dictionary:
 	var diagnostics: Array[Dictionary] = DocumentValidator.validate(root_element)
 	var button_groups: Dictionary = {}
+	var document_rebuild_bindings := PackedStringArray()
 	DeclarationApplier.begin_build(viewport_size)
 	var rule_index := _index_rules(rules, viewport_size)
-	var root_control := _build_element(root_element, rule_index, diagnostics, "0", button_groups, binding_context)
+	var root_control := _build_element(root_element, rule_index, diagnostics, "0", button_groups, binding_context, {}, "", document_rebuild_bindings)
+	if root_control != null:
+		root_control.set_meta("cascade_document_rebuild_bindings", document_rebuild_bindings)
 	return {"root": root_control, "diagnostics": diagnostics}
 
 
@@ -49,8 +52,11 @@ static func _build_element(
 	button_groups: Dictionary,
 	binding_context: Variant = null,
 	binding_scope: Dictionary = {},
-	key_scope: String = ""
+	key_scope: String = "",
+	document_rebuild_bindings: PackedStringArray = PackedStringArray()
 ) -> Control:
+	if not _condition_allows(element, binding_context, binding_scope, diagnostics, document_rebuild_bindings, key_path == "0"):
+		return null
 	var class_binding_path := _resolve_bound_classes(element, binding_context, binding_scope, diagnostics)
 	var control: Control
 	if element.tag_name.to_lower() == "repeat" and element.children.size() == 1 and element.children[0].tag_name.to_lower() == "tablerow":
@@ -96,7 +102,7 @@ static func _build_element(
 		_apply_select_options(control, element, rule_index, diagnostics)
 		return control
 	if element.tag_name.to_lower() == "repeat":
-		_build_repeat_children(control, element, rule_index, diagnostics, key_path, button_groups, binding_context, key_scope)
+		_build_repeat_children(control, element, rule_index, diagnostics, key_path, button_groups, binding_context, key_scope, document_rebuild_bindings)
 		return control
 
 	for index in element.children.size():
@@ -104,7 +110,7 @@ static func _build_element(
 		if child_element.tag_name.to_lower() == "bindings":
 			continue
 		var child_key := "%s/%s:%s" % [key_path, index, child_element.tag_name]
-		var child_control := _build_element(child_element, rule_index, diagnostics, child_key, button_groups, binding_context, binding_scope, key_scope)
+		var child_control := _build_element(child_element, rule_index, diagnostics, child_key, button_groups, binding_context, binding_scope, key_scope, document_rebuild_bindings)
 		if child_control != null:
 			control.add_child(child_control)
 	return control
@@ -118,7 +124,8 @@ static func _build_repeat_children(
 	key_path: String,
 	button_groups: Dictionary,
 	binding_context: Variant,
-	key_scope: String
+	key_scope: String,
+	document_rebuild_bindings: PackedStringArray
 ) -> void:
 	if element.children.size() != 1:
 		diagnostics.append(_diagnostic("error", "Repeat requires exactly one child template."))
@@ -165,7 +172,8 @@ static func _build_repeat_children(
 			button_groups,
 			binding_context,
 			repeated_scope,
-			repeated_key_scope
+			repeated_key_scope,
+			document_rebuild_bindings
 		)
 		if child != null:
 			control.add_child(child)
@@ -639,6 +647,38 @@ static func _resolve_bound_classes(
 		return path
 	element.attributes["class"] = class_result["value"]
 	return path
+
+
+static func _condition_allows(
+	element,
+	binding_context: Variant,
+	binding_scope: Dictionary,
+	diagnostics: Array[Dictionary],
+	document_rebuild_bindings: PackedStringArray,
+	is_root: bool
+) -> bool:
+	if not element.attributes.has("if"):
+		return true
+	if is_root:
+		diagnostics.append(_diagnostic("error", "The document root cannot use conditional 'if'."))
+		return false
+	var raw_value := str(element.attributes["if"]).strip_edges()
+	var path := BindingCompiler.binding_path(raw_value)
+	if path.is_empty():
+		diagnostics.append(_diagnostic("error", "Conditional 'if' requires an exact {dot.separated.path}."))
+		return false
+	if path not in document_rebuild_bindings:
+		document_rebuild_bindings.append(path)
+	var first_segment := path.get_slice(".", 0)
+	var context: Variant = binding_scope if binding_scope.has(first_segment) else binding_context
+	var result := BindingResolver.resolve(context, path)
+	if not result["found"]:
+		diagnostics.append(_diagnostic("warning", "conditional binding: %s" % result["message"]))
+		return false
+	if not result["value"] is bool:
+		diagnostics.append(_diagnostic("warning", "Conditional binding '%s' requires a boolean value." % path))
+		return false
+	return result["value"]
 
 
 static func _class_string(value: Variant) -> Dictionary:

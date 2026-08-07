@@ -511,8 +511,12 @@ func _binding_path_matches(binding_path: String, invalidated_paths: PackedString
 
 
 func _tree_has_rebuild_binding(node: Node) -> bool:
-	if node is Control and not (node as Control).get_meta("cascade_rebuild_bindings", PackedStringArray()).is_empty():
-		return true
+	if node is Control:
+		var control := node as Control
+		if not control.get_meta("cascade_rebuild_bindings", PackedStringArray()).is_empty():
+			return true
+		if not control.get_meta("cascade_document_rebuild_bindings", PackedStringArray()).is_empty():
+			return true
 	for child in node.get_children():
 		if _tree_has_rebuild_binding(child):
 			return true
@@ -521,7 +525,10 @@ func _tree_has_rebuild_binding(node: Node) -> bool:
 
 func _tree_has_matching_rebuild_binding(node: Node, paths: PackedStringArray) -> bool:
 	if node is Control:
-		for binding_path in (node as Control).get_meta("cascade_rebuild_bindings", PackedStringArray()):
+		var control := node as Control
+		var rebuild_paths: PackedStringArray = control.get_meta("cascade_rebuild_bindings", PackedStringArray())
+		rebuild_paths.append_array(control.get_meta("cascade_document_rebuild_bindings", PackedStringArray()))
+		for binding_path in rebuild_paths:
 			if _binding_path_matches(str(binding_path), paths):
 				return true
 	for child in node.get_children():

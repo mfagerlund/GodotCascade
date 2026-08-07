@@ -116,6 +116,18 @@ func set_scale(value: float) -> void:
 
 Paths use the existing identifier/numeric-segment grammar. Expressions, method calls, wildcards, and property interception are not introduced. The adapter does not watch mutations or perform dependency tracking; application code remains responsible for naming what changed. A document containing `Repeat` conservatively rebuilds its candidate tree and performs keyed reconciliation after adapter invalidation because a collection change may alter native topology.
 
+## Conditional rendering
+
+Any non-root visual element may use one exact boolean condition:
+
+```xml
+<Label if="{session.connected}">Connection established</Label>
+```
+
+`if` accepts only an exact `{dot.separated.path}` resolving to a boolean. A false value omits the element and its subtree from the native candidate; a true value builds it normally. Missing paths and non-boolean values produce diagnostics and omit the branch. Literal truthiness, negation, comparisons, method calls, compound expressions, and `else` branches are not supported.
+
+The document records conditional dependencies even while their controls are absent. Invalidating a condition path rebuilds an off-tree candidate and performs keyed reconciliation, preserving compatible siblings. A branch removed by a false condition is genuinely freed; if later reintroduced, its controls are newly created rather than cached with hidden editing state.
+
 Interpolation is not supported. This is invalid as a binding:
 
 ```xml

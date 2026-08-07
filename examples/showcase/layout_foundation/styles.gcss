@@ -76,6 +76,7 @@
 
 .status { color: #7dbfff; flex-grow: 1; }
 .inspected .status { color: #65d6a7; }
+.inspection-note { color: #65d6a7; font-size: 11px; }
 
 #inspect {
     min-width: 150px;
