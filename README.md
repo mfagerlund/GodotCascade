@@ -10,7 +10,7 @@ GodotCascade is an experimental retained-mode UI framework for Godot 4. It bring
 The goal is to make game UI faster to build and easier to maintain without embedding a browser or replacing Godot's renderer. A GodotCascade interface remains a tree of native controls, so it can continue to use Godot's signals, themes, input, rendering, and editor tooling.
 
 > [!IMPORTANT]
-> GodotCascade 0.4.0 is the prepared release candidate for Godot 4.7, adding typed C# binding generation, semantic tables, and automatic scroll viewports without becoming a browser engine. The latest published preview remains 0.3.0 until the 0.4 release workflow completes. APIs outside the documented preview references remain unstable.
+> GodotCascade 0.4.0 is the current experimental preview for Godot 4.7, adding typed C# binding generation, semantic tables, and automatic scroll viewports without becoming a browser engine. APIs outside the documented preview references remain unstable.
 
 ## Native Godot renders
 

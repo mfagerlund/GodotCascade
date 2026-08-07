@@ -1,6 +1,6 @@
 # GodotCascade documentation
 
-GodotCascade 0.4.0 is the prepared release candidate, including typed C# binding generation, semantic tables, native scrolling, adapted multiline editing, and scoped repeated forms. The latest published preview remains 0.3.0 until the 0.4 release workflow completes. Documentation distinguishes the supported focused surface from intentionally unsupported browser features.
+GodotCascade 0.4.0 is the current experimental preview, including typed C# binding generation, semantic tables, native scrolling, adapted multiline editing, and scoped repeated forms. Documentation distinguishes the supported focused surface from intentionally unsupported browser features.
 
 ## Start here
 

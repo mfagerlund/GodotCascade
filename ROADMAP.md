@@ -8,7 +8,7 @@ The executable foundation now covers flex/grid/stack layout, owned and adapted f
 
 All planned 0.1 milestones and every first-public-preview acceptance item are complete. The source-generated settings-menu slice includes shared interactive-state precedence, a native mouse/keyboard/controller test matrix, and owned checkbox, grouped radio-button, switch, select, and slider components. The layout foundation includes native grid tracks, automatic and explicit placement, stack overlays, absolute insets, media, responsive rules, and viewport values. The editor and performance release gates are executable.
 
-Versions 0.1.0 through 0.3.0 are tagged and published through the reproducible release gate. Version 0.4.0 is a prepared release candidate awaiting the release workflow. The 0.2 interactive-forms slice adds an adapted native single-line text input, explicit writable bindings, validation state, input-modality-aware focus styling, and a live settings workflow exercised in both native and HTML showcase views. Version 0.3 adds the corresponding native multiline adapter, repeated-item write-back, and owned-container hover backgrounds. The 0.4 candidate adds optional typed C# generation, semantic tables, native scrolling, and dynamic collection examples.
+Versions 0.1.0 through 0.4.0 are tagged and published through the reproducible release gate. The 0.2 interactive-forms slice adds an adapted native single-line text input, explicit writable bindings, validation state, input-modality-aware focus styling, and a live settings workflow exercised in both native and HTML showcase views. Version 0.3 adds the corresponding native multiline adapter, repeated-item write-back, and owned-container hover backgrounds. Version 0.4 adds optional typed C# generation, semantic tables, native scrolling, and dynamic collection examples.
 
 The reproduced findings in the [2026-08-05 code review](docs/artifacts/review.md) and the [2026-08-07 publication-readiness review](docs/artifacts/publication-readiness-review-2026-08-07.md) are part of this roadmap. Blocking correctness fixes take priority when they touch the same runtime layer as an active vertical slice.
 
@@ -218,7 +218,7 @@ The first public preview should build a small settings menu from `.gxml` and a s
 - [x] Select a permissive software license and include it in both the repository and packaged addon
 - [x] Publish a visual README with runnable GXML, GCSS, and GDScript plus native Godot captures
 - [x] Document the direct comparison with GTML, Reactive UI Toolkit, GUML, and native Godot
-- [ ] Publish the 0.4 experimental-preview release
+- [x] Publish the 0.4 experimental-preview release
 - [ ] Make the repository public after verifying its release page and installation archive
 - [ ] Prepare the Godot Asset Library icon, metadata, and testing-support submission
 - [ ] Share a short native-tree/live-reload demonstration with the Godot community
