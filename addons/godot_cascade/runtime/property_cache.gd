@@ -18,5 +18,7 @@ static func has(target: Object, property_name: String) -> bool:
 static func _type_key(target: Object) -> String:
 	var script: Script = target.get_script()
 	if script != null:
-		return "script:%s" % script.resource_path
+		# Inner GDScript classes share a resource path but have distinct Script
+		# instances and property shapes.
+		return "script:%s" % script.get_instance_id()
 	return "native:%s" % target.get_class()

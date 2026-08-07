@@ -4,30 +4,52 @@ GodotCascade bindings connect GXML controls to application state without evaluat
 
 ## Binding context
 
-Set `CascadeDocument.binding_context` to a nested `Dictionary`, `Array`, or Godot object before loading the document:
+Prefer a typed `RefCounted`, `Resource`, or other Godot object for application state. Script properties are visible to the resolver while the model retains names, types, autocomplete, and refactoring support:
+
+```gdscript
+class_name SettingsViewModel
+extends RefCounted
+
+var profile := "Rhea"
+var shadows := true
+var scale := 100.0
+var quality := "high"
+var status := "Change a setting, then apply"
+
+class ChannelState extends RefCounted:
+    var id: String
+    var label: String
+    var enabled: bool
+
+    func _init(channel_id: String, channel_label: String, channel_enabled: bool) -> void:
+        id = channel_id
+        label = channel_label
+        enabled = channel_enabled
+
+var channels: Array[ChannelState] = [
+    ChannelState.new("damage", "Damage numbers", true),
+    ChannelState.new("team", "Team markers", false),
+]
+```
+
+Assign the model before loading the document:
 
 ```gdscript
 extends "res://addons/godot_cascade/runtime/cascade_document.gd"
 
+var model: SettingsViewModel
 
 func _ready() -> void:
-    binding_context = {
-        "settings": {
-            "profile": "Rhea",
-            "shadows": true,
-            "scale": 100.0,
-            "quality": "high",
-        },
-        "ui": {
-            "status": "Change a setting, then apply",
-        },
-    }
+    model = SettingsViewModel.new()
+    binding_context = model
     event_context = self
     binding_value_changed.connect(_on_binding_value_changed)
     super()
 ```
 
-A path such as `settings.profile` walks the context one segment at a time. Dictionary keys may be `String` or `StringName`; array segments must be numeric indexes; object segments must name Godot-visible properties.
+A path such as `profile` walks the context one segment at a time. Models may contain other typed Godot objects and arrays, so `settings.profile` and `players.0.name` are also valid when those segments exist. Object segments must name Godot-visible properties and array segments must be numeric indexes.
+
+`Dictionary` contexts remain supported for parsed JSON, external data, and quick prototypes. Dictionary keys may be `String` or `StringName`; they are not required for ordinary application models.
 
 Bindings do not call methods, create missing values, or evaluate expressions.
 
@@ -36,10 +58,10 @@ Bindings do not call methods, create missing values, or evaluate expressions.
 An entire supported attribute value may be an exact brace-wrapped path:
 
 ```xml
-<Label text="{settings.profile}" />
-<Button text="{ui.status}" />
-<Progress min="0" max="125" value="{settings.scale}" />
-<Slider min="75" max="125" value="{settings.scale}" />
+<Label text="{profile}" />
+<Button text="{status}" />
+<Progress min="0" max="125" value="{scale}" />
+<Slider min="75" max="125" value="{scale}" />
 ```
 
 The current one-way surface is:
@@ -52,7 +74,7 @@ The current one-way surface is:
 Assigning a new `binding_context` refreshes automatically. Mutating a nested value does not notify GodotCascade, so call `refresh_bindings()` afterward:
 
 ```gdscript
-binding_context["settings"]["scale"] = 115.0
+model.scale = 115.0
 refresh_bindings()
 ```
 
@@ -61,18 +83,18 @@ The update changes compatible controls in place. It does not rebuild a non-repea
 Interpolation is not supported. This is invalid as a binding:
 
 ```xml
-<Label text="Scale: {settings.scale}%" />
+<Label text="Scale: {scale}%" />
 ```
 
 Store a formatted value in the context or update it in code instead:
 
 ```gdscript
-binding_context["ui"]["scale_label"] = "%d%%" % binding_context["settings"]["scale"]
+model.status = "%d%%" % model.scale
 refresh_bindings()
 ```
 
 ```xml
-<Label text="{ui.scale_label}" />
+<Label text="{status}" />
 ```
 
 ## Writable form bindings
@@ -80,11 +102,10 @@ refresh_bindings()
 Form write-back is explicit through `bind-*` attributes:
 
 ```xml
-<TextInput bind-text="{settings.profile}" />
-<Checkbox bind-checked="{settings.shadows}">Dynamic shadows</Checkbox>
-<Switch bind-checked="{settings.vsync}">Vertical sync</Switch>
-<Slider bind-value="{settings.scale}" min="75" max="125" />
-<Select bind-selected="{settings.quality}">
+<TextInput bind-text="{profile}" />
+<Checkbox bind-checked="{shadows}">Dynamic shadows</Checkbox>
+<Slider bind-value="{scale}" min="75" max="125" />
+<Select bind-selected="{quality}">
     <Option value="low">Low quality</Option>
     <Option value="high">High quality</Option>
 </Select>
@@ -107,11 +128,11 @@ When the user changes a writable control, GodotCascade:
 This makes a live echo require no event handler:
 
 ```xml
-<TextInput bind-text="{settings.profile}" />
-<Label text="{settings.profile}" />
+<TextInput bind-text="{profile}" />
+<Label text="{profile}" />
 ```
 
-Typing in the input writes `settings.profile`; the label then refreshes immediately.
+Typing in the input writes `model.profile`; the label then refreshes immediately.
 
 The write target must already exist. A binding never invents a missing Dictionary key, array entry, object, or property.
 
@@ -121,9 +142,10 @@ Use `binding_value_changed` for derived state or application side effects:
 
 ```gdscript
 func _on_binding_value_changed(path: String, value: Variant, _control: Control) -> void:
-    if path == "settings.scale":
-        binding_context["ui"]["scale_label"] = "%d%%" % roundi(float(value))
-    binding_context["ui"]["status"] = "Unsaved changes"
+    if path == "scale":
+        model.status = "%d%%" % roundi(float(value))
+    else:
+        model.status = "Unsaved changes"
 ```
 
 Writable controls already refresh ordinary one-way bindings after emitting the signal. If the callback adds or changes derived context values, call `refresh_bindings()` when those values must appear immediately. An event handler that mutates context must also refresh explicitly.
@@ -146,9 +168,9 @@ Hyphens in the authored signal name become underscores. The method target is sel
 ```gdscript
 func _on_apply_settings() -> void:
     if not validate():
-        binding_context["ui"]["status"] = "Fix invalid fields"
+        model.status = "Fix invalid fields"
     else:
-        binding_context["ui"]["status"] = "Settings applied"
+        model.status = "Settings applied"
     refresh_bindings()
 ```
 
@@ -159,20 +181,9 @@ Authored connections are re-established after reload without removing signal con
 `Repeat` introduces local `item` and `index` values while retaining access to the root context:
 
 ```xml
-<Repeat items="{settings.channels}" key="id">
+<Repeat items="{channels}" key="id">
     <Checkbox text="{item.label}" bind-checked="{item.enabled}" />
 </Repeat>
-```
-
-```gdscript
-binding_context = {
-    "settings": {
-        "channels": [
-            {"id": "damage", "label": "Damage numbers", "enabled": true},
-            {"id": "team", "label": "Team markers", "enabled": false},
-        ],
-    },
-}
 ```
 
 `bind-checked="{item.enabled}"` writes to the backing item. A `key` preserves native identity when the collection reorders. `index` and bare `item` are read-only; replacing an entire collection item remains application logic.
@@ -185,7 +196,7 @@ Binding and validation are separate operations. `TextInput` supports required an
 
 ```xml
 <TextInput
-    bind-text="{settings.profile}"
+    bind-text="{profile}"
     required="true"
     pattern="^.{2,16}$"
     error-message="Enter 2–16 characters."
@@ -194,7 +205,7 @@ Binding and validation are separate operations. `TextInput` supports required an
 
 ```gdscript
 if validate():
-    save_settings(binding_context["settings"])
+    save_settings(model)
 ```
 
 Invalid input still writes through to the context. Validation decides whether application code accepts the form.
@@ -215,34 +226,40 @@ Typical failures include:
 
 ## C# integration
 
-`CascadeDocument` is currently implemented in GDScript. C# can assign its context and call its public methods through Godot's dynamic object API:
+Use a typed Godot `Resource` or another Godot object for C# state. Exported properties participate in Godot's property system and can therefore be resolved by GodotCascade:
+
+```csharp
+using Godot;
+
+[GlobalClass]
+public partial class SettingsViewModel : Resource
+{
+    [Export] public string Profile { get; set; } = "Rhea";
+    [Export] public double Scale { get; set; } = 100.0;
+}
+```
+
+`CascadeDocument` is currently implemented in GDScript, so C# assigns the typed model and calls document methods through Godot's dynamic object API. GXML paths use the property names exposed to Godot—for this model, `{Profile}` and `{Scale}`:
 
 ```csharp
 private Control _document = null!;
-private Godot.Collections.Dictionary _context = null!;
+private SettingsViewModel _model = null!;
 
 public override void _Ready()
 {
     _document = GetNode<Control>("CascadeDocument");
-    _context = new Godot.Collections.Dictionary
-    {
-        ["settings"] = new Godot.Collections.Dictionary
-        {
-            ["profile"] = "Rhea",
-            ["scale"] = 100.0,
-        },
-    };
-    _document.Set("binding_context", _context);
+    _model = new SettingsViewModel();
+    _document.Set("binding_context", _model);
 }
 
 private void SetScale(double value)
 {
-    ((Godot.Collections.Dictionary)_context["settings"])["scale"] = value;
+    _model.Scale = value;
     _document.Call("refresh_bindings");
 }
 ```
 
-Object-backed contexts must expose properties through Godot's property system. GodotCascade does not reflect over arbitrary plain C# objects and does not currently provide Bindot-style typed getter/setter lambdas.
+GodotCascade does not reflect over arbitrary plain C# objects and does not currently provide Bindot-style typed getter/setter lambdas.
 
 ## Intentional limits
 

@@ -82,14 +82,18 @@ func _verify_settings_page(app: Control) -> void:
 	shadows.button_pressed = false
 	shadows.emit_signal("toggled", false)
 	windowed.button_pressed = true
-	_expect_true("settings checkbox writes through its connection", not scene.get("binding_context")["settings"]["shadows"])
+	var state: Object = scene.get("binding_context")
+	var settings: Object = state.get("settings")
+	_expect_true("settings showcase uses typed object state", state is ShowcaseSettingsMenuState and settings is ShowcaseSettingsMenuState.SettingsState)
+	_expect_true("settings checkbox writes through its connection", not bool(settings.get("shadows")))
 	var bound_shadows := _find_by_id(scene, "bound-shadows")
 	_expect_true("settings checkbox refreshes dependent bound output", bound_shadows != null and bound_shadows.get("text") == "false")
 	_expect_true("settings native radio group selects one option", windowed.button_pressed and not borderless.button_pressed)
 	_expect_true("settings HUD channel exposes its label as one control", first_channel.get("text") == "Damage numbers")
 	first_channel.button_pressed = false
 	first_channel.emit_signal("toggled", false)
-	_expect_true("settings HUD channel row writes through its connection", not scene.get("binding_context")["settings"]["hud_channels"][0]["enabled"])
+	var channels: Array = settings.get("hud_channels")
+	_expect_true("settings HUD channel row writes through its connection", not bool(channels[0].get("enabled")))
 	profile.set("text", "Nova")
 	profile.emit_signal("text_changed", "Nova")
 	var bound_profile := _find_by_id(scene, "bound-profile")
@@ -117,7 +121,7 @@ func _verify_settings_page(app: Control) -> void:
 	if actual_status != "Applied ultra quality for Nova":
 		var event_connections: Array = apply_button.get_meta("cascade_event_connections", [])
 		var event_method := str(event_connections[0]["callable"].get_method()) if not event_connections.is_empty() else "<none>"
-		var context_status := str(scene.get("binding_context")["ui"]["status"])
+		var context_status := str(state.get("ui").get("status"))
 		_failures.append("settings bindings and Apply connection complete: expected 'Applied ultra quality for Nova', got immediate '%s', final '%s', context '%s'; signal connections=%s event method=%s valid=%s blocked=%s" % [immediate_status, actual_status, context_status, apply_button.get_signal_connection_list("pressed").size(), event_method, event_connections[0]["callable"].is_valid() if not event_connections.is_empty() else false, apply_button.is_blocking_signals()])
 
 

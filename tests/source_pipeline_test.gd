@@ -16,6 +16,15 @@ const ComponentRegistry := preload("res://addons/godot_cascade/runtime/component
 const CascadePanel := preload("res://addons/godot_cascade/components/cascade_panel.gd")
 const DebugSnapshot := preload("res://addons/godot_cascade/editor/debug_snapshot.gd")
 
+
+class TypedBindingLeaf extends RefCounted:
+	var id := "typed-leaf"
+
+
+class TypedBindingRoot extends RefCounted:
+	var child := TypedBindingLeaf.new()
+
+
 var _failures: Array[String] = []
 var _custom_mounts := 0
 var _custom_updates := 0
@@ -548,6 +557,9 @@ func _test_parser_recovery() -> void:
 
 
 func _test_binding_resolver() -> void:
+	var typed_context := TypedBindingRoot.new()
+	var typed_result := BindingResolver.resolve(typed_context, "child.id")
+	_expect_true("binding resolves distinct inner-class property shapes", typed_result["found"] and typed_result["value"] == "typed-leaf")
 	var context := {"player": {"name": "Rhea", "inventory": ["key", "map"]}}
 	var name_result := BindingResolver.resolve(context, "player.name")
 	_expect_true("binding resolves dictionary path", name_result["found"] and name_result["value"] == "Rhea")

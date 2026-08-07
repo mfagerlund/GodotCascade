@@ -120,7 +120,7 @@ If an edit is invalid, `diagnostics_changed` is emitted and the previous valid U
 
 ### One-way data binding
 
-Exact brace expressions resolve against a Dictionary or Godot Object assigned to `CascadeDocument.binding_context`:
+Exact brace expressions resolve against a typed Godot object—or a Dictionary for JSON-shaped data and prototypes—assigned to `CascadeDocument.binding_context`:
 
 ```xml
 <Label text="{player.name}" />
@@ -128,12 +128,18 @@ Exact brace expressions resolve against a Dictionary or Godot Object assigned to
 ```
 
 ```gdscript
-document.binding_context = {
-    "player": {"name": "Rhea", "health": 72.0}
-}
+class PlayerState extends RefCounted:
+    var name := "Rhea"
+    var health := 72.0
+
+class HudState extends RefCounted:
+    var player := PlayerState.new()
+
+var state := HudState.new()
+document.binding_context = state
 
 # After mutating nested state:
-document.binding_context["player"]["health"] = 54.0
+state.player.health = 54.0
 document.refresh_bindings()
 ```
 
@@ -150,7 +156,7 @@ Writable bindings are opt-in, so existing `{path}` attributes remain one-way:
 <Select bind-selected="{settings.quality}">…</Select>
 ```
 
-Native edits assign only existing Dictionary, Array, or object-property paths, emit `binding_value_changed`, and refresh dependent one-way controls. `CascadeDocument.validate()` evaluates adapted controls and publishes validation diagnostics. No expressions, converters, implicit object creation, or method calls are involved.
+Native edits assign only existing typed object, array, or Dictionary paths, emit `binding_value_changed`, and refresh dependent one-way controls. `CascadeDocument.validate()` evaluates adapted controls and publishes validation diagnostics. No expressions, converters, implicit object creation, or method calls are involved.
 
 See the [binding guide](docs/bindings.md) for the complete path grammar, supported attributes, dependent refresh behavior, repeated-item scopes, event targets, diagnostics, limits, and C# integration boundary.
 
