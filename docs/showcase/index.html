@@ -78,7 +78,7 @@
         <div>
           <p class="eyebrow">Current demo</p>
           <h2>Layout foundation</h2>
-          <p>Reusable typed feature cards exercising slots, scoped IDs, fractional grid tracks, stack overlays, flex flow, box styling, and native controls.</p>
+          <p>Reusable typed feature cards exercising inherited custom properties, typed calc arithmetic, slots, fractional grid tracks, stack overlays, and native controls.</p>
         </div>
         <dl>
           <div><dt>Viewport</dt><dd>960 × 540</dd></div>
@@ -88,9 +88,9 @@
 
       <div class="comparison">
         <section class="render-column">
-          <div class="render-label"><span>HTML reference</span><small><a href="references/layout-foundation-74fe14cd1348.html" target="_blank" rel="noreferrer">Open reference</a></small></div>
+          <div class="render-label"><span>HTML reference</span><small><a href="references/layout-foundation-9e30dbf1233d.html" target="_blank" rel="noreferrer">Open reference</a></small></div>
           <div class="render-frame" data-viewport-width="960" data-viewport-height="540" style="--viewport-width:960px; --viewport-height:540px; aspect-ratio:960/540">
-            <iframe width="960" height="540" title="HTML rendering of Layout foundation" src="references/layout-foundation-74fe14cd1348.html"></iframe>
+            <iframe width="960" height="540" title="HTML rendering of Layout foundation" src="references/layout-foundation-9e30dbf1233d.html"></iframe>
           </div>
         </section>
         <section class="render-column">
@@ -107,7 +107,7 @@
         </div>
         <table>
           <thead><tr><th>HTML/CSS</th><th>GodotCascade source</th><th>Runtime</th></tr></thead>
-          <tbody><tr><td><code>&lt;main&gt;</code></td><td><code>&lt;Page&gt;</code></td><td><code>CascadeBox (column)</code></td></tr><tr><td><code>display: grid</code></td><td><code>&lt;Grid&gt;</code></td><td><code>CascadeGrid track layout</code></td></tr><tr><td><code>repeated card structure</code></td><td><code>&lt;Component&gt; + typed Param + Slot</code></td><td><code>Source-expanded native controls with scoped IDs</code></td></tr><tr><td><code>1fr 1fr 1fr</code></td><td><code>grid-template-columns</code></td><td><code>Fractional track resolution</code></td></tr><tr><td><code>.cards &gt; .card</code></td><td><code>.cards &gt; .card</code></td><td><code>Direct-child selector matching</code></td></tr><tr><td><code>@media (max-width: 700px)</code></td><td><code>@media (max-width: 700px)</code></td><td><code>Viewport-conditional recomputation</code></td></tr><tr><td><code>7vh</code></td><td><code>7vh</code></td><td><code>Viewport-aware length resolution</code></td></tr><tr><td><code>position: absolute</code></td><td><code>&lt;Stack&gt; + right/top</code></td><td><code>Overlay inset placement</code></td></tr><tr><td><code>visual media</code></td><td><code>&lt;Image src=&quot;res://…&quot;&gt;</code></td><td><code>CascadeImage cover crop</code></td></tr><tr><td><code>padding / gap</code></td><td><code>padding / column-gap</code></td><td><code>CascadeStyle + layout request</code></td></tr><tr><td><code>card hover</code></td><td><code>.cards &gt; .card:hover</code></td><td><code>Owned container hover adapter</code></td></tr><tr><td><code>button click</code></td><td><code>on-pressed=&quot;_on_inspect_layout&quot;</code></td><td><code>Event-to-method binding</code></td></tr><tr><td><code>state dependency inspection</code></td><td><code>debugger binding/invalidation trace</code></td><td><code>Targeted update or keyed-reconcile reason</code></td></tr><tr><td><code>:hover / :active</code></td><td><code>:hover / :pressed</code></td><td><code>Native button state drawing</code></td></tr></tbody>
+          <tbody><tr><td><code>&lt;main&gt;</code></td><td><code>&lt;Page&gt;</code></td><td><code>CascadeBox (column)</code></td></tr><tr><td><code>display: grid</code></td><td><code>&lt;Grid&gt;</code></td><td><code>CascadeGrid track layout</code></td></tr><tr><td><code>repeated card structure</code></td><td><code>&lt;Component&gt; + typed Param + Slot</code></td><td><code>Source-expanded native controls with scoped IDs</code></td></tr><tr><td><code>1fr 1fr 1fr</code></td><td><code>grid-template-columns</code></td><td><code>Fractional track resolution</code></td></tr><tr><td><code>.cards &gt; .card</code></td><td><code>.cards &gt; .card</code></td><td><code>Direct-child selector matching</code></td></tr><tr><td><code>@media (max-width: 700px)</code></td><td><code>@media (max-width: 700px)</code></td><td><code>Viewport-conditional recomputation</code></td></tr><tr><td><code>7vh</code></td><td><code>7vh</code></td><td><code>Viewport-aware length resolution</code></td></tr><tr><td><code>--accent / var()</code></td><td><code>--accent / var()</code></td><td><code>Cascaded, inherited custom-property resolution</code></td></tr><tr><td><code>calc(var(--section-gap) * 1)</code></td><td><code>calc(var(--section-gap) * 1)</code></td><td><code>Typed length arithmetic before native application</code></td></tr><tr><td><code>position: absolute</code></td><td><code>&lt;Stack&gt; + right/top</code></td><td><code>Overlay inset placement</code></td></tr><tr><td><code>visual media</code></td><td><code>&lt;Image src=&quot;res://…&quot;&gt;</code></td><td><code>CascadeImage cover crop</code></td></tr><tr><td><code>padding / gap</code></td><td><code>padding / column-gap</code></td><td><code>CascadeStyle + layout request</code></td></tr><tr><td><code>card hover</code></td><td><code>.cards &gt; .card:hover</code></td><td><code>Owned container hover adapter</code></td></tr><tr><td><code>button click</code></td><td><code>on-pressed=&quot;_on_inspect_layout&quot;</code></td><td><code>Event-to-method binding</code></td></tr><tr><td><code>state dependency inspection</code></td><td><code>debugger binding/invalidation trace</code></td><td><code>Targeted update or keyed-reconcile reason</code></td></tr><tr><td><code>:hover / :active</code></td><td><code>:hover / :pressed</code></td><td><code>Native button state drawing</code></td></tr></tbody>
         </table>
       </section>
 
@@ -139,17 +139,26 @@
     }
 
     .page {
+      --page-padding-y: 56px;
+      --page-padding-x: 80px;
+      --section-gap: 24px;
+      --surface: #0e1014;
+      --accent: #7dbfff;
+      --hero-height: 7vh;
+      --card-padding: 20px 22px;
+      --card-column-gap: 18px;
       width: 100%;
       min-height: 540px;
-      padding: 56px 80px;
+      padding: var(--page-padding-y) var(--page-padding-x);
       display: flex;
       flex-direction: column;
-      gap: 24px;
+      gap: calc(var(--section-gap) * 1);
+      background: var(--surface);
     }
 
     .hero {
       position: relative;
-      height: 7vh;
+      height: calc(var(--hero-height) + 0px);
     }
 
     h1 {
@@ -167,7 +176,7 @@
       width: 112px;
       height: 28px;
       padding: 5px 8px;
-      color: #7dbfff;
+      color: var(--accent);
       font-size: 12px;
       background: #17253a;
       border: 1px solid #315a89;
@@ -187,12 +196,12 @@
       flex: 1;
       grid-template-columns: 1fr 1fr 1fr;
       grid-template-rows: minmax(210px, 1fr);
-      column-gap: 18px;
+      column-gap: var(--card-column-gap);
     }
 
     .card {
       min-height: 210px;
-      padding: 20px 22px;
+      padding: var(--card-padding);
       display: flex;
       flex-direction: column;
       gap: 10px;
@@ -251,7 +260,7 @@
       background: #1d5b5a;
     }
 
-    .card:nth-child(1) h2 { color: #7dbfff; }
+    .card:nth-child(1) h2 { color: var(--accent); }
     .card:nth-child(2) h2 { color: #a8e08c; }
     .card:nth-child(3) h2 { color: #ffb064; }
 
@@ -263,7 +272,7 @@
 
     .status {
       flex: 1;
-      color: #7dbfff;
+      color: var(--accent);
       font-size: 16px;
     }
 
@@ -289,7 +298,11 @@
     button:disabled { background: #202938; color: #98a2b3; cursor: default; }
 
     @media (max-width: 700px) {
-      .page { padding: 24px; gap: 16px; }
+      .page {
+        --page-padding-y: 24px;
+        --page-padding-x: 24px;
+        --section-gap: 16px;
+      }
       .cards { grid-template-columns: 1fr; grid-template-rows: auto auto auto; row-gap: 12px; }
     }
   &lt;/style&gt;
@@ -389,12 +402,20 @@
         <summary><span>GodotCascade stylesheet</span><code>examples/showcase/layout_foundation/styles.gcss</code></summary>
         <pre><code class="language-css">/* Executed by CascadeDocument&#x27;s focused GXML/GCSS vertical slice. */
 .page {
+    --page-padding-y: 56px;
+    --page-padding-x: 80px;
+    --section-gap: 24px;
+    --surface: #0e1014;
+    --accent: #7dbfff;
+    --hero-height: 7vh;
+    --card-padding: 20px 22px;
+    --card-column-gap: 18px;
     min-height: 540px;
-    padding: 56px 80px;
+    padding: var(--page-padding-y) var(--page-padding-x);
     display: flex;
     flex-direction: column;
-    gap: 24px;
-    background: #0e1014;
+    gap: calc(var(--section-gap) * 1);
+    background: var(--surface);
 }
 
 .heading {
@@ -402,7 +423,7 @@
     font-size: 30px;
 }
 
-.hero { height: 7vh; }
+.hero { height: calc(var(--hero-height) + 0px); }
 
 .layout-badge {
     position: absolute;
@@ -411,7 +432,7 @@
     width: 112px;
     height: 28px;
     padding: 5px 8px;
-    color: #7dbfff;
+    color: var(--accent);
     font-size: 12px;
     background: #17253a;
     border: 1px solid #315a89;
@@ -428,12 +449,12 @@
     flex-grow: 1;
     grid-template-columns: 1fr 1fr 1fr;
     grid-template-rows: minmax(210px, 1fr);
-    column-gap: 18px;
+    column-gap: var(--card-column-gap);
 }
 
 .cards &gt; .card {
     min-height: 210px;
-    padding: 20px 22px;
+    padding: var(--card-padding);
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -452,7 +473,7 @@
     border: 1px solid #315a89;
     border-radius: 6px;
 }
-.box-model .card-title { color: #7dbfff; }
+.box-model .card-title { color: var(--accent); }
 .flex-flow .card-title { color: #a8e08c; }
 .godot-native .card-title { color: #ffb064; }
 
@@ -463,7 +484,7 @@
     gap: 12px;
 }
 
-.status { color: #7dbfff; flex-grow: 1; }
+.status { color: var(--accent); flex-grow: 1; }
 .inspected .status { color: #65d6a7; }
 .inspection-note { color: #65d6a7; font-size: 11px; }
 
@@ -483,7 +504,11 @@
 #inspect:disabled { background: #202938; color: #98a2b3; }
 
 @media (max-width: 700px) {
-    .page { padding: 24px; gap: 16px; }
+    .page {
+        --page-padding-y: 24px;
+        --page-padding-x: 24px;
+        --section-gap: 16px;
+    }
     .cards {
         grid-template-columns: 1fr;
         grid-template-rows: auto auto auto;

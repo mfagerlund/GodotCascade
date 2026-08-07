@@ -1,11 +1,19 @@
 /* Executed by CascadeDocument's focused GXML/GCSS vertical slice. */
 .page {
+    --page-padding-y: 56px;
+    --page-padding-x: 80px;
+    --section-gap: 24px;
+    --surface: #0e1014;
+    --accent: #7dbfff;
+    --hero-height: 7vh;
+    --card-padding: 20px 22px;
+    --card-column-gap: 18px;
     min-height: 540px;
-    padding: 56px 80px;
+    padding: var(--page-padding-y) var(--page-padding-x);
     display: flex;
     flex-direction: column;
-    gap: 24px;
-    background: #0e1014;
+    gap: calc(var(--section-gap) * 1);
+    background: var(--surface);
 }
 
 .heading {
@@ -13,7 +21,7 @@
     font-size: 30px;
 }
 
-.hero { height: 7vh; }
+.hero { height: calc(var(--hero-height) + 0px); }
 
 .layout-badge {
     position: absolute;
@@ -22,7 +30,7 @@
     width: 112px;
     height: 28px;
     padding: 5px 8px;
-    color: #7dbfff;
+    color: var(--accent);
     font-size: 12px;
     background: #17253a;
     border: 1px solid #315a89;
@@ -39,12 +47,12 @@
     flex-grow: 1;
     grid-template-columns: 1fr 1fr 1fr;
     grid-template-rows: minmax(210px, 1fr);
-    column-gap: 18px;
+    column-gap: var(--card-column-gap);
 }
 
 .cards > .card {
     min-height: 210px;
-    padding: 20px 22px;
+    padding: var(--card-padding);
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -63,7 +71,7 @@
     border: 1px solid #315a89;
     border-radius: 6px;
 }
-.box-model .card-title { color: #7dbfff; }
+.box-model .card-title { color: var(--accent); }
 .flex-flow .card-title { color: #a8e08c; }
 .godot-native .card-title { color: #ffb064; }
 
@@ -74,7 +82,7 @@
     gap: 12px;
 }
 
-.status { color: #7dbfff; flex-grow: 1; }
+.status { color: var(--accent); flex-grow: 1; }
 .inspected .status { color: #65d6a7; }
 .inspection-note { color: #65d6a7; font-size: 11px; }
 
@@ -94,7 +102,11 @@
 #inspect:disabled { background: #202938; color: #98a2b3; }
 
 @media (max-width: 700px) {
-    .page { padding: 24px; gap: 16px; }
+    .page {
+        --page-padding-y: 24px;
+        --page-padding-x: 24px;
+        --section-gap: 16px;
+    }
     .cards {
         grid-template-columns: 1fr;
         grid-template-rows: auto auto auto;

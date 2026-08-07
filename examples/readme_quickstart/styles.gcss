@@ -1,15 +1,18 @@
 .demo {
+    --space: 16px;
+    --accent: #5aa7ff;
+    --primary: #246bce;
     display: flex;
     flex-direction: column;
-    gap: 16px;
-    padding: 40px;
+    gap: var(--space);
+    padding: calc(var(--space) * 2.5);
     background: #0b1220;
 }
 
 Label { color: #e8eefc; }
 
 .eyebrow {
-    color: #5aa7ff;
+    color: var(--accent);
     font-size: 12px;
 }
 
@@ -30,9 +33,9 @@ Label { color: #e8eefc; }
 
 Button {
     padding: 10px 16px;
-    background: #246bce;
+    background: var(--primary);
     color: #ffffff;
-    border: 1px solid #5aa7ff;
+    border: 1px solid var(--accent);
     border-radius: 8px;
 }
 

@@ -253,7 +253,7 @@ The first public preview should build a small settings menu from `.gxml` and a s
 
 ## Phase 12 — language and editor depth
 
-- [ ] Evaluate GCSS custom properties and typed `calc()` without claiming browser compatibility
+- [x] Evaluate and implement focused GCSS custom properties and typed `calc()` without claiming browser compatibility ([experiment record](docs/artifacts/custom-properties-calc-experiments-2026-08-07.md))
 - [ ] Add the highest-value missing layout/style primitives: flex shrink/basis, opacity, transforms, gradients, and custom fonts
 - [ ] Define SVG support through native Godot textures rather than a browser DOM
 - [ ] Add authored autofocus, tab order, and modal focus-trap contracts

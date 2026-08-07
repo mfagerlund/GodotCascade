@@ -29,6 +29,7 @@ const DocumentValidator := preload("res://addons/godot_cascade/runtime/document_
 const BindingCompiler := preload("res://addons/godot_cascade/runtime/binding_compiler.gd")
 const DeclarationApplier := preload("res://addons/godot_cascade/runtime/declaration_applier.gd")
 const GxmlComponentExpander := preload("res://addons/godot_cascade/runtime/gxml_component_expander.gd")
+const GcssExpression := preload("res://addons/godot_cascade/style/gcss_expression.gd")
 
 const INHERITED_PROPERTIES: PackedStringArray = ["color", "font-size"]
 
@@ -280,7 +281,8 @@ static func _is_text_input(control: Control) -> bool:
 
 
 static func _compute_declarations(element, rule_index: Dictionary) -> Dictionary:
-	var cache_key := "%s|%s|%s" % [rule_index.get("revision", 0), rule_index.get("viewport_width", INF), _element_signature(element)]
+	var viewport_size: Vector2 = rule_index.get("viewport_size", Vector2.ZERO)
+	var cache_key := "%s|%s,%s|%s" % [rule_index.get("revision", 0), viewport_size.x, viewport_size.y, _element_signature(element)]
 	if ComputedStyleCache.has(cache_key):
 		return ComputedStyleCache.retrieve(cache_key)
 	var winners := _compute_declarations_uncached(element, rule_index)
@@ -290,16 +292,34 @@ static func _compute_declarations(element, rule_index: Dictionary) -> Dictionary
 
 
 static func _compute_declarations_uncached(element, rule_index: Dictionary) -> Dictionary:
-	var winners := {}
+	var winners := {"__diagnostics": []}
+	var matched_rules := []
 	for rule in _candidate_rules(element, rule_index):
 		if not rule.matches(element, float(rule_index.get("viewport_width", INF))):
 			continue
+		matched_rules.append(rule)
+	var custom_properties := _compute_custom_properties(element, rule_index, matched_rules)
+	winners["__custom_properties"] = custom_properties
+	for rule in matched_rules:
 		var state: String = rule.pseudo_state
 		if not winners.has(state):
 			winners[state] = {}
-		var expansion := DeclarationApplier.expand_shorthands(rule.declarations)
+		var resolved_declarations := {}
+		var resolution_errors := {}
+		var environment: Dictionary = custom_properties.get(state, custom_properties.get("", {}))
+		for property_name in rule.declarations:
+			if str(property_name).begins_with("--"):
+				continue
+			var resolved := GcssExpression.resolve_variables(str(rule.declarations[property_name]), environment)
+			if not bool(resolved.get("ok", false)):
+				resolved_declarations[property_name] = DeclarationApplier.INVALID_RESOLVED_VALUE
+				resolution_errors[property_name] = resolved.get("error", "variable resolution failed")
+				continue
+			resolved_declarations[property_name] = resolved["value"]
+		var expansion := DeclarationApplier.expand_shorthands(resolved_declarations)
 		var declarations: Dictionary = expansion["values"]
 		var origins: Dictionary = expansion["origins"]
+		var shorthand_errors: Dictionary = expansion.get("errors", {})
 		for property_name in declarations:
 			var existing: Dictionary = winners[state].get(property_name, {})
 			if existing.is_empty() or rule.specificity > existing["specificity"] or (
@@ -309,12 +329,75 @@ static func _compute_declarations_uncached(element, rule_index: Dictionary) -> D
 				var location: Dictionary = rule.declaration_locations.get(origin, {"line": rule.line, "column": 1})
 				winners[state][property_name] = {
 					"value": declarations[property_name],
+					"invalid": declarations[property_name] == DeclarationApplier.INVALID_RESOLVED_VALUE,
+					"resolution_error": resolution_errors.get(origin, shorthand_errors.get(origin, "invalid shorthand value")),
+					"origin": origin,
 					"specificity": rule.specificity,
 					"order": rule.order,
 					"line": location["line"],
 					"column": location["column"],
 				}
+	var reported := {}
+	for state in winners:
+		if str(state).begins_with("__"):
+			continue
+		for property_name in winners[state]:
+			var declaration: Dictionary = winners[state][property_name]
+			if not bool(declaration.get("invalid", false)):
+				continue
+			var report_key := "%s|%s|%s|%s" % [state, declaration["line"], declaration["column"], declaration.get("origin", property_name)]
+			if reported.has(report_key):
+				continue
+			reported[report_key] = true
+			winners["__diagnostics"].append({
+				"severity": "error",
+				"line": declaration["line"],
+				"column": declaration["column"],
+				"message": "Property '%s' was ignored: %s" % [declaration.get("origin", property_name), declaration.get("resolution_error", "variable resolution failed")],
+			})
 	return winners
+
+
+static func _compute_custom_properties(element, rule_index: Dictionary, matched_rules: Array) -> Dictionary:
+	var base := {}
+	var parent = element.parent_element()
+	if parent != null:
+		var parent_computed := _compute_declarations(parent, rule_index)
+		base = parent_computed.get("__custom_properties", {}).get("", {}).duplicate(true)
+	var by_state := {"": base}
+	var winners := {"": {}}
+	for rule in matched_rules:
+		var state: String = rule.pseudo_state
+		if not winners.has(state):
+			winners[state] = {}
+		for property_name in rule.declarations:
+			if not str(property_name).begins_with("--"):
+				continue
+			var existing: Dictionary = winners[state].get(property_name, {})
+			if existing.is_empty() or rule.specificity > existing["specificity"] or (
+				rule.specificity == existing["specificity"] and rule.order >= existing["order"]
+			):
+				winners[state][property_name] = {
+					"value": rule.declarations[property_name],
+					"specificity": rule.specificity,
+					"order": rule.order,
+				}
+	for property_name in winners[""]:
+		var raw_value := str(winners[""][property_name]["value"])
+		if raw_value.strip_edges().to_lower() == "inherit":
+			continue
+		by_state[""][property_name] = raw_value
+	for state in winners:
+		if state.is_empty():
+			continue
+		var state_values: Dictionary = by_state[""].duplicate(true)
+		for property_name in winners[state]:
+			var raw_value := str(winners[state][property_name]["value"])
+			if raw_value.strip_edges().to_lower() == "inherit":
+				continue
+			state_values[property_name] = raw_value
+		by_state[state] = state_values
+	return by_state
 
 
 static func _inherit_declarations(element, rule_index: Dictionary, winners: Dictionary) -> void:
@@ -368,7 +451,7 @@ static func _element_dependencies(element) -> PackedStringArray:
 
 static func _index_rules(rules: Array, viewport_size: Vector2) -> Dictionary:
 	var viewport_width := viewport_size.x if viewport_size.x > 0.0 else INF
-	var index := {"universal": [], "types": {}, "classes": {}, "ids": {}, "revision": _rules_revision(rules), "viewport_width": viewport_width}
+	var index := {"universal": [], "types": {}, "classes": {}, "ids": {}, "revision": _rules_revision(rules), "viewport_width": viewport_width, "viewport_size": viewport_size}
 	for rule in rules:
 		var compound := str(rule.compounds[-1])
 		var rule_id := _compound_token(compound, "#")

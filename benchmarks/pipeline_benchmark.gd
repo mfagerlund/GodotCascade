@@ -10,6 +10,7 @@ const ITEM_COUNT := 500
 const PARSE_BUILD_BUDGET_MS := 2000.0
 const LAYOUT_BUDGET_MS := 1000.0
 const RECONCILE_BUDGET_MS := 1000.0
+const EXPRESSION_BUILD_BUDGET_MS := 2500.0
 
 
 func _initialize() -> void:
@@ -23,6 +24,7 @@ func _run() -> void:
 	fragments.append("</Page>")
 	var markup_source := "".join(fragments)
 	var style_source := "Page { gap: 2px; } .item { height: 18px; color: #d0d5dd; }"
+	var expression_style_source := "Page { --base-gap: 1px; gap: calc(var(--base-gap) * 2); } .item { --item-height: 18px; --item-color: #d0d5dd; height: calc(var(--item-height) + 0px); color: var(--item-color); }"
 
 	var parse_start := Time.get_ticks_usec()
 	var markup := GxmlParser.parse(markup_source)
@@ -34,6 +36,17 @@ func _run() -> void:
 		failures.append("benchmark fixture produced diagnostics")
 	if parse_build_ms > PARSE_BUILD_BUDGET_MS:
 		failures.append("parse/build %.2fms exceeds %.2fms" % [parse_build_ms, PARSE_BUILD_BUDGET_MS])
+
+	var expression_start := Time.get_ticks_usec()
+	var expression_stylesheet := GcssParser.parse(expression_style_source)
+	var expression_build := CascadeBuilder.build(markup["root"], expression_stylesheet["rules"], null, Vector2(960.0, 540.0))
+	var expression_build_ms := (Time.get_ticks_usec() - expression_start) / 1000.0
+	if not expression_stylesheet["diagnostics"].is_empty() or not expression_build["diagnostics"].is_empty():
+		failures.append("expression-heavy benchmark fixture produced diagnostics")
+	if expression_build_ms > EXPRESSION_BUILD_BUDGET_MS:
+		failures.append("expression build %.2fms exceeds %.2fms" % [expression_build_ms, EXPRESSION_BUILD_BUDGET_MS])
+	if expression_build["root"] != null:
+		expression_build["root"].free()
 
 	var built_root: Control = build["root"]
 	root.add_child(built_root)
@@ -61,6 +74,8 @@ func _run() -> void:
 		"items": ITEM_COUNT,
 		"native_nodes": node_count,
 		"parse_build_ms": parse_build_ms,
+		"expression_build_ms": expression_build_ms,
+		"expression_overhead_ms": expression_build_ms - parse_build_ms,
 		"layout_ms": layout_ms,
 		"reconcile_ms": reconcile_ms,
 		"reconcile": reconciled["stats"],
@@ -68,6 +83,7 @@ func _run() -> void:
 			"parse_build": PARSE_BUILD_BUDGET_MS,
 			"layout": LAYOUT_BUDGET_MS,
 			"reconcile": RECONCILE_BUDGET_MS,
+			"expression_build": EXPRESSION_BUILD_BUDGET_MS,
 		},
 	}))
 	if failures.is_empty():

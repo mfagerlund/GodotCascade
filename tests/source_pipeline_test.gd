@@ -12,6 +12,7 @@ const BindingResolver := preload("res://addons/godot_cascade/runtime/binding_res
 const ObservableBindingContext := preload("res://addons/godot_cascade/runtime/observable_binding_context.gd")
 const GcssTokenizer := preload("res://addons/godot_cascade/style/gcss_tokenizer.gd")
 const GcssValue := preload("res://addons/godot_cascade/style/gcss_value.gd")
+const GcssExpression := preload("res://addons/godot_cascade/style/gcss_expression.gd")
 const ComputedStyleCache := preload("res://addons/godot_cascade/style/computed_style_cache.gd")
 const ThemeAdapter := preload("res://addons/godot_cascade/style/theme_adapter.gd")
 const ComponentRegistry := preload("res://addons/godot_cascade/runtime/component_registry.gd")
@@ -58,6 +59,7 @@ func _run() -> void:
 	_test_csharp_binding_generator()
 	_test_gcss_specificity()
 	_test_style_foundations()
+	_test_custom_properties_and_calc()
 	_test_responsive_and_transition_styles()
 	_test_form_controls_pipeline()
 	_test_select_pipeline()
@@ -486,6 +488,110 @@ func _test_responsive_and_transition_styles() -> void:
 		_expect_float("wide viewport unit resolves", wide.get("cascade_style").preferred_width, 500.0)
 		_expect_true("wide media rule wins background", wide.get("cascade_style").background_color == Color("4da3ff"))
 		wide_build["root"].free()
+
+
+func _test_custom_properties_and_calc() -> void:
+	var variables := {
+		"--space": "var(--base)",
+		"--base": "12px",
+		"--cycle-a": "var(--cycle-b)",
+		"--cycle-b": "var(--cycle-a)",
+		"--MixedCase": "#55aaff",
+	}
+	var transitive := GcssExpression.resolve_variables("calc(var(--space) * 2)", variables)
+	_expect_true("transitive custom property resolves", transitive.get("ok", false) and transitive.get("value", "") == "calc(12px * 2)")
+	var nested_fallback := GcssExpression.resolve_variables("var(--missing, var(--base, 7px))", variables)
+	_expect_true("nested custom property fallback resolves", nested_fallback.get("ok", false) and nested_fallback.get("value", "") == "12px")
+	_expect_true("custom property names remain case sensitive", GcssExpression.resolve_variables("var(--MixedCase)", variables).get("ok", false))
+	_expect_true("case mismatch remains missing", not GcssExpression.resolve_variables("var(--mixedcase)", variables).get("ok", false))
+	var quoted_var := GcssExpression.resolve_variables("'var(--base)' var(--base)", variables)
+	_expect_true("var text inside quotes remains literal", quoted_var.get("ok", false) and quoted_var.get("value", "") == "'var(--base)' 12px")
+	_expect_true("consumed custom property cycle is rejected", not GcssExpression.resolve_variables("var(--cycle-a)", variables).get("ok", false))
+	var cycle_fallback := GcssExpression.resolve_variables("var(--cycle-a, 9px)", variables)
+	_expect_true("cycle may recover through consuming fallback", cycle_fallback.get("ok", false) and cycle_fallback.get("value", "") == "9px")
+	var deep_variables := {}
+	for index in 66:
+		deep_variables["--deep-%s" % index] = "var(--deep-%s)" % (index + 1)
+	deep_variables["--deep-66"] = "1px"
+	_expect_true("custom property expansion depth is guarded", not GcssExpression.resolve_variables("var(--deep-0)", deep_variables).get("ok", false))
+
+	var viewport := Vector2(1000.0, 600.0)
+	_expect_calc("calc precedence", "calc(2 + 3 * 4)", viewport, "number", 14.0)
+	_expect_calc("calc parentheses", "calc((2 + 3) * 4)", viewport, "number", 20.0)
+	_expect_calc("calc unary", "calc(-2 * -3px)", viewport, "length", 6.0)
+	_expect_calc("calc viewport lengths", "calc(10vw + 5vh - 10px)", viewport, "length", 120.0)
+	_expect_calc("calc time normalization", "calc(1s + 250ms)", viewport, "time", 1250.0)
+	_expect_calc("calc no-space operators", "calc(1px+2px)", viewport, "length", 3.0)
+	for invalid_expression in [
+		"calc(1px + 2)", "calc(2px * 3px)", "calc(2px / 1px)", "calc(2px / 0)",
+		"calc(10%)", "calc(1em + 2em)", "calc(1fr + 2fr)", "calc(1px +)", "calc(1px) trailing",
+	]:
+		_expect_true("invalid typed calc rejected: %s" % invalid_expression, not GcssExpression.evaluate(invalid_expression, viewport).get("ok", false))
+	_expect_true("viewport calc requires viewport context", not GcssExpression.evaluate("calc(1vh + 1px)", Vector2.ZERO).get("ok", false))
+
+	var parsed := GcssParser.parse("Page { --MixedCase: #55aaff; --mixedcase: #ff8844; }")
+	_expect_true("parser preserves custom-property spelling", parsed["rules"][0].declarations.has("--MixedCase") and parsed["rules"][0].declarations.has("--mixedcase"))
+	var invalid_name := GcssParser.parse("Page { --: 1px; --bad!: 2px; }")
+	_expect_int("parser rejects malformed custom-property names", invalid_name["diagnostics"].filter(func(d): return "Invalid custom-property name" in d.get("message", "")).size(), 2)
+
+	var markup := GxmlParser.parse("""<Page><Panel class="theme"><Label id="target">Target</Label><Label id="fallback">Fallback</Label><Label id="invalid">Invalid</Label><Label id="calc-invalid">Calc invalid</Label><Button id="stateful">State</Button></Panel></Page>""")
+	var stylesheet := GcssParser.parse("""Page {
+		--space: 6px 10px;
+		--accent: #55aaff;
+		--duration: 100ms;
+		--unused-a: var(--unused-b);
+		--unused-b: var(--unused-a);
+	}
+	.theme { --space: 8px calc(4px + 6px); }
+	.theme Label { width: var(--losing-missing); }
+	Label { padding-left: 99px; }
+	#target {
+		padding: var(--space);
+		width: calc(50vw - 20px);
+		height: calc(10vh + 5px);
+		color: var(--accent);
+		transition-duration: calc(var(--duration) + 50ms);
+	}
+	#fallback { width: var(--absent, calc(25vw - 5px)); }
+	#invalid { width: 1px; padding: var(--absent); }
+	#calc-invalid { width: 1px; padding: calc(1px + 2); }
+	#stateful { --state-color: #223344; }
+	#stateful:hover { --state-color: #446688; background: var(--state-color); }
+	""")
+	ComputedStyleCache.clear()
+	var first := CascadeBuilder.build(markup["root"], stylesheet["rules"], null, viewport)
+	_expect_int("one consumed missing-variable diagnostic", first["diagnostics"].filter(func(d): return "--absent" in d.get("message", "")).size(), 1)
+	_expect_true("invalid losing declaration stays silent", not first["diagnostics"].any(func(d): return "--losing-missing" in d.get("message", "")))
+	_expect_true("variable diagnostic retains source location", first["diagnostics"].any(func(d): return "--absent" in d.get("message", "") and int(d.get("line", 0)) > 0 and int(d.get("column", 0)) > 0))
+	_expect_true("unused cyclic custom properties stay silent", not first["diagnostics"].any(func(d): return "unused-a" in d.get("message", "")))
+	if first["root"] != null:
+		var target: Control = _find_by_id(first["root"], "target")[0]
+		var target_style: CascadeStyle = target.get("cascade_style")
+		_expect_float("inherited variable expands shorthand top", target_style.padding_top, 8.0)
+		_expect_float("calc variable expands shorthand right", target_style.padding_right, 10.0)
+		_expect_float("typed calc width applies", target_style.preferred_width, 480.0)
+		_expect_float("typed calc vh applies", target_style.preferred_height, 65.0)
+		_expect_true("inherited custom color applies", target.get("text_color") == Color("55aaff"))
+		_expect_float("variable-backed time calc applies", target.get_meta("cascade_transition_duration"), 0.15)
+		var fallback: Control = _find_by_id(first["root"], "fallback")[0]
+		_expect_float("missing variable fallback calc applies", fallback.get("cascade_style").preferred_width, 245.0)
+		var invalid: Control = _find_by_id(first["root"], "invalid")[0]
+		_expect_float("invalid winning shorthand blocks lower longhand", invalid.get("cascade_style").padding_left, 0.0)
+		var calc_invalid: Control = _find_by_id(first["root"], "calc-invalid")[0]
+		_expect_float("type-invalid calc shorthand blocks lower longhand", calc_invalid.get("cascade_style").padding_left, 0.0)
+		_expect_int("type-invalid shorthand has one origin diagnostic", first["diagnostics"].filter(func(d): return "Unsupported shorthand value 'calc(1px + 2)'" in d.get("message", "")).size(), 1)
+		var stateful: Control = _find_by_id(first["root"], "stateful")[0]
+		_expect_true("pseudo-state custom property overlays base environment", stateful.get("hover_background_color") == Color("446688"))
+		first["root"].free()
+	var cached := CascadeBuilder.build(markup["root"], stylesheet["rules"], null, viewport)
+	_expect_int("cached variable diagnostics replay", cached["diagnostics"].filter(func(d): return "--absent" in d.get("message", "")).size(), 1)
+	if cached["root"] != null:
+		cached["root"].free()
+	var taller := CascadeBuilder.build(markup["root"], stylesheet["rules"], null, Vector2(1000.0, 1000.0))
+	if taller["root"] != null:
+		var taller_target: Control = _find_by_id(taller["root"], "target")[0]
+		_expect_float("computed cache keys include viewport height", taller_target.get("cascade_style").preferred_height, 105.0)
+		taller["root"].free()
 
 
 func _test_form_controls_pipeline() -> void:
@@ -1342,7 +1448,8 @@ func _test_identity_preserving_reload() -> void:
 	var stylesheet_path := "user://cascade_reload_test.gcss"
 	var initial_markup := "<Page><Button id=\"stable\">Before</Button><Button id=\"move\">Move</Button><Checkbox id=\"runtime\">Runtime</Checkbox></Page>"
 	var updated_markup := "<Page><Checkbox id=\"runtime\">Runtime</Checkbox><Button id=\"move\">Move</Button><Button id=\"stable\">After</Button></Page>"
-	var stylesheet := "Page { display: flex; flex-direction: column; } Button { padding: 8px; }"
+	var stylesheet := "Page { --button-padding: 8px; display: flex; flex-direction: column; } Button { padding: var(--button-padding); }"
+	var updated_stylesheet := "Page { --button-padding: calc(10px + 4px); display: flex; flex-direction: column; } Button { padding: var(--button-padding); }"
 	_expect_true("write initial reload markup", _write_text(markup_path, initial_markup))
 	_expect_true("write initial reload stylesheet", _write_text(stylesheet_path, stylesheet))
 
@@ -1365,6 +1472,11 @@ func _test_identity_preserving_reload() -> void:
 	initial_button.grab_focus()
 	await process_frame
 	_expect_true("reload fixture acquires focus", initial_button.has_focus())
+	_expect_true("write variable reload stylesheet", _write_text(stylesheet_path, updated_stylesheet))
+	_expect_true("stylesheet variable edit is detected", document.poll_sources())
+	var restyled_button: Control = _find_by_id(document.generated_root(), "stable")[0]
+	_expect_true("variable reload preserves native node identity", restyled_button.get_instance_id() == initial_instance_id)
+	_expect_float("variable reload applies typed calc value", restyled_button.get("cascade_style").padding_left, 14.0)
 
 	_expect_true("write updated reload markup", _write_text(markup_path, updated_markup))
 	_expect_true("source polling detects edit", document.poll_sources())
@@ -1458,3 +1570,11 @@ func _expect_int(label: String, actual: int, expected: int) -> void:
 func _expect_float(label: String, actual: float, expected: float) -> void:
 	if not is_equal_approx(actual, expected):
 		_failures.append("%s: expected %s, got %s" % [label, expected, actual])
+
+
+func _expect_calc(label: String, expression: String, viewport: Vector2, expected_kind: String, expected_value: float) -> void:
+	var result := GcssExpression.evaluate(expression, viewport)
+	_expect_true("%s parses" % label, result.get("ok", false))
+	if result.get("ok", false):
+		_expect_true("%s has %s type" % [label, expected_kind], result.get("kind", "") == expected_kind)
+		_expect_float("%s value" % label, float(result.get("value", NAN)), expected_value)

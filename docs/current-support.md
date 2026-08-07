@@ -187,7 +187,23 @@ When a select popup is open, `ui_up` and `ui_down` move through enabled options,
 | Image | `object-fit: contain\|cover\|fill\|none` |
 | Transition | `transition: <property> <time>`, `transition-property`, `transition-duration` for reconciliation-time style changes |
 
-Lengths accept bare numbers, `px`, `vw`, or `vh`. The typed value layer recognizes seconds and milliseconds for transitions. Percentages, `em`/`rem`, `calc()`, variables, and automatic values are not implemented. `padding` and `margin` accept the familiar one-to-four-value form; `gap` accepts row and optional column values. `border` must be `<width> solid <color>`. Shorthands expand before cascade winner selection.
+Lengths accept bare numbers, `px`, `vw`, or `vh`. The typed value layer recognizes seconds and milliseconds for transitions. Percentages, `em`/`rem`, automatic values, and browser-wide value functions are not implemented. `padding` and `margin` accept the familiar one-to-four-value form; `gap` accepts row and optional column values. `border` must be `<width> solid <color>`. Variable substitution occurs before shorthands expand and compete in the cascade.
+
+### Custom properties and typed `calc()`
+
+GCSS supports case-sensitive custom property names beginning with `--`, `var(--name)`, and `var(--name, fallback)`. Custom properties use ordinary selector specificity/source order, inherit through the authored element tree, and may contain another variable reference or a complete value such as a color, time, or multi-token shorthand. Fallbacks and transitive references may nest. Values resolve lazily: unused missing or cyclic custom properties are silent; a winning declaration that consumes one is ignored with a source-located diagnostic. Its conceptual longhands remain cascade winners, so an invalid high-specificity shorthand does not reveal a lower-specificity edge.
+
+Pseudo-state custom properties overlay the element's resolved base environment for declarations in that state. A parent pseudo-state environment does not propagate to its children, and changing a state does not rematch the stylesheet. This matches GodotCascade's precomputed native state-property model rather than browser dynamic custom-property behavior.
+
+`calc()` is a typed arithmetic subset:
+
+- NUMBER, LENGTH (`px`, `vw`, `vh`), and TIME (`ms`, `s`) values;
+- parentheses, unary `+`/`-`, and binary `+`, `-`, `*`, `/` with ordinary precedence;
+- matching types for addition/subtraction;
+- at least one unitless number for multiplication;
+- a non-zero unitless divisor for division.
+
+Lengths normalize to native pixels against the document viewport; times normalize to milliseconds. A final unitless result is accepted by number properties, and by length properties as native pixels. Mixed-type addition, dimensional multiplication/division, division by zero, `%`, `em`, `rem`, `fr` arithmetic, malformed expressions, and partial `calc()` fragments are rejected. This focused contract is not a browser-CSS compatibility claim. The design decisions and rejected approaches are recorded in the [experiment report](artifacts/custom-properties-calc-experiments-2026-08-07.md).
 
 Top-level `@media (min-width: <px>)` and `@media (max-width: <px>)` blocks condition rules on the document viewport. Compound queries, orientation, and nested media blocks are unsupported.
 

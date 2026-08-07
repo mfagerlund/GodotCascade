@@ -10,8 +10,10 @@ const CascadeImage := preload("res://addons/godot_cascade/components/cascade_ima
 const PropertyCache := preload("res://addons/godot_cascade/runtime/property_cache.gd")
 const GcssValue := preload("res://addons/godot_cascade/style/gcss_value.gd")
 const TransitionManager := preload("res://addons/godot_cascade/runtime/transition_manager.gd")
+const GcssExpression := preload("res://addons/godot_cascade/style/gcss_expression.gd")
 
 static var _active_viewport_size := Vector2.ZERO
+const INVALID_RESOLVED_VALUE := "__godot_cascade_invalid_resolved_value__"
 
 
 static func begin_build(viewport_size: Vector2) -> void:
@@ -32,8 +34,12 @@ static func apply_select_option_styles(option: Dictionary, computed: Dictionary,
 static func _expand_shorthands(declarations: Dictionary) -> Dictionary:
 	var expanded := {}
 	var origins := {}
+	var errors := {}
 	for property_name in declarations:
 		var value: String = str(declarations[property_name])
+		if value == INVALID_RESOLVED_VALUE:
+			_expand_invalid_shorthand(property_name, expanded, origins)
+			continue
 		if property_name in ["padding", "margin"]:
 			var tokens := _split_whitespace(value)
 			var valid_lengths := tokens.size() >= 1 and tokens.size() <= 4
@@ -41,8 +47,8 @@ static func _expand_shorthands(declarations: Dictionary) -> Dictionary:
 				var parsed := _parse_length(token)
 				valid_lengths = valid_lengths and not is_nan(parsed) and parsed >= 0.0
 			if not valid_lengths:
-				expanded[property_name] = value
-				origins[property_name] = property_name
+				_expand_invalid_shorthand(property_name, expanded, origins)
+				errors[property_name] = "Unsupported shorthand value '%s'." % value
 				continue
 			var top := tokens[0]
 			var right := tokens[0] if tokens.size() == 1 else tokens[1]
@@ -62,8 +68,8 @@ static func _expand_shorthands(declarations: Dictionary) -> Dictionary:
 				origins["border-width"] = property_name
 				origins["border-color"] = property_name
 			else:
-				expanded[property_name] = value
-				origins[property_name] = property_name
+				_expand_invalid_shorthand(property_name, expanded, origins)
+				errors[property_name] = "Unsupported shorthand value '%s'." % value
 		elif property_name == "gap":
 			var tokens := _split_whitespace(value)
 			var valid_gaps := tokens.size() >= 1 and tokens.size() <= 2
@@ -76,37 +82,61 @@ static func _expand_shorthands(declarations: Dictionary) -> Dictionary:
 				origins["row-gap"] = property_name
 				origins["column-gap"] = property_name
 			else:
-				expanded[property_name] = value
-				origins[property_name] = property_name
+				_expand_invalid_shorthand(property_name, expanded, origins)
+				errors[property_name] = "Unsupported shorthand value '%s'." % value
 		elif property_name == "transition":
 			var tokens := _split_whitespace(value)
 			if tokens.size() == 2:
 				var first = GcssValue.parse(tokens[0])
 				var second = GcssValue.parse(tokens[1])
-				var duration_index := 0 if first.kind == GcssValue.Kind.TIME else 1
-				var duration = first if duration_index == 0 else second
+				var first_is_time: bool = first.kind == GcssValue.Kind.TIME or not is_nan(_parse_time_ms(tokens[0]))
+				var second_is_time: bool = second.kind == GcssValue.Kind.TIME or not is_nan(_parse_time_ms(tokens[1]))
+				var duration_index := 0 if first_is_time else 1
 				var transition_property := tokens[1 - duration_index]
-				if duration.kind == GcssValue.Kind.TIME:
+				if first_is_time != second_is_time:
 					expanded["transition-property"] = transition_property
 					expanded["transition-duration"] = tokens[duration_index]
 					origins["transition-property"] = property_name
 					origins["transition-duration"] = property_name
 				else:
-					expanded[property_name] = value
-					origins[property_name] = property_name
+					_expand_invalid_shorthand(property_name, expanded, origins)
+					errors[property_name] = "Unsupported shorthand value '%s'." % value
 			else:
-				expanded[property_name] = value
-				origins[property_name] = property_name
+				_expand_invalid_shorthand(property_name, expanded, origins)
+				errors[property_name] = "Unsupported shorthand value '%s'." % value
 		else:
 			expanded[property_name] = value
 			origins[property_name] = property_name
-	return {"values": expanded, "origins": origins}
+	return {"values": expanded, "origins": origins, "errors": errors}
+
+
+static func _expand_invalid_shorthand(property_name: String, expanded: Dictionary, origins: Dictionary) -> void:
+	var invalid_targets := PackedStringArray([property_name])
+	if property_name in ["padding", "margin"]:
+		invalid_targets = PackedStringArray([
+			"%s-top" % property_name, "%s-right" % property_name,
+			"%s-bottom" % property_name, "%s-left" % property_name,
+		])
+	elif property_name == "gap":
+		invalid_targets = PackedStringArray(["row-gap", "column-gap"])
+	elif property_name == "border":
+		invalid_targets = PackedStringArray(["border-width", "border-color"])
+	elif property_name == "transition":
+		invalid_targets = PackedStringArray(["transition-property", "transition-duration"])
+	for target in invalid_targets:
+		expanded[target] = INVALID_RESOLVED_VALUE
+		origins[target] = property_name
 
 
 static func _apply_declarations(control: Control, computed: Dictionary, diagnostics: Array[Dictionary]) -> void:
+	diagnostics.append_array(computed.get("__diagnostics", []))
 	for state in computed:
+		if str(state).begins_with("__"):
+			continue
 		for property_name in computed[state]:
 			var declaration: Dictionary = computed[state][property_name]
+			if bool(declaration.get("invalid", false)):
+				continue
 			var diagnostic_start := diagnostics.size()
 			_apply_declaration(
 				control,
@@ -259,11 +289,11 @@ static func _apply_declaration(
 				transition_properties.append(mapped)
 			control.set_meta("cascade_transition_properties", transition_properties)
 		"transition-duration":
-			var duration = GcssValue.parse(value)
-			if duration.kind != GcssValue.Kind.TIME or duration.number < 0.0:
+			var duration_ms := _parse_time_ms(value)
+			if is_nan(duration_ms) or duration_ms < 0.0:
 				_diagnostic_bad_value(diagnostics, line, property_name, value)
 			else:
-				control.set_meta("cascade_transition_duration", duration.milliseconds() / 1000.0)
+				control.set_meta("cascade_transition_duration", duration_ms / 1000.0)
 		"position":
 			if value.to_lower() in ["relative", "absolute"]:
 				control.set_meta("cascade_position", value.to_lower())
@@ -351,9 +381,14 @@ static func _apply_select_option_styles(
 	computed: Dictionary,
 	diagnostics: Array[Dictionary]
 ) -> void:
+	diagnostics.append_array(computed.get("__diagnostics", []))
 	for state in computed:
+		if str(state).begins_with("__"):
+			continue
 		for property_name in computed[state]:
 			var declaration: Dictionary = computed[state][property_name]
+			if bool(declaration.get("invalid", false)):
+				continue
 			var line := int(declaration["line"])
 			var diagnostic_start := diagnostics.size()
 			var value := str(declaration["value"])
@@ -437,17 +472,29 @@ static func _set_length_property(target: Object, property_name: String, value: S
 
 
 static func _set_number_property(target: Object, property_name: String, value: String, line: int, diagnostics: Array[Dictionary]) -> void:
-	if not value.is_valid_float():
+	var parsed := NAN
+	if value.strip_edges().to_lower().begins_with("calc("):
+		var evaluated := GcssExpression.evaluate(value, _active_viewport_size)
+		if bool(evaluated.get("ok", false)) and evaluated.get("kind", "") == "number":
+			parsed = float(evaluated["value"])
+	elif value.is_valid_float():
+		parsed = value.to_float()
+	if is_nan(parsed):
 		_diagnostic_bad_value(diagnostics, line, property_name.replace("_", "-"), value)
 		return
 	if not _has_property(target, property_name):
 		_diagnostic_not_applicable(diagnostics, line, property_name.replace("_", "-"), target)
 		return
-	target.set(property_name, value.to_float())
+	target.set(property_name, parsed)
 
 
 static func _parse_length(value: String) -> float:
 	var normalized := value.strip_edges().to_lower()
+	if normalized.begins_with("calc("):
+		var evaluated := GcssExpression.evaluate(normalized, _active_viewport_size)
+		if not bool(evaluated.get("ok", false)) or evaluated.get("kind", "") not in ["length", "number"]:
+			return NAN
+		return float(evaluated["value"])
 	if normalized.ends_with("vw") or normalized.ends_with("vh"):
 		var axis := "vw" if normalized.ends_with("vw") else "vh"
 		var magnitude := normalized.trim_suffix(axis).strip_edges()
@@ -460,6 +507,15 @@ static func _parse_length(value: String) -> float:
 	if not normalized.is_valid_float():
 		return NAN
 	return normalized.to_float()
+
+
+static func _parse_time_ms(value: String) -> float:
+	var normalized := value.strip_edges().to_lower()
+	if normalized.begins_with("calc("):
+		var evaluated := GcssExpression.evaluate(normalized, _active_viewport_size)
+		return float(evaluated["value"]) if bool(evaluated.get("ok", false)) and evaluated.get("kind", "") == "time" else NAN
+	var parsed = GcssValue.parse(normalized)
+	return parsed.milliseconds() if parsed.kind == GcssValue.Kind.TIME else NAN
 
 
 static func _resolve_flex_gaps(control: Control) -> void:
@@ -563,7 +619,7 @@ static func _parse_color(value: String, line: int, diagnostics: Array[Dictionary
 
 
 static func _split_whitespace(value: String) -> PackedStringArray:
-	return value.replace("\t", " ").replace("\r", " ").replace("\n", " ").split(" ", false)
+	return _split_grid_tracks(value)
 
 
 static func _has_property(target: Object, property_name: String) -> bool:

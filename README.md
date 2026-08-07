@@ -115,10 +115,13 @@ Its [GCSS](examples/readme_quickstart/styles.gcss) owns layout, box model, and i
 
 ```css
 .demo {
+    --space: 16px;
+    --accent: #5aa7ff;
+    --primary: #246bce;
     display: flex;
     flex-direction: column;
-    gap: 16px;
-    padding: 40px;
+    gap: var(--space);
+    padding: calc(var(--space) * 2.5);
     background: #0b1220;
 }
 
@@ -126,9 +129,9 @@ Label { color: #e8eefc; }
 
 Button {
     padding: 10px 16px;
-    background: #246bce;
+    background: var(--primary);
     color: #ffffff;
-    border: 1px solid #5aa7ff;
+    border: 1px solid var(--accent);
     border-radius: 8px;
 }
 
@@ -178,7 +181,7 @@ The repository currently contains several working vertical slices:
 - `CascadeProgress`, an owned range display with exact track, fill, padding, border, and radius drawing;
 - `CascadeImage`, an owned texture control with deterministic contain, cover, fill, and crop geometry;
 - a recoverable `.gxml` parser and native control registry;
-- a focused `.gcss` subset with type/class/ID, descendant/direct-child selectors, specificity, inheritance, source order, typed values, layout values, and native pseudo states;
+- a focused `.gcss` subset with type/class/ID, descendant/direct-child selectors, specificity, inheritance, source order, case-sensitive custom properties, typed `calc()`, layout values, and native pseudo states;
 - `CascadeDocument`, which builds the running native UI directly from paired source files;
 - content-based source watching with automatic runtime reloads;
 - `.gxml`/`.gcss` import resources plus a docked live preview, Inspector summary, dependency/invalidation-aware layout debugger, and source navigation;
@@ -200,7 +203,7 @@ GodotCascade is not the only declarative UI project for Godot. The closest alter
 | Primary model | Focused GXML + GCSS | HTML/CSS + Vue-style directives | Compiled JSX-like GDScript + hooks | QML/XAML-like Godot .NET markup |
 | Runtime output | Native `Control` tree | Native `Control` tree | Any instantiable Godot `Node` | Built-in Godot `Control` types |
 | State updates | Typed paths, targeted invalidation, opt-in write-back | Automatic reactive store + expressions | Fiber rendering, hooks, signals, context | Generated one/two-way C# bindings |
-| Styling | Constrained cascade with deterministic box/flex/grid/table layout | Broad CSS-like surface with variables, calculations, transforms, gradients, SVG, and fonts | Godot properties, themes, state styleboxes | Godot properties through generated markup |
+| Styling | Constrained cascade with custom properties, typed calculations, and deterministic box/flex/grid/table layout | Broad CSS-like surface with variables, calculations, transforms, gradients, SVG, and fonts | Godot properties, themes, state styleboxes | Godot properties through generated markup |
 | Reload model | Last-valid candidate + keyed native reconciliation | Live reactive reconciliation | Fast Refresh with hook-state preservation | Compile-time Roslyn generation |
 | Main trade-off | Small language and explicit unsupported diagnostics | Broader runtime and expression surface | React-scale framework and concepts | Requires Godot .NET |
 
@@ -211,7 +214,7 @@ Choose GodotCascade when you want a reviewable source format, native controls, C
 - automatic dependency-tracked reactivity; mutations still require an explicit full or named-path invalidation;
 - general expressions and Vue/JSX-style control flow beyond exact boolean path conditions;
 - an open vocabulary covering every built-in `Control` or arbitrary `Node`;
-- broad CSS features such as variables, `calc()`, opacity, transforms, gradients, custom fonts, and inline SVG;
+- broader CSS features such as opacity, transforms, gradients, custom fonts, inline SVG, percentages, and browser-wide value functions;
 - `autofocus`, authored tab order, modal focus traps, and higher-level routing;
 - hooks, context, effects, Suspense, memoization, time-slicing, and declarative item-model adapters;
 - virtualized large collections;
@@ -435,7 +438,7 @@ The next pipeline is intentionally validation-first:
 
 1. **Public validation:** submit the prepared 0.5 testing-level Asset Library entry after maintainer approval, share the native live-reload artifact, and compare one production-shaped UI directly with GTML.
 2. **Focused reactivity and composition:** completed observable path invalidation, broader bound properties, exact conditions, reusable typed GXML components, and dependency/invalidation traces in the debugger.
-3. **Language and editor depth:** the highest-value missing style primitives, focus traps/tab order, and real completion/hover/rename/go-to-definition tooling.
+3. **Language and editor depth:** completed focused custom properties and typed `calc()`; next are the highest-value missing style primitives, focus traps/tab order, and real completion/hover/rename/go-to-definition tooling.
 4. **Scale and platform confidence:** collection-only updates, item models and virtualization, representative benchmarks, multi-platform CI, and manual IME/touch/screen-reader certification.
 
 The detailed acceptance criteria and remaining engineering findings live in the [roadmap](ROADMAP.md).

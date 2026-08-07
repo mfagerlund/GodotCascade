@@ -209,7 +209,11 @@ static func _parse_rule(
 		if separator < 1:
 			diagnostics.append(_diagnostic(source, offset, "Invalid declaration '%s'." % declaration))
 			continue
-		var property_name := declaration.substr(0, separator).strip_edges().to_lower()
+		var authored_property_name := declaration.substr(0, separator).strip_edges()
+		var property_name := authored_property_name if authored_property_name.begins_with("--") else authored_property_name.to_lower()
+		if property_name.begins_with("--") and not _valid_custom_property_name(property_name):
+			diagnostics.append(_diagnostic(source, body_offset + declaration_start, "Invalid custom-property name '%s'." % property_name))
+			continue
 		var value := declaration.substr(separator + 1).strip_edges()
 		if value.is_empty():
 			diagnostics.append(_diagnostic(source, offset, "Property '%s' has no value." % property_name))
@@ -221,6 +225,17 @@ static func _parse_rule(
 			"column": location["column"],
 		}
 	return rule
+
+
+static func _valid_custom_property_name(value: String) -> bool:
+	if value.length() < 3:
+		return false
+	for cursor in range(2, value.length()):
+		var character := value[cursor]
+		var lowered := character.to_lower()
+		if character not in ["-", "_"] and not (lowered >= "a" and lowered <= "z") and not (character >= "0" and character <= "9"):
+			return false
+	return true
 
 
 static func _specificity(compounds: PackedStringArray, pseudo_state: String) -> int:

@@ -1,6 +1,6 @@
 # GodotCascade documentation
 
-GodotCascade 0.5.0 is the current experimental preview; `main` additionally includes reusable typed GXML components with slots and scoped IDs plus dependency/invalidation traces in the layout debugger. The preview includes targeted binding invalidation, native state bindings, exact boolean conditions, typed C# generation, semantic tables, native scrolling, and scoped repeated forms. Documentation distinguishes the supported focused surface from intentionally unsupported browser features.
+GodotCascade 0.5.0 is the current experimental preview; `main` additionally includes reusable typed GXML components with slots and scoped IDs, dependency/invalidation traces in the layout debugger, case-sensitive GCSS custom properties, and typed `calc()` arithmetic. The preview includes targeted binding invalidation, native state bindings, exact boolean conditions, typed C# generation, semantic tables, native scrolling, and scoped repeated forms. Documentation distinguishes the supported focused surface from intentionally unsupported browser features.
 
 ## Start here
 
@@ -13,13 +13,14 @@ GodotCascade 0.5.0 is the current experimental preview; `main` additionally incl
 - [TextInput certification matrix](text-input-certification.md) — automated evidence and platform-dependent limits
 - [Native control compatibility tiers](compatibility-tiers.md) — exact, adapted, and layout-only classification and diagnostics
 - [Style system](style-system.md) — token spans, typed values, selectors, inheritance, computed caching, and theme adapters
+- [Custom properties / calc experiment](artifacts/custom-properties-calc-experiments-2026-08-07.md) — selected semantics, rejected approaches, regressions, performance, and verification evidence
 - [Markup and state](markup-and-state.md) — reusable typed GXML components, slots, scoped IDs, keyed repeats, events, and native custom-component lifecycle
 - [Editor tooling](editor-tooling.md) — importers, live preview, generated-control Inspector, debugger, and source navigation
 - [Production readiness](production-readiness.md) — transitions, responsive rules, navigation, accessibility, and release gates
 - [Release process](release-process.md) — reproducible packaging, clean-install smoke testing, and tag publishing
 - [Asset Library submission](asset-library-submission.md) — copy-ready 0.5.0 metadata, direct assets, and verified preflight
 - [Changelog](../CHANGELOG.md) — versioned user-visible changes
-- [Performance budgets](performance.md) — executable 500-item benchmark and allocation ceilings
+- [Performance budgets](performance.md) — executable 500-item baseline/expression benchmark and allocation ceilings
 - [Migration notes](migrations.md) — source/API compatibility and upgrade instructions
 - [Public preview stability policy](api-stability.md) — current guarantees, unstable surfaces, and change process
 - [Roadmap](../ROADMAP.md) — completed preview, typed-binding, semantic-table, and publication milestones plus ongoing platform certification

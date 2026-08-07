@@ -6,7 +6,7 @@
     {
       "id": "layout-foundation",
       "title": "Layout foundation",
-      "summary": "Reusable typed feature cards exercising slots, scoped IDs, fractional grid tracks, stack overlays, flex flow, box styling, and native controls.",
+      "summary": "Reusable typed feature cards exercising inherited custom properties, typed calc arithmetic, slots, fractional grid tracks, stack overlays, and native controls.",
       "viewport": [960, 540],
       "html": "examples/showcase/layout_foundation/reference.html",
       "gxml": "examples/showcase/layout_foundation/interface.gxml",
@@ -21,6 +21,8 @@
         [".cards > .card", ".cards > .card", "Direct-child selector matching"],
         ["@media (max-width: 700px)", "@media (max-width: 700px)", "Viewport-conditional recomputation"],
         ["7vh", "7vh", "Viewport-aware length resolution"],
+        ["--accent / var()", "--accent / var()", "Cascaded, inherited custom-property resolution"],
+        ["calc(var(--section-gap) * 1)", "calc(var(--section-gap) * 1)", "Typed length arithmetic before native application"],
         ["position: absolute", "<Stack> + right/top", "Overlay inset placement"],
         ["visual media", "<Image src=\"res://…\">", "CascadeImage cover crop"],
         ["padding / gap", "padding / column-gap", "CascadeStyle + layout request"],

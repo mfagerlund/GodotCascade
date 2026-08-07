@@ -19,15 +19,17 @@ The GCSS pipeline keeps syntax, selector matching, typed values, computed declar
 
 Transition properties consume time values and normalize seconds/milliseconds to a duration in seconds.
 
+`GcssExpression` owns the focused functional layer. It substitutes lazy `var()` references against the element/state custom-property environment, then evaluates complete typed `calc()` expressions. Arithmetic preserves NUMBER, LENGTH, or TIME dimensions; viewport lengths normalize using both active viewport axes. Unsupported or incompatible operations return recoverable errors rather than untyped strings.
+
 ## Selectors and inheritance
 
-Type, class, ID, descendant, and direct-child (`>`) selectors participate in specificity and source order. `color` and `font-size` inherit through the authored GXML element tree. An explicit `inherit` value requests the parent result; at the root it resolves to the component default.
+Type, class, ID, descendant, and direct-child (`>`) selectors participate in specificity and source order. `color`, `font-size`, and all case-sensitive `--custom` declarations inherit through the authored GXML element tree. An explicit `inherit` value requests the parent result; at the root it resolves to the component default. State custom properties form an overlay on the element's base environment.
 
-Shorthands expand before cascade winner selection. The supported expansion set is padding and margin edges, solid border width/color, and one- or two-value gap into row/column gaps. This ensures a later or more-specific longhand competes with the corresponding expanded property.
+Custom references resolve before shorthands expand and before ordinary winner selection. The supported expansion set is padding and margin edges, solid border width/color, transition property/time, and one- or two-value gap into row/column gaps. Invalid variable-backed shorthands still reserve their conceptual longhands and carry one cached origin diagnostic. This prevents a lower longhand from reappearing when a winning shorthand is invalid.
 
 ## Computed cache
 
-Computed declarations are cached by the stylesheet revision and the element's type/ID/class ancestry signature. Equivalent rebuilds reuse immutable computed dictionaries. Integrations that mutate selector inputs can invalidate only affected entries:
+Computed declarations are cached by the stylesheet revision, both viewport dimensions, and the element's type/ID/class ancestry signature. Equivalent rebuilds reuse immutable computed dictionaries, including variable-resolution diagnostics. Integrations that mutate selector inputs can invalidate only affected entries:
 
 ```gdscript
 const ComputedStyleCache := preload("res://addons/godot_cascade/style/computed_style_cache.gd")
