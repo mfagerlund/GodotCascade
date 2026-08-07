@@ -158,7 +158,9 @@ jobs:
           $actual = (Get-FileHash -Algorithm SHA512 $archive).Hash.ToLowerInvariant()
           if (-not $expected -or $actual -ne $expected.ToLowerInvariant()) { throw "SHA-512 mismatch for $archive" }
           Expand-Archive -LiteralPath $archive -DestinationPath godot-dist
-          Move-Item -LiteralPath "godot-dist/Godot_v$env:RELEASE`_win64_console.exe" -Destination "$env:RUNNER_TEMP/godot.exe"
+          # The console wrapper validates its companion executable's original
+          # name. Use the main binary directly for --headless after renaming.
+          Move-Item -LiteralPath "godot-dist/Godot_v$env:RELEASE`_win64.exe" -Destination "$env:RUNNER_TEMP/godot.exe"
           Add-Content -LiteralPath $env:GITHUB_PATH -Value $env:RUNNER_TEMP
 
       - name: Install Godot on macOS
