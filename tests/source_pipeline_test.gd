@@ -52,6 +52,7 @@ func _run() -> void:
 	_test_stack_pipeline()
 	_test_grid_pipeline()
 	_test_table_pipeline()
+	_test_scroll_pipeline()
 	_test_review_regressions()
 	_test_parser_recovery()
 	_test_binding_resolver()
@@ -541,6 +542,27 @@ func _test_table_pipeline() -> void:
 	var invalid_markup := GxmlParser.parse("<Table><Label>Not a row</Label></Table>")
 	var invalid_build := CascadeBuilder.build(invalid_markup["root"], [])
 	_expect_true("table rejects non-row children", _has_error_diagnostics(invalid_build["diagnostics"]))
+	if invalid_build["root"] != null:
+		invalid_build["root"].free()
+
+
+func _test_scroll_pipeline() -> void:
+	var markup := GxmlParser.parse("<Scroll id=\"results-scroll\"><Table><TableRow><TableCell>Result</TableCell></TableRow></Table></Scroll>")
+	var stylesheet := GcssParser.parse("Scroll { min-height: 120px; flex-grow: 1; background: #101827; border: 1px solid #2b3b57; }")
+	var build := CascadeBuilder.build(markup["root"], stylesheet["rules"])
+	_expect_int("scroll parser diagnostics", markup["diagnostics"].size(), 0)
+	_expect_int("scroll stylesheet diagnostics", stylesheet["diagnostics"].size(), 0)
+	_expect_int("scroll builder diagnostics", build["diagnostics"].size(), 0)
+	var scroll: Control = build["root"]
+	if scroll != null:
+		_expect_true("scroll builds native viewport", scroll is ScrollContainer)
+		_expect_true("scroll is an adapted native control", scroll.get_meta("cascade_compatibility_tier") == "adapted")
+		_expect_float("scroll retains authored minimum height", scroll.get("cascade_style").min_height, 120.0)
+		scroll.free()
+
+	var invalid_markup := GxmlParser.parse("<Scroll><Label>One</Label><Label>Two</Label></Scroll>")
+	var invalid_build := CascadeBuilder.build(invalid_markup["root"], [])
+	_expect_true("scroll rejects multiple content children", _has_error_diagnostics(invalid_build["diagnostics"]))
 	if invalid_build["root"] != null:
 		invalid_build["root"].free()
 

@@ -19,6 +19,7 @@ const CascadeLabel := preload("res://addons/godot_cascade/components/cascade_lab
 const CascadePanel := preload("res://addons/godot_cascade/components/cascade_panel.gd")
 const CascadeProgress := preload("res://addons/godot_cascade/components/cascade_progress.gd")
 const CascadeImage := preload("res://addons/godot_cascade/components/cascade_image.gd")
+const CascadeScroll := preload("res://addons/godot_cascade/components/cascade_scroll.gd")
 const CascadeTable := preload("res://addons/godot_cascade/components/cascade_table.gd")
 const CascadeTablePart := preload("res://addons/godot_cascade/components/cascade_table_part.gd")
 const CascadeTableCell := preload("res://addons/godot_cascade/components/cascade_table_cell.gd")
@@ -41,6 +42,7 @@ func _run() -> void:
 	_test_grid_track_engine()
 	await _test_native_grid_layout()
 	await _test_native_table_layout()
+	await _test_native_scroll_overflow()
 	await _test_shared_style_invalidation()
 	await _test_layout_container_hover_state()
 	await _test_overflow_and_align_self()
@@ -300,6 +302,24 @@ func _test_native_table_layout() -> void:
 	_expect_true("authored table cell controls retain keyboard focus", cell_action.focus_mode == Control.FOCUS_ALL and cell_action.size.x > 0.0)
 	_expect_true("table cell exposes native accessibility description", body_cells[0].accessibility_description == "Table cell")
 	table.queue_free()
+
+
+func _test_native_scroll_overflow() -> void:
+	var scroll := CascadeScroll.new()
+	scroll.size = Vector2(220.0, 90.0)
+	scroll.cascade_style.min_width = 100.0
+	scroll.cascade_style.min_height = 60.0
+	root.add_child(scroll)
+	var content := Control.new()
+	content.custom_minimum_size = Vector2(200.0, 260.0)
+	scroll.add_child(content)
+	await process_frame
+	await process_frame
+	_expect_true("scroll viewport does not inherit content height", scroll.get_combined_minimum_size().y < content.get_combined_minimum_size().y)
+	_expect_true("scroll content fills the horizontal viewport", content.size.x >= scroll.size.x - scroll.get_v_scroll_bar().size.x)
+	_expect_true("scroll viewport exposes automatic vertical overflow", scroll.get_v_scroll_bar().visible and scroll.get_v_scroll_bar().max_value > scroll.size.y)
+	_expect_true("scroll viewport disables horizontal overflow", scroll.horizontal_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED)
+	scroll.queue_free()
 
 
 func _test_shared_style_invalidation() -> void:

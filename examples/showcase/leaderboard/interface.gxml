@@ -9,36 +9,38 @@
         <Label class="subtitle">Add, remove, sort, or drag pilots while keyed rows reconcile in place.</Label>
     </Column>
 
-    <Table id="leaderboard" accessible-label="Flight leaderboard">
-        <TableHeader>
-            <TableRow>
-                <TableHeaderCell></TableHeaderCell>
-                <TableHeaderCell>Rank</TableHeaderCell>
-                <TableHeaderCell>Pilot</TableHeaderCell>
-                <TableHeaderCell>Division</TableHeaderCell>
-                <TableHeaderCell>Wins</TableHeaderCell>
-                <TableHeaderCell>Rating</TableHeaderCell>
-                <TableHeaderCell>Action</TableHeaderCell>
-            </TableRow>
-        </TableHeader>
-        <TableBody>
-            <Repeat items="{entries}" key="id">
-                <TableRow class="pilot-row">
-                    <TableCell class="drag-cell">
-                        <Button class="drag-handle" accessible-label="Drag pilot to reorder">↕</Button>
-                    </TableCell>
-                    <TableCell class="rank-cell" text="{item.rank}" />
-                    <TableCell class="pilot-cell" text="{item.pilot}" />
-                    <TableCell text="{item.division}" />
-                    <TableCell class="wins-cell" text="{item.wins}" />
-                    <TableCell class="rating-cell" text="{item.rating}" />
-                    <TableCell class="action-cell">
-                        <Button class="remove-pilot" accessible-label="Remove pilot">Remove</Button>
-                    </TableCell>
+    <Scroll id="leaderboard-scroll" class="table-scroll">
+        <Table id="leaderboard" accessible-label="Flight leaderboard">
+            <TableHeader>
+                <TableRow>
+                    <TableHeaderCell></TableHeaderCell>
+                    <TableHeaderCell>Rank</TableHeaderCell>
+                    <TableHeaderCell>Pilot</TableHeaderCell>
+                    <TableHeaderCell>Division</TableHeaderCell>
+                    <TableHeaderCell>Wins</TableHeaderCell>
+                    <TableHeaderCell>Rating</TableHeaderCell>
+                    <TableHeaderCell>Action</TableHeaderCell>
                 </TableRow>
-            </Repeat>
-        </TableBody>
-    </Table>
+            </TableHeader>
+            <TableBody>
+                <Repeat items="{entries}" key="id">
+                    <TableRow class="pilot-row">
+                        <TableCell class="drag-cell">
+                            <Button class="drag-handle" accessible-label="Drag pilot to reorder">↕</Button>
+                        </TableCell>
+                        <TableCell class="rank-cell" text="{item.rank}" />
+                        <TableCell class="pilot-cell" text="{item.pilot}" />
+                        <TableCell text="{item.division}" />
+                        <TableCell class="wins-cell" text="{item.wins}" />
+                        <TableCell class="rating-cell" text="{item.rating}" />
+                        <TableCell class="action-cell">
+                            <Button class="remove-pilot" accessible-label="Remove pilot">Remove</Button>
+                        </TableCell>
+                    </TableRow>
+                </Repeat>
+            </TableBody>
+        </Table>
+    </Scroll>
 
     <Row class="leaderboard-footer">
         <Label id="leaderboard-status" class="status" text="{status}" />

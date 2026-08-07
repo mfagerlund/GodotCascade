@@ -1089,9 +1089,9 @@ Option:selected { background: #16233a; color: #ffffff; }
 
       <div class="comparison">
         <section class="render-column">
-          <div class="render-label"><span>HTML reference</span><small><a href="references/leaderboard-84fa9d726222.html" target="_blank" rel="noreferrer">Open reference</a></small></div>
+          <div class="render-label"><span>HTML reference</span><small><a href="references/leaderboard-031b3ab58b5f.html" target="_blank" rel="noreferrer">Open reference</a></small></div>
           <div class="render-frame" data-viewport-width="960" data-viewport-height="540" style="--viewport-width:960px; --viewport-height:540px; aspect-ratio:960/540">
-            <iframe width="960" height="540" title="HTML rendering of Flight leaderboard" src="references/leaderboard-84fa9d726222.html"></iframe>
+            <iframe width="960" height="540" title="HTML rendering of Flight leaderboard" src="references/leaderboard-031b3ab58b5f.html"></iframe>
           </div>
         </section>
         <section class="render-column">
@@ -1108,7 +1108,7 @@ Option:selected { background: #16233a; color: #ffffff; }
         </div>
         <table>
           <thead><tr><th>HTML/CSS</th><th>GodotCascade source</th><th>Runtime</th></tr></thead>
-          <tbody><tr><td><code>&lt;table&gt;</code></td><td><code>&lt;Table&gt;</code></td><td><code>CascadeTable shared track layout</code></td></tr><tr><td><code>&lt;thead&gt; / &lt;tbody&gt;</code></td><td><code>TableHeader / TableBody</code></td><td><code>Semantic structural containers</code></td></tr><tr><td><code>&lt;tr&gt;</code></td><td><code>TableRow</code></td><td><code>Shared row placement</code></td></tr><tr><td><code>&lt;th scope=col&gt;</code></td><td><code>TableHeaderCell</code></td><td><code>Column-header accessibility metadata</code></td></tr><tr><td><code>&lt;td&gt;</code></td><td><code>TableCell</code></td><td><code>Owned box/text cell</code></td></tr><tr><td><code>&lt;colgroup&gt;</code></td><td><code>grid-template-columns</code></td><td><code>Fixed/fraction/minmax tracks</code></td></tr><tr><td><code>tbody rows</code></td><td><code>Repeat items={entries} key=id</code></td><td><code>Keyed native row expansion</code></td></tr><tr><td><code>cell text</code></td><td><code>text={item.path}</code></td><td><code>Scoped one-way binding</code></td></tr><tr><td><code>add / remove</code></td><td><code>Array mutation + renderRows()</code></td><td><code>Typed model mutation + refresh_bindings()</code></td></tr><tr><td><code>sort</code></td><td><code>Array.sort()</code></td><td><code>Array.sort_custom() + keyed reconciliation</code></td></tr><tr><td><code>drag rows</code></td><td><code>HTML drag events</code></td><td><code>Control drag forwarding + stable item keys</code></td></tr></tbody>
+          <tbody><tr><td><code>&lt;table&gt;</code></td><td><code>&lt;Table&gt;</code></td><td><code>CascadeTable shared track layout</code></td></tr><tr><td><code>overflow: auto</code></td><td><code>Scroll</code></td><td><code>Native ScrollContainer viewport</code></td></tr><tr><td><code>&lt;thead&gt; / &lt;tbody&gt;</code></td><td><code>TableHeader / TableBody</code></td><td><code>Semantic structural containers</code></td></tr><tr><td><code>&lt;tr&gt;</code></td><td><code>TableRow</code></td><td><code>Shared row placement</code></td></tr><tr><td><code>&lt;th scope=col&gt;</code></td><td><code>TableHeaderCell</code></td><td><code>Column-header accessibility metadata</code></td></tr><tr><td><code>&lt;td&gt;</code></td><td><code>TableCell</code></td><td><code>Owned box/text cell</code></td></tr><tr><td><code>&lt;colgroup&gt;</code></td><td><code>grid-template-columns</code></td><td><code>Fixed/fraction/minmax tracks</code></td></tr><tr><td><code>tbody rows</code></td><td><code>Repeat items={entries} key=id</code></td><td><code>Keyed native row expansion</code></td></tr><tr><td><code>cell text</code></td><td><code>text={item.path}</code></td><td><code>Scoped one-way binding</code></td></tr><tr><td><code>add / remove</code></td><td><code>Array mutation + renderRows()</code></td><td><code>Typed model mutation + refresh_bindings()</code></td></tr><tr><td><code>sort</code></td><td><code>Array.sort()</code></td><td><code>Array.sort_custom() + keyed reconciliation</code></td></tr><tr><td><code>drag rows</code></td><td><code>Captured pointer events</code></td><td><code>Captured GUI input + stable item keys</code></td></tr></tbody>
         </table>
       </section>
 
@@ -1134,7 +1134,7 @@ Option:selected { background: #16233a; color: #ffffff; }
     h1 { margin:0; flex:1; color:#f2f5fb; font-size:30px; font-weight:400; }
     .subtitle { margin:0; color:#8d9bb5; font-size:14px; }
     .live-pill { min-width:108px; padding:6px 10px; background:#132b26; border:1px solid #286452; border-radius:99px; color:#75e0b4; font-size:10px; text-align:center; white-space:nowrap; }
-    .table-shell { flex:1; overflow:hidden; border:1px solid #2b3b57; border-radius:12px; background:#101827; }
+    .table-shell { flex:1; min-height:180px; overflow:auto; border:1px solid #2b3b57; border-radius:12px; background:#101827; scrollbar-color:#3b557e #101827; scrollbar-width:thin; }
     table { width:100%; border-collapse:separate; border-spacing:0; table-layout:fixed; }
     col.drag { width:40px; } col.rank { width:54px; } col.pilot { width:auto; } col.division { width:130px; } col.wins { width:58px; } col.rating { width:76px; } col.action { width:88px; }
     th { height:38px; padding:9px 12px; color:#8fa3c4; font-size:11px; font-weight:400; text-align:left; background:#172237; border:0; border-bottom:1px solid #2b3b57; }
@@ -1142,7 +1142,7 @@ Option:selected { background: #16233a; color: #ffffff; }
     td:last-child { border-right:0; } tbody tr:last-child td { border-bottom:0; }
     tbody tr.drag-over td { background:#172a46; }
     .drag-cell,.action-cell { padding:5px; text-align:center; }
-    .drag-handle,.remove-pilot { min-width:28px; min-height:32px; padding:4px 7px; color:#8fa3c4; background:#101827; border:1px solid #314361; border-radius:6px; font:inherit; cursor:grab; }
+    .drag-handle,.remove-pilot { min-width:28px; min-height:32px; padding:4px 7px; color:#8fa3c4; background:#101827; border:1px solid #314361; border-radius:6px; font:inherit; cursor:grab; touch-action:none; user-select:none; }
     .drag-handle:active { cursor:grabbing; }
     .remove-pilot { min-width:76px; color:#f2b8b5; background:#24171d; border-color:#66313c; cursor:pointer; }
     .remove-pilot:hover { background:#382029; }
@@ -1187,38 +1187,78 @@ Option:selected { background: #16233a; color: #ffffff; }
     const status = document.querySelector(&#x27;#status&#x27;);
     let nextPilot = 0;
     let draggedId = null;
+    let dragTargetId = null;
+
+    function clearDragTarget() {
+      document.querySelectorAll(&#x27;.drag-over&#x27;).forEach(item =&gt; item.classList.remove(&#x27;drag-over&#x27;));
+      dragTargetId = null;
+    }
+
+    function updateDragTarget(clientX,clientY) {
+      clearDragTarget();
+      const row = document.elementFromPoint(clientX,clientY)?.closest(&#x27;#leaderboard-body tr&#x27;);
+      if (!row) return;
+      dragTargetId = row.dataset.id;
+      if (dragTargetId !== draggedId) row.classList.add(&#x27;drag-over&#x27;);
+    }
+
+    function moveBefore(sourceId,targetId) {
+      const sourceIndex = entries.findIndex(item =&gt; item.id === sourceId);
+      let targetIndex = entries.findIndex(item =&gt; item.id === targetId);
+      if (sourceIndex &lt; 0 || targetIndex &lt; 0 || sourceIndex === targetIndex) return false;
+      const [moved] = entries.splice(sourceIndex,1);
+      if (sourceIndex &lt; targetIndex) targetIndex--;
+      entries.splice(targetIndex,0,moved);
+      status.textContent = `Moved ${moved.pilot} · standings manually reordered`;
+      renderRows();
+      return true;
+    }
+
+    function moveBy(entryId,offset) {
+      const sourceIndex = entries.findIndex(item =&gt; item.id === entryId);
+      const targetIndex = Math.max(0,Math.min(entries.length-1,sourceIndex+offset));
+      if (sourceIndex &lt; 0 || sourceIndex === targetIndex) return;
+      const [moved] = entries.splice(sourceIndex,1);
+      entries.splice(targetIndex,0,moved);
+      status.textContent = `Moved ${moved.pilot} · standings manually reordered`;
+      renderRows();
+    }
 
     function renderRows() {
       body.replaceChildren(...entries.map((entry,index) =&gt; {
         const row = document.createElement(&#x27;tr&#x27;);
         row.dataset.id = entry.id;
-        row.innerHTML = `&lt;td class=&quot;drag-cell&quot;&gt;&lt;button class=&quot;drag-handle&quot; draggable=&quot;true&quot; aria-label=&quot;Drag ${entry.pilot} to reorder&quot;&gt;↕&lt;/button&gt;&lt;/td&gt;&lt;td&gt;${index+1}&lt;/td&gt;&lt;td&gt;${entry.pilot}&lt;/td&gt;&lt;td&gt;${entry.division}&lt;/td&gt;&lt;td&gt;${entry.wins}&lt;/td&gt;&lt;td&gt;${entry.rating}&lt;/td&gt;&lt;td class=&quot;action-cell&quot;&gt;&lt;button class=&quot;remove-pilot&quot; aria-label=&quot;Remove ${entry.pilot}&quot;&gt;Remove&lt;/button&gt;&lt;/td&gt;`;
+        row.innerHTML = `&lt;td class=&quot;drag-cell&quot;&gt;&lt;button class=&quot;drag-handle&quot; aria-label=&quot;Drag ${entry.pilot} to reorder; use Up or Down arrow keys for keyboard reordering&quot;&gt;↕&lt;/button&gt;&lt;/td&gt;&lt;td&gt;${index+1}&lt;/td&gt;&lt;td&gt;${entry.pilot}&lt;/td&gt;&lt;td&gt;${entry.division}&lt;/td&gt;&lt;td&gt;${entry.wins}&lt;/td&gt;&lt;td&gt;${entry.rating}&lt;/td&gt;&lt;td class=&quot;action-cell&quot;&gt;&lt;button class=&quot;remove-pilot&quot; aria-label=&quot;Remove ${entry.pilot}&quot;&gt;Remove&lt;/button&gt;&lt;/td&gt;`;
         const handle = row.querySelector(&#x27;.drag-handle&#x27;);
-        handle.addEventListener(&#x27;dragstart&#x27;, event =&gt; {
+        handle.addEventListener(&#x27;pointerdown&#x27;, event =&gt; {
+          if (event.button !== 0) return;
+          event.preventDefault();
           draggedId = entry.id;
-          event.dataTransfer.effectAllowed = &#x27;move&#x27;;
-          event.dataTransfer.setData(&#x27;text/plain&#x27;, entry.id);
+          dragTargetId = entry.id;
+          handle.setPointerCapture(event.pointerId);
         });
-        handle.addEventListener(&#x27;dragend&#x27;, () =&gt; {
+        handle.addEventListener(&#x27;pointermove&#x27;, event =&gt; {
+          if (draggedId !== entry.id) return;
+          updateDragTarget(event.clientX,event.clientY);
+        });
+        handle.addEventListener(&#x27;pointerup&#x27;, event =&gt; {
+          if (draggedId !== entry.id) return;
+          updateDragTarget(event.clientX,event.clientY);
+          const sourceId = draggedId;
+          const targetId = dragTargetId;
           draggedId = null;
-          document.querySelectorAll(&#x27;.drag-over&#x27;).forEach(item =&gt; item.classList.remove(&#x27;drag-over&#x27;));
+          clearDragTarget();
+          if (handle.hasPointerCapture(event.pointerId)) handle.releasePointerCapture(event.pointerId);
+          moveBefore(sourceId,targetId);
         });
-        row.addEventListener(&#x27;dragover&#x27;, event =&gt; {
-          if (!draggedId || draggedId === entry.id) return;
-          event.preventDefault();
-          row.classList.add(&#x27;drag-over&#x27;);
+        handle.addEventListener(&#x27;pointercancel&#x27;, () =&gt; {
+          draggedId = null;
+          clearDragTarget();
         });
-        row.addEventListener(&#x27;dragleave&#x27;, () =&gt; row.classList.remove(&#x27;drag-over&#x27;));
-        row.addEventListener(&#x27;drop&#x27;, event =&gt; {
+        handle.addEventListener(&#x27;keydown&#x27;, event =&gt; {
+          if (event.key !== &#x27;ArrowUp&#x27; &amp;&amp; event.key !== &#x27;ArrowDown&#x27;) return;
           event.preventDefault();
-          const sourceIndex = entries.findIndex(item =&gt; item.id === draggedId);
-          let targetIndex = entries.findIndex(item =&gt; item.id === entry.id);
-          if (sourceIndex &lt; 0 || targetIndex &lt; 0 || sourceIndex === targetIndex) return;
-          const [moved] = entries.splice(sourceIndex,1);
-          if (sourceIndex &lt; targetIndex) targetIndex--;
-          entries.splice(targetIndex,0,moved);
-          status.textContent = `Moved ${moved.pilot} · standings manually reordered`;
-          renderRows();
+          moveBy(entry.id,event.key === &#x27;ArrowUp&#x27; ? -1 : 1);
         });
         row.querySelector(&#x27;.remove-pilot&#x27;).addEventListener(&#x27;click&#x27;, () =&gt; {
           entries.splice(entries.findIndex(item =&gt; item.id === entry.id),1);
@@ -1235,10 +1275,6 @@ Option:selected { background: #16233a; color: #ffffff; }
       renderRows();
     });
     document.querySelector(&#x27;#add-pilot&#x27;).addEventListener(&#x27;click&#x27;, () =&gt; {
-      if (entries.length &gt;= 6) {
-        status.textContent = &#x27;Table holds six pilots · remove one to add another&#x27;;
-        return;
-      }
       const template = newPilots[nextPilot % newPilots.length];
       const cycle = Math.floor(nextPilot / newPilots.length);
       nextPilot++;
@@ -1267,36 +1303,38 @@ Option:selected { background: #16233a; color: #ffffff; }
         &lt;Label class=&quot;subtitle&quot;&gt;Add, remove, sort, or drag pilots while keyed rows reconcile in place.&lt;/Label&gt;
     &lt;/Column&gt;
 
-    &lt;Table id=&quot;leaderboard&quot; accessible-label=&quot;Flight leaderboard&quot;&gt;
-        &lt;TableHeader&gt;
-            &lt;TableRow&gt;
-                &lt;TableHeaderCell&gt;&lt;/TableHeaderCell&gt;
-                &lt;TableHeaderCell&gt;Rank&lt;/TableHeaderCell&gt;
-                &lt;TableHeaderCell&gt;Pilot&lt;/TableHeaderCell&gt;
-                &lt;TableHeaderCell&gt;Division&lt;/TableHeaderCell&gt;
-                &lt;TableHeaderCell&gt;Wins&lt;/TableHeaderCell&gt;
-                &lt;TableHeaderCell&gt;Rating&lt;/TableHeaderCell&gt;
-                &lt;TableHeaderCell&gt;Action&lt;/TableHeaderCell&gt;
-            &lt;/TableRow&gt;
-        &lt;/TableHeader&gt;
-        &lt;TableBody&gt;
-            &lt;Repeat items=&quot;{entries}&quot; key=&quot;id&quot;&gt;
-                &lt;TableRow class=&quot;pilot-row&quot;&gt;
-                    &lt;TableCell class=&quot;drag-cell&quot;&gt;
-                        &lt;Button class=&quot;drag-handle&quot; accessible-label=&quot;Drag pilot to reorder&quot;&gt;↕&lt;/Button&gt;
-                    &lt;/TableCell&gt;
-                    &lt;TableCell class=&quot;rank-cell&quot; text=&quot;{item.rank}&quot; /&gt;
-                    &lt;TableCell class=&quot;pilot-cell&quot; text=&quot;{item.pilot}&quot; /&gt;
-                    &lt;TableCell text=&quot;{item.division}&quot; /&gt;
-                    &lt;TableCell class=&quot;wins-cell&quot; text=&quot;{item.wins}&quot; /&gt;
-                    &lt;TableCell class=&quot;rating-cell&quot; text=&quot;{item.rating}&quot; /&gt;
-                    &lt;TableCell class=&quot;action-cell&quot;&gt;
-                        &lt;Button class=&quot;remove-pilot&quot; accessible-label=&quot;Remove pilot&quot;&gt;Remove&lt;/Button&gt;
-                    &lt;/TableCell&gt;
+    &lt;Scroll id=&quot;leaderboard-scroll&quot; class=&quot;table-scroll&quot;&gt;
+        &lt;Table id=&quot;leaderboard&quot; accessible-label=&quot;Flight leaderboard&quot;&gt;
+            &lt;TableHeader&gt;
+                &lt;TableRow&gt;
+                    &lt;TableHeaderCell&gt;&lt;/TableHeaderCell&gt;
+                    &lt;TableHeaderCell&gt;Rank&lt;/TableHeaderCell&gt;
+                    &lt;TableHeaderCell&gt;Pilot&lt;/TableHeaderCell&gt;
+                    &lt;TableHeaderCell&gt;Division&lt;/TableHeaderCell&gt;
+                    &lt;TableHeaderCell&gt;Wins&lt;/TableHeaderCell&gt;
+                    &lt;TableHeaderCell&gt;Rating&lt;/TableHeaderCell&gt;
+                    &lt;TableHeaderCell&gt;Action&lt;/TableHeaderCell&gt;
                 &lt;/TableRow&gt;
-            &lt;/Repeat&gt;
-        &lt;/TableBody&gt;
-    &lt;/Table&gt;
+            &lt;/TableHeader&gt;
+            &lt;TableBody&gt;
+                &lt;Repeat items=&quot;{entries}&quot; key=&quot;id&quot;&gt;
+                    &lt;TableRow class=&quot;pilot-row&quot;&gt;
+                        &lt;TableCell class=&quot;drag-cell&quot;&gt;
+                            &lt;Button class=&quot;drag-handle&quot; accessible-label=&quot;Drag pilot to reorder&quot;&gt;↕&lt;/Button&gt;
+                        &lt;/TableCell&gt;
+                        &lt;TableCell class=&quot;rank-cell&quot; text=&quot;{item.rank}&quot; /&gt;
+                        &lt;TableCell class=&quot;pilot-cell&quot; text=&quot;{item.pilot}&quot; /&gt;
+                        &lt;TableCell text=&quot;{item.division}&quot; /&gt;
+                        &lt;TableCell class=&quot;wins-cell&quot; text=&quot;{item.wins}&quot; /&gt;
+                        &lt;TableCell class=&quot;rating-cell&quot; text=&quot;{item.rating}&quot; /&gt;
+                        &lt;TableCell class=&quot;action-cell&quot;&gt;
+                            &lt;Button class=&quot;remove-pilot&quot; accessible-label=&quot;Remove pilot&quot;&gt;Remove&lt;/Button&gt;
+                        &lt;/TableCell&gt;
+                    &lt;/TableRow&gt;
+                &lt;/Repeat&gt;
+            &lt;/TableBody&gt;
+        &lt;/Table&gt;
+    &lt;/Scroll&gt;
 
     &lt;Row class=&quot;leaderboard-footer&quot;&gt;
         &lt;Label id=&quot;leaderboard-status&quot; class=&quot;status&quot; text=&quot;{status}&quot; /&gt;
@@ -1326,15 +1364,22 @@ Option:selected { background: #16233a; color: #ffffff; }
 .live-pill { min-width: 108px; padding: 6px 10px; background: #132b26; border: 1px solid #286452; border-radius: 99px; }
 .live-text { color: #75e0b4; font-size: 10px; }
 
+.table-scroll {
+    min-height: 180px;
+    background: #101827;
+    border: 1px solid #2b3b57;
+    border-radius: 12px;
+    flex-grow: 1;
+}
+
 Table {
     grid-template-columns: 40px 54px minmax(140px, 1fr) minmax(100px, 0.7fr) 58px 76px 88px;
     column-gap: 0px;
     row-gap: 0px;
     background: #101827;
-    border: 1px solid #2b3b57;
-    border-radius: 12px;
+    border: 0px solid #2b3b57;
+    border-radius: 11px;
     overflow: clip;
-    flex-grow: 1;
 }
 
 TableHeaderCell {
@@ -1396,6 +1441,8 @@ TableCell {
 const LeaderboardState := preload(&quot;res://examples/showcase/leaderboard/leaderboard_state.gd&quot;)
 
 var model := LeaderboardState.new()
+var _drag_source_id := &quot;&quot;
+var _drag_target_id := &quot;&quot;
 
 
 func _ready() -&gt; void:
@@ -1406,10 +1453,6 @@ func _ready() -&gt; void:
 
 
 func _on_add_pilot() -&gt; void:
-	if model.entries.size() &gt;= 6:
-		model.status = &quot;Table holds six pilots · remove one to add another&quot;
-		refresh_bindings()
-		return
 	var entry: LeaderboardState.Entry = model.add_pilot()
 	model.status = &quot;Added %s · drag a handle to reorder&quot; % entry.pilot
 	refresh_bindings()
@@ -1448,68 +1491,80 @@ func _wire_row_interactions() -&gt; void:
 		remove_button.pressed.connect(callback)
 		remove_button.set_meta(&quot;showcase_remove_callback&quot;, callback)
 
-	for row in _find_by_class(root, &quot;pilot-row&quot;):
-		var entry := _scoped_entry(row)
-		if entry == null:
-			continue
-		row.set_drag_forwarding(
-			_no_drag_data,
-			_can_drop_pilot.bind(entry.id),
-			_drop_pilot.bind(entry.id)
-		)
-		for cell in row.get_children():
-			if cell is Control:
-				cell.set_drag_forwarding(
-					_no_drag_data,
-					_can_drop_pilot.bind(entry.id),
-					_drop_pilot.bind(entry.id)
-				)
-
 	for handle in _find_by_class(root, &quot;drag-handle&quot;):
 		var entry := _scoped_entry(handle)
 		if entry == null:
 			continue
 		handle.mouse_default_cursor_shape = Control.CURSOR_MOVE
-		handle.set_drag_forwarding(
-			_get_pilot_drag_data.bind(handle, entry.id, entry.pilot),
-			_no_drop,
-			_ignore_drop
-		)
+		var previous: Callable = handle.get_meta(&quot;showcase_drag_callback&quot;, Callable())
+		if previous.is_valid() and handle.gui_input.is_connected(previous):
+			handle.gui_input.disconnect(previous)
+		var callback := _on_drag_handle_input.bind(handle, entry.id)
+		handle.gui_input.connect(callback)
+		handle.set_meta(&quot;showcase_drag_callback&quot;, callback)
 
 
-func _get_pilot_drag_data(_position: Vector2, handle: Control, entry_id: String, pilot: String) -&gt; Variant:
-	var preview := Label.new()
-	preview.text = &quot;Move %s&quot; % pilot
-	preview.add_theme_color_override(&quot;font_color&quot;, Color(&quot;f2f5fb&quot;))
-	preview.add_theme_color_override(&quot;font_shadow_color&quot;, Color(&quot;0a0f19&quot;))
-	preview.add_theme_constant_override(&quot;shadow_offset_x&quot;, 1)
-	preview.add_theme_constant_override(&quot;shadow_offset_y&quot;, 1)
-	handle.set_drag_preview(preview)
-	return {&quot;kind&quot;: &quot;leaderboard-pilot&quot;, &quot;id&quot;: entry_id, &quot;pilot&quot;: pilot}
+func _on_drag_handle_input(event: InputEvent, handle: Control, entry_id: String) -&gt; void:
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		if event.pressed:
+			_drag_source_id = entry_id
+			_update_drag_target(handle.get_global_mouse_position())
+		else:
+			_update_drag_target(handle.get_global_mouse_position())
+			_commit_pointer_drag()
+		handle.accept_event()
+	elif event is InputEventMouseMotion and not _drag_source_id.is_empty():
+		_update_drag_target(handle.get_global_mouse_position())
+		handle.accept_event()
+	elif event is InputEventKey and event.pressed and not event.echo:
+		if event.is_action_pressed(&quot;ui_up&quot;):
+			_move_pilot_by(entry_id, -1)
+			handle.accept_event()
+		elif event.is_action_pressed(&quot;ui_down&quot;):
+			_move_pilot_by(entry_id, 1)
+			handle.accept_event()
 
 
-func _can_drop_pilot(_position: Vector2, data: Variant, target_id: String) -&gt; bool:
-	return data is Dictionary and data.get(&quot;kind&quot;, &quot;&quot;) == &quot;leaderboard-pilot&quot; and data.get(&quot;id&quot;, &quot;&quot;) != target_id
-
-
-func _drop_pilot(_position: Vector2, data: Variant, target_id: String) -&gt; void:
-	if not _can_drop_pilot(Vector2.ZERO, data, target_id):
+func _update_drag_target(global_position: Vector2) -&gt; void:
+	_drag_target_id = &quot;&quot;
+	var root := generated_root()
+	if root == null:
 		return
-	if model.move_before(str(data[&quot;id&quot;]), target_id):
-		model.status = &quot;Moved %s · standings manually reordered&quot; % data.get(&quot;pilot&quot;, &quot;pilot&quot;)
+	for row in _find_by_class(root, &quot;pilot-row&quot;):
+		var entry := _scoped_entry(row)
+		var targeted := entry != null and row.get_global_rect().has_point(global_position)
+		row.modulate = Color(&quot;c7dcff&quot;) if targeted else Color.WHITE
+		if targeted:
+			_drag_target_id = entry.id
+
+
+func _commit_pointer_drag() -&gt; void:
+	var source_id := _drag_source_id
+	var target_id := _drag_target_id
+	_clear_drag_state()
+	if source_id.is_empty() or target_id.is_empty() or source_id == target_id:
+		return
+	var pilot := model.pilot_name(source_id)
+	if model.move_before(source_id, target_id):
+		model.status = &quot;Moved %s · standings manually reordered&quot; % pilot
 		refresh_bindings()
 
 
-func _no_drag_data(_position: Vector2) -&gt; Variant:
-	return null
+func _move_pilot_by(entry_id: String, offset: int) -&gt; void:
+	var pilot := model.pilot_name(entry_id)
+	if model.move_by(entry_id, offset):
+		model.status = &quot;Moved %s · standings manually reordered&quot; % pilot
+		refresh_bindings()
 
 
-func _no_drop(_position: Vector2, _data: Variant) -&gt; bool:
-	return false
-
-
-func _ignore_drop(_position: Vector2, _data: Variant) -&gt; void:
-	pass
+func _clear_drag_state() -&gt; void:
+	_drag_source_id = &quot;&quot;
+	_drag_target_id = &quot;&quot;
+	var root := generated_root()
+	if root == null:
+		return
+	for row in _find_by_class(root, &quot;pilot-row&quot;):
+		row.modulate = Color.WHITE
 
 
 func _scoped_entry(control: Control) -&gt; LeaderboardState.Entry:

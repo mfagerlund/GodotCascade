@@ -87,6 +87,23 @@ func move_before(source_id: String, target_id: String) -> bool:
 	return true
 
 
+func move_by(entry_id: String, offset: int) -> bool:
+	var source_index := _entry_index(entry_id)
+	var target_index := clampi(source_index + offset, 0, entries.size() - 1)
+	if source_index < 0 or source_index == target_index:
+		return false
+	var entry := entries[source_index]
+	entries.remove_at(source_index)
+	entries.insert(target_index, entry)
+	rerank()
+	return true
+
+
+func pilot_name(entry_id: String) -> String:
+	var index := _entry_index(entry_id)
+	return entries[index].pilot if index >= 0 else "pilot"
+
+
 func rerank() -> void:
 	for index in entries.size():
 		entries[index].rank = index + 1

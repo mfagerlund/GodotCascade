@@ -199,4 +199,5 @@ The first public preview should build a small settings menu from `.gxml` and a s
 - [x] Repeated row binding with stable keys
 - [x] HTML/native showcase parity page and component/layout regression matrix
 - [x] Application-level add, remove, sort, and drag-reorder demo over keyed rows
+- [x] Native `Scroll` viewport with automatic vertical overflow for growing tables
 - [x] Document explicit boundaries for sorting, selection, resizing, and virtualization

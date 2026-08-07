@@ -3,6 +3,8 @@ extends "res://addons/godot_cascade/runtime/cascade_document.gd"
 const LeaderboardState := preload("res://examples/showcase/leaderboard/leaderboard_state.gd")
 
 var model := LeaderboardState.new()
+var _drag_source_id := ""
+var _drag_target_id := ""
 
 
 func _ready() -> void:
@@ -13,10 +15,6 @@ func _ready() -> void:
 
 
 func _on_add_pilot() -> void:
-	if model.entries.size() >= 6:
-		model.status = "Table holds six pilots · remove one to add another"
-		refresh_bindings()
-		return
 	var entry: LeaderboardState.Entry = model.add_pilot()
 	model.status = "Added %s · drag a handle to reorder" % entry.pilot
 	refresh_bindings()
@@ -55,68 +53,80 @@ func _wire_row_interactions() -> void:
 		remove_button.pressed.connect(callback)
 		remove_button.set_meta("showcase_remove_callback", callback)
 
-	for row in _find_by_class(root, "pilot-row"):
-		var entry := _scoped_entry(row)
-		if entry == null:
-			continue
-		row.set_drag_forwarding(
-			_no_drag_data,
-			_can_drop_pilot.bind(entry.id),
-			_drop_pilot.bind(entry.id)
-		)
-		for cell in row.get_children():
-			if cell is Control:
-				cell.set_drag_forwarding(
-					_no_drag_data,
-					_can_drop_pilot.bind(entry.id),
-					_drop_pilot.bind(entry.id)
-				)
-
 	for handle in _find_by_class(root, "drag-handle"):
 		var entry := _scoped_entry(handle)
 		if entry == null:
 			continue
 		handle.mouse_default_cursor_shape = Control.CURSOR_MOVE
-		handle.set_drag_forwarding(
-			_get_pilot_drag_data.bind(handle, entry.id, entry.pilot),
-			_no_drop,
-			_ignore_drop
-		)
+		var previous: Callable = handle.get_meta("showcase_drag_callback", Callable())
+		if previous.is_valid() and handle.gui_input.is_connected(previous):
+			handle.gui_input.disconnect(previous)
+		var callback := _on_drag_handle_input.bind(handle, entry.id)
+		handle.gui_input.connect(callback)
+		handle.set_meta("showcase_drag_callback", callback)
 
 
-func _get_pilot_drag_data(_position: Vector2, handle: Control, entry_id: String, pilot: String) -> Variant:
-	var preview := Label.new()
-	preview.text = "Move %s" % pilot
-	preview.add_theme_color_override("font_color", Color("f2f5fb"))
-	preview.add_theme_color_override("font_shadow_color", Color("0a0f19"))
-	preview.add_theme_constant_override("shadow_offset_x", 1)
-	preview.add_theme_constant_override("shadow_offset_y", 1)
-	handle.set_drag_preview(preview)
-	return {"kind": "leaderboard-pilot", "id": entry_id, "pilot": pilot}
+func _on_drag_handle_input(event: InputEvent, handle: Control, entry_id: String) -> void:
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		if event.pressed:
+			_drag_source_id = entry_id
+			_update_drag_target(handle.get_global_mouse_position())
+		else:
+			_update_drag_target(handle.get_global_mouse_position())
+			_commit_pointer_drag()
+		handle.accept_event()
+	elif event is InputEventMouseMotion and not _drag_source_id.is_empty():
+		_update_drag_target(handle.get_global_mouse_position())
+		handle.accept_event()
+	elif event is InputEventKey and event.pressed and not event.echo:
+		if event.is_action_pressed("ui_up"):
+			_move_pilot_by(entry_id, -1)
+			handle.accept_event()
+		elif event.is_action_pressed("ui_down"):
+			_move_pilot_by(entry_id, 1)
+			handle.accept_event()
 
 
-func _can_drop_pilot(_position: Vector2, data: Variant, target_id: String) -> bool:
-	return data is Dictionary and data.get("kind", "") == "leaderboard-pilot" and data.get("id", "") != target_id
-
-
-func _drop_pilot(_position: Vector2, data: Variant, target_id: String) -> void:
-	if not _can_drop_pilot(Vector2.ZERO, data, target_id):
+func _update_drag_target(global_position: Vector2) -> void:
+	_drag_target_id = ""
+	var root := generated_root()
+	if root == null:
 		return
-	if model.move_before(str(data["id"]), target_id):
-		model.status = "Moved %s · standings manually reordered" % data.get("pilot", "pilot")
+	for row in _find_by_class(root, "pilot-row"):
+		var entry := _scoped_entry(row)
+		var targeted := entry != null and row.get_global_rect().has_point(global_position)
+		row.modulate = Color("c7dcff") if targeted else Color.WHITE
+		if targeted:
+			_drag_target_id = entry.id
+
+
+func _commit_pointer_drag() -> void:
+	var source_id := _drag_source_id
+	var target_id := _drag_target_id
+	_clear_drag_state()
+	if source_id.is_empty() or target_id.is_empty() or source_id == target_id:
+		return
+	var pilot := model.pilot_name(source_id)
+	if model.move_before(source_id, target_id):
+		model.status = "Moved %s · standings manually reordered" % pilot
 		refresh_bindings()
 
 
-func _no_drag_data(_position: Vector2) -> Variant:
-	return null
+func _move_pilot_by(entry_id: String, offset: int) -> void:
+	var pilot := model.pilot_name(entry_id)
+	if model.move_by(entry_id, offset):
+		model.status = "Moved %s · standings manually reordered" % pilot
+		refresh_bindings()
 
 
-func _no_drop(_position: Vector2, _data: Variant) -> bool:
-	return false
-
-
-func _ignore_drop(_position: Vector2, _data: Variant) -> void:
-	pass
+func _clear_drag_state() -> void:
+	_drag_source_id = ""
+	_drag_target_id = ""
+	var root := generated_root()
+	if root == null:
+		return
+	for row in _find_by_class(root, "pilot-row"):
+		row.modulate = Color.WHITE
 
 
 func _scoped_entry(control: Control) -> LeaderboardState.Entry:

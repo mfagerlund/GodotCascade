@@ -15,15 +15,22 @@
 .live-pill { min-width: 108px; padding: 6px 10px; background: #132b26; border: 1px solid #286452; border-radius: 99px; }
 .live-text { color: #75e0b4; font-size: 10px; }
 
+.table-scroll {
+    min-height: 180px;
+    background: #101827;
+    border: 1px solid #2b3b57;
+    border-radius: 12px;
+    flex-grow: 1;
+}
+
 Table {
     grid-template-columns: 40px 54px minmax(140px, 1fr) minmax(100px, 0.7fr) 58px 76px 88px;
     column-gap: 0px;
     row-gap: 0px;
     background: #101827;
-    border: 1px solid #2b3b57;
-    border-radius: 12px;
+    border: 0px solid #2b3b57;
+    border-radius: 11px;
     overflow: clip;
-    flex-grow: 1;
 }
 
 TableHeaderCell {

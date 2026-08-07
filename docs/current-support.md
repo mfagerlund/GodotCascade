@@ -24,6 +24,7 @@ This page documents the executable subset on `main`. GodotCascade borrows produc
 | `Progress` | `CascadeProgress` | Owned horizontal track, fill, range, and box model |
 | `Image` | `CascadeImage` | Texture resource rendering with contain, cover, fill, or intrinsic crop geometry |
 | `Repeat` | `CascadeBox` plus expanded template | One child template repeated from an array binding with optional item key |
+| `Scroll` | `CascadeScroll` | Adapted native `ScrollContainer` with automatic vertical overflow |
 | `Table` | `CascadeTable` | Shared column measurement across semantic header and body rows |
 | `TableHeader` / `TableBody` | `CascadeTablePart` | Non-focusable semantic row groups |
 | `TableRow` | `CascadeTablePart` | Non-focusable semantic row container arranged by its table |
@@ -32,6 +33,8 @@ This page documents the executable subset on `main`. GodotCascade borrows produc
 Every element accepts `id`, `class`, `accessible-label`, and `accessible-description`. Text-bearing controls use their visible text as the native accessibility name when no explicit label is authored. `Label`, `Button`, `Checkbox`, `RadioButton`, `Switch`, `TableHeaderCell`, and `TableCell` accept text as element content or through a `text` attribute. Interactive controls accept boolean `disabled`; toggle controls accept boolean `checked`; radio buttons use `group` to share a native `ButtonGroup`. `Select` accepts `selected` as an option value or zero-based index; `Option` accepts `value` and boolean `disabled`. `Progress` and `Slider` accept numeric `min`, `max`, and `value`; `Slider` also accepts a positive `step`. `TextInput` accepts `text`, `placeholder`, boolean `read-only`, `disabled`, `required`, and `multiline`, non-negative `max-length`, a Godot regular-expression `pattern`, and `error-message`. `secret` is supported only by the single-line adapter and is an error with `multiline="true"`. `Image` requires a `src` path that loads a Godot `Texture2D` resource.
 
 Unknown elements are build errors unless their native factory is registered through `ComponentRegistry`. `Window` is not implemented.
+
+`Scroll` requires exactly one content child. It disables horizontal scrolling, adds a native vertical scrollbar when that child's intrinsic height exceeds the available viewport, and maps the supported box-model appearance through Godot's `ScrollContainer` panel style.
 
 ### Tables
 
@@ -62,7 +65,7 @@ Unknown elements are build errors unless their native factory is registered thro
 
 Cells accept direct text, `text`, one-way text bindings, accessibility attributes, and authored child controls. Authored children fill the cell content box and retain their own keyboard behavior. Table structure and cells are not focusable themselves, so interactive cell contents remain in ordinary document focus order. Header/cell semantic roles are retained as `cascade_table_role` metadata; native accessibility names and descriptions remain available through the normal attributes. Style the table and cells for exact padding, background, border, size, color, and font behavior. Header/body/row structural nodes support background and border painting but do not introduce padding or independent sizing.
 
-This is a semantic display table, not a data-grid widget. Sorting, row/cell selection, column resizing/reordering, sticky headers, pagination, and virtualization remain application-level or future component work.
+This is a semantic display table, not a data-grid widget. Wrap it in `Scroll` when repeated rows may exceed the available height. Sorting and row reordering remain application-level operations, as demonstrated by the leaderboard showcase; row/cell selection, column resizing/reordering, sticky headers, pagination, and virtualization remain application-level or future component work.
 
 ## Bindings
 
@@ -188,7 +191,7 @@ Unsupported properties produce warnings; unsupported values for known properties
 
 ## Component support
 
-Implemented exact components are `CascadeBox`, `CascadeGrid`, `CascadeStack`, `CascadePanel`, `CascadeLabel`, `CascadeImage`, `CascadeButton`, `CascadeCheckbox`, `CascadeRadioButton`, `CascadeSwitch`, `CascadeSelect`, `CascadeSlider`, `CascadeProgress`, `CascadeTable`, and `CascadeTableCell`. `CascadeTablePart` is structural. `CascadeTextInput` and `CascadeTextArea` are adapted: native `LineEdit`/`TextEdit` own editing behavior while Cascade maps the documented box and state surface. Exact means GodotCascade owns the supported measurement and visual semantics.
+Implemented exact components are `CascadeBox`, `CascadeGrid`, `CascadeStack`, `CascadePanel`, `CascadeLabel`, `CascadeImage`, `CascadeButton`, `CascadeCheckbox`, `CascadeRadioButton`, `CascadeSwitch`, `CascadeSelect`, `CascadeSlider`, `CascadeProgress`, `CascadeTable`, and `CascadeTableCell`. `CascadeTablePart` is structural. `CascadeScroll`, `CascadeTextInput`, and `CascadeTextArea` are adapted: native `ScrollContainer`, `LineEdit`, and `TextEdit` own scrolling or editing behavior while Cascade maps each documented style surface. Exact means GodotCascade owns the supported measurement and visual semantics.
 
 Ordinary Godot `Control` children are layout-only by default. Integrations can declare an adapted property surface; `CompatibilityRegistry` reports warnings for inexact or unsupported visual mappings while permitting layout properties. See the [compatibility tier reference](compatibility-tiers.md) and [ADR 0001](decisions/0001-owned-core-controls.md).
 

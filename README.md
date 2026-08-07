@@ -162,7 +162,7 @@ Godot .NET projects can also declare `@Name` bindings in GXML and generate a dis
 
 ## Components and interactive states
 
-The executable GXML elements are `Page`, `Row`, `Column`, `Panel`, `Label`, `Button`, `Checkbox`, `RadioButton`/`Radio`, `Switch`, `Select`/`Option`, `Slider`, `Progress`, semantic `Table` header/body/row/cell elements, and the adapted `TextInput`. GodotCascade owns the measurement and drawing of its exact components while native `LineEdit` and `TextEdit` continue to own single-line and multiline editing behavior.
+The executable GXML elements are `Page`, `Row`, `Column`, `Panel`, `Label`, `Button`, `Checkbox`, `RadioButton`/`Radio`, `Switch`, `Select`/`Option`, `Slider`, `Progress`, `Scroll`, semantic `Table` header/body/row/cell elements, and the adapted `TextInput`. GodotCascade owns the measurement and drawing of its exact components while native `ScrollContainer`, `LineEdit`, and `TextEdit` retain scrolling and editing behavior behind documented adapters.
 
 Button state selectors respond dynamically to Godot's native interaction state:
 

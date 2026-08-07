@@ -131,11 +131,12 @@ func _verify_leaderboard_page(app: Control) -> void:
 	var scene: Control = app.call("current_showcase_scene")
 	_expect_document_ready("leaderboard", scene)
 	var table := _find_by_id(scene, "leaderboard")
+	var scroll := _find_by_id(scene, "leaderboard-scroll") as ScrollContainer
 	var add_button := _find_by_id(scene, "add-pilot")
 	var sort_button := _find_by_id(scene, "sort-rating")
 	var pilots := _find_all_by_class(scene, "pilot-cell")
-	_expect_true("leaderboard native table and collection controls exist", table != null and add_button != null and sort_button != null and pilots.size() == 5)
-	if table == null or add_button == null or sort_button == null or pilots.size() != 5:
+	_expect_true("leaderboard native table, scroll viewport, and collection controls exist", table != null and scroll != null and add_button != null and sort_button != null and pilots.size() == 5)
+	if table == null or scroll == null or add_button == null or sort_button == null or pilots.size() != 5:
 		return
 	_expect_true("leaderboard starts with bound first pilot", pilots[0].get("text") == "Rhea Sol")
 	add_button.emit_signal("pressed")
@@ -145,21 +146,33 @@ func _verify_leaderboard_page(app: Control) -> void:
 	pilots = _find_all_by_class(scene, "pilot-cell")
 	_expect_true("leaderboard add event creates a keyed row", pilots.size() == 6 and pilots[-1].get("text") == "Nia Ward")
 	_expect_true("leaderboard add event refreshes bound status", status != null and str(status.get("text")).begins_with("Added Nia Ward"))
+	for _index in 2:
+		add_button = _find_by_id(scene, "add-pilot")
+		add_button.emit_signal("pressed")
+		await process_frame
+		await process_frame
+	scroll = _find_by_id(scene, "leaderboard-scroll") as ScrollContainer
+	pilots = _find_all_by_class(scene, "pilot-cell")
+	_expect_true("leaderboard accepts additional keyed rows", pilots.size() == 8)
+	_expect_true("leaderboard automatically scrolls overflowing rows", scroll != null and scroll.get_v_scroll_bar().visible and scroll.get_v_scroll_bar().max_value > scroll.size.y)
 
 	var remove_buttons := _find_all_by_class(scene, "remove-pilot")
-	_expect_true("leaderboard wires one remove action per row", remove_buttons.size() == 6)
+	_expect_true("leaderboard wires one remove action per row", remove_buttons.size() == 8)
 	if not remove_buttons.is_empty():
 		remove_buttons[0].emit_signal("pressed")
 		await process_frame
 		await process_frame
 		pilots = _find_all_by_class(scene, "pilot-cell")
-		_expect_true("leaderboard remove action deletes its keyed row", pilots.size() == 5 and pilots[0].get("text") == "Milo Vance")
+		_expect_true("leaderboard remove action deletes its keyed row", pilots.size() == 7 and pilots[0].get("text") == "Milo Vance")
 
-	scene.call("_drop_pilot", Vector2.ZERO, {"kind": "leaderboard-pilot", "id": "nia-1", "pilot": "Nia Ward"}, "milo")
+	scene.set("_drag_source_id", "nia-1")
+	var target_row := pilots[0].get_parent() as Control
+	scene.call("_update_drag_target", target_row.get_global_rect().get_center())
+	scene.call("_commit_pointer_drag")
 	await process_frame
 	await process_frame
 	pilots = _find_all_by_class(scene, "pilot-cell")
-	_expect_true("leaderboard drag drop reorders keyed rows", pilots.size() == 5 and pilots[0].get("text") == "Nia Ward")
+	_expect_true("leaderboard pointer reorder moves keyed rows", pilots.size() == 7 and pilots[0].get("text") == "Nia Ward")
 
 	sort_button = _find_by_id(scene, "sort-rating")
 	sort_button.emit_signal("pressed")
@@ -167,8 +180,8 @@ func _verify_leaderboard_page(app: Control) -> void:
 	await process_frame
 	pilots = _find_all_by_class(scene, "pilot-cell")
 	var ranks := _find_all_by_class(scene, "rank-cell")
-	_expect_true("leaderboard sort restores descending rating order", pilots.size() == 5 and pilots[0].get("text") == "Milo Vance")
-	_expect_true("leaderboard sort reranks rows", ranks.size() == 5 and ranks[0].get("text") == "1")
+	_expect_true("leaderboard sort restores descending rating order", pilots.size() == 7 and pilots[0].get("text") == "Milo Vance")
+	_expect_true("leaderboard sort reranks rows", ranks.size() == 7 and ranks[0].get("text") == "1")
 
 
 func _expect_document_ready(label: String, scene: Control) -> void:

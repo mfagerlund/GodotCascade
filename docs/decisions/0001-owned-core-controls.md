@@ -25,6 +25,7 @@ Examples:
 | `CascadePanel` | Implemented | `CascadeBox` / `Container` | container lifecycle and child layout notifications | semantic component identity plus shared box/flex behavior |
 | `CascadeImage` | Implemented | `Control` | native texture resources | contain/cover/fill/intrinsic crop geometry, clipping, drawing, and box model |
 | `CascadeTable` / `CascadeTableCell` | Implemented | `Container` with internal native `Label` for text cells | container lifecycle, text shaping, authored child input/accessibility | shared semantic column layout, cell box model, and header/body/row projection |
+| `CascadeScroll` | Implemented adapter | `ScrollContainer` | wheel/touch scrolling, clipping, focus following, and scrollbars | bounded minimum-size contract and supported panel box styling |
 
 The form-control roadmap follows the same rule:
 

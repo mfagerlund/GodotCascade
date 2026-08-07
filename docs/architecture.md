@@ -56,6 +56,8 @@ Layout has two conceptual passes:
 
 `CascadeTable` reuses grid track resolution but owns semantic row grouping. It flattens visible cells only for one shared column/row calculation, then projects the resulting rectangles back through `TableHeader`, `TableBody`, repeated row groups, and `TableRow` containers. Cells own their box/text measurement; structural containers remain non-focusable and do not compete with authored interactive cell content.
 
+`CascadeScroll` is a narrow adapter over native `ScrollContainer`. Its minimum-size contract deliberately excludes the content child's height, allowing flex layout to allocate a bounded viewport while Godot owns wheel, touch, scrollbar, focus-following, and clipping behavior.
+
 ### Data binding
 
 Exact `{dot.separated.path}` attribute values are stored as metadata on the generated native control. `BindingResolver` traverses dictionaries, arrays, or Godot object properties only; it does not evaluate expressions or invoke methods. `CascadeDocument` applies bindings after initial construction and after reconciliation, so authored reloads and data refreshes share stable native instances. Assigning a context refreshes immediately, while nested state changes use the explicit `refresh_bindings()` boundary until reactive adapters are introduced.

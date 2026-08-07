@@ -6,6 +6,7 @@ All notable changes to GodotCascade are documented here. Versions follow semanti
 
 - Added optional typed C# binding generation from GXML, including partial getter/setter contracts, verbatim formatter/parser bodies, source-mapped compiler diagnostics, native signal wiring, and hot-reload reconnection.
 - Added semantic native tables with shared fixed/content/fraction/minmax columns, header/body/row/cell structure, keyed repeated rows, accessible cell metadata, and a runnable HTML/Godot leaderboard parity page.
+- Added an adapted native `Scroll` viewport with automatic vertical overflow, plus reliable captured-pointer and keyboard row reordering in the dynamic add/remove/sort leaderboard demo.
 - Replaced Dictionary-backed settings showcase state with typed Godot object models and made typed models the recommended binding pattern.
 - Added an end-to-end binding guide covering one-way paths, writable forms, dependent refresh, events, repeated scopes, validation, diagnostics, limits, and C# integration.
 - Made the settings showcase's two-way write-back visible through live one-way labels bound to the same profile, quality, scale, and shadow values.

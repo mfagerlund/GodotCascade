@@ -17,6 +17,7 @@ const CascadeSlider := preload("res://addons/godot_cascade/components/cascade_sl
 const CascadeTextInput := preload("res://addons/godot_cascade/components/cascade_text_input.gd")
 const CascadeTextArea := preload("res://addons/godot_cascade/components/cascade_text_area.gd")
 const CascadeImage := preload("res://addons/godot_cascade/components/cascade_image.gd")
+const CascadeScroll := preload("res://addons/godot_cascade/components/cascade_scroll.gd")
 const CascadeTable := preload("res://addons/godot_cascade/components/cascade_table.gd")
 const CascadeTablePart := preload("res://addons/godot_cascade/components/cascade_table_part.gd")
 const CascadeTableCell := preload("res://addons/godot_cascade/components/cascade_table_cell.gd")
@@ -51,6 +52,7 @@ static func _build_element(
 	key_scope: String = ""
 ) -> Control:
 	_validate_table_relation(element, diagnostics)
+	_validate_scroll_relation(element, diagnostics)
 	var control: Control
 	if element.tag_name.to_lower() == "repeat" and element.children.size() == 1 and element.children[0].tag_name.to_lower() == "tablerow":
 		control = CascadeTablePart.new()
@@ -75,10 +77,14 @@ static func _build_element(
 	control.set_meta("cascade_transition_properties", PackedStringArray())
 	control.set_meta("cascade_transition_duration", 0.0)
 	control.set_meta("cascade_explicit_accessible_label", false)
-	var compatibility_tier := "layout-only" if ComponentRegistry.has(element.tag_name) else ("adapted" if _is_text_input(control) else "exact")
+	var compatibility_tier := "layout-only" if ComponentRegistry.has(element.tag_name) else ("adapted" if _is_text_input(control) or control is CascadeScroll else "exact")
 	control.set_meta("cascade_compatibility_tier", compatibility_tier)
 	if _is_text_input(control):
 		control.set_meta("cascade_adapted_properties", PackedStringArray(["background", "border", "color", "font-size", "padding"]))
+	elif control is CascadeScroll:
+		control.set_meta("cascade_adapted_properties", PackedStringArray([
+			"background", "background-color", "border", "border-color", "border-width", "border-radius", "padding",
+		]))
 
 	_apply_attributes(control, element.attributes, element.text, diagnostics, button_groups)
 	if element.tag_name.to_lower() == "row":
@@ -195,6 +201,8 @@ static func _create_control(tag_name: String, diagnostics: Array[Dictionary], at
 			return CascadeTextArea.new() if _raw_boolean_attribute(attributes, "multiline") else CascadeTextInput.new()
 		"image":
 			return CascadeImage.new()
+		"scroll":
+			return CascadeScroll.new()
 		"table":
 			var table := CascadeTable.new()
 			table.set_meta("cascade_table_role", "table")
@@ -269,6 +277,14 @@ static func _validate_table_relation(element, diagnostics: Array[Dictionary]) ->
 		element.children.size() != 1 or element.children[0].tag_name.to_lower() != "tablerow"
 	):
 		diagnostics.append(_diagnostic("error", "Repeat inside table structure must contain exactly one TableRow template."))
+
+
+static func _validate_scroll_relation(element, diagnostics: Array[Dictionary]) -> void:
+	if element.tag_name.to_lower() != "scroll":
+		return
+	var content_children: Array = element.children.filter(func(child): return child.tag_name.to_lower() != "bindings")
+	if content_children.size() != 1:
+		diagnostics.append(_diagnostic("error", "<Scroll> requires exactly one content child."))
 
 
 static func _compute_declarations(element, rule_index: Dictionary) -> Dictionary:
