@@ -1,0 +1,19 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "GodotCascade GCSS",
+  "scopeName": "source.gcss",
+  "patterns": [
+    {"name": "comment.block.gcss", "begin": "/\\*", "end": "\\*/"},
+    {"name": "keyword.control.at-rule.gcss", "match": "@media\\b"},
+    {"name": "entity.other.attribute-name.class.gcss", "match": "\\.[A-Za-z_][A-Za-z0-9_-]*"},
+    {"name": "entity.other.attribute-name.id.gcss", "match": "#[A-Za-z_][A-Za-z0-9_-]*(?=\\s*[:.{>,])"},
+    {"name": "entity.other.attribute-name.pseudo-class.gcss", "match": ":(?:hover|pressed|checked|focused|focus-visible|disabled|selected|open|invalid)\\b"},
+    {"name": "variable.other.custom-property.gcss", "match": "--[A-Za-z_][A-Za-z0-9_-]*"},
+    {"name": "support.type.property-name.gcss", "match": "[A-Za-z-]+(?=\\s*:)"},
+    {"name": "support.function.gcss", "match": "\\b(?:var|calc|linear-gradient|minmax|translate|rotate|scale)\\b(?=\\()"},
+    {"name": "constant.numeric.gcss", "match": "[-+]?(?:\\d+(?:\\.\\d+)?|\\.\\d+)(?:px|vw|vh|ms|s|fr|deg)?\\b"},
+    {"name": "constant.other.color.rgb-value.gcss", "match": "#[0-9A-Fa-f]{3,8}\\b"},
+    {"name": "string.quoted.double.gcss", "begin": "\"", "end": "\"", "patterns": [{"name": "constant.character.escape.gcss", "match": "\\\\."}]},
+    {"name": "string.quoted.single.gcss", "begin": "'", "end": "'", "patterns": [{"name": "constant.character.escape.gcss", "match": "\\\\."}]}
+  ]
+}

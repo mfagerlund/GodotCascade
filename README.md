@@ -185,7 +185,7 @@ The repository currently contains several working vertical slices:
 - weighted flex shrink/basis, descendant opacity, container-safe translate/rotate/scale, rounded two-stop gradients, and inherited project-local Font resources;
 - `CascadeDocument`, which builds the running native UI directly from paired source files;
 - content-based source watching with automatic runtime reloads;
-- `.gxml`/`.gcss` import resources plus a docked live preview, Inspector summary, dependency/invalidation-aware layout debugger, and source navigation;
+- `.gxml`/`.gcss` import resources plus a docked live preview, Inspector summary, dependency/invalidation-aware layout debugger, exact source navigation, and a Godot `CodeEdit` language surface;
 - stable ID and structural keys that reconcile edits into the existing native tree;
 - last-valid rendering when an in-progress edit has parser or builder errors;
 - focused `{dot.separated.path}` one-way bindings, explicit writable form bindings, and optional typed C# partial generation;
@@ -219,7 +219,7 @@ Choose GodotCascade when you want a reviewable source format, native controls, C
 - higher-level navigation/routing beyond authored autofocus, tab order, and modal focus traps;
 - hooks, context, effects, Suspense, memoization, time-slicing, and declarative item-model adapters;
 - virtualized large collections;
-- VS Code/Visual Studio language tooling with completion, hover, rename, and go-to-definition.
+- Marketplace distribution and broader cross-file refactors beyond the packaged Godot/VS Code focused language tooling.
 
 Those are roadmap inputs, not promises to reproduce a browser or React. New features must preserve the focused grammar, native behavior, and actionable failure model.
 

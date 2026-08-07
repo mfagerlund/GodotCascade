@@ -25,11 +25,14 @@ const GXML_IMPORTER_SCRIPT := preload("res://addons/godot_cascade/editor/gxml_im
 const GCSS_IMPORTER_SCRIPT := preload("res://addons/godot_cascade/editor/gcss_importer.gd")
 const PREVIEW_DOCK_SCRIPT := preload("res://addons/godot_cascade/editor/cascade_preview_dock.gd")
 const INSPECTOR_PLUGIN_SCRIPT := preload("res://addons/godot_cascade/editor/cascade_inspector_plugin.gd")
+const SOURCE_EDITOR_SCRIPT := preload("res://addons/godot_cascade/editor/cascade_source_editor.gd")
 
 var _gxml_importer: EditorImportPlugin
 var _gcss_importer: EditorImportPlugin
 var _preview_dock: Control
 var _inspector_plugin: EditorInspectorPlugin
+var _source_editor: Control
+var _source_editor_button: Button
 
 
 func _enter_tree() -> void:
@@ -42,6 +45,8 @@ func _enter_tree() -> void:
 	_preview_dock = PREVIEW_DOCK_SCRIPT.new()
 	_preview_dock.source_requested.connect(_on_source_requested)
 	add_control_to_dock(DOCK_SLOT_RIGHT_UL, _preview_dock)
+	_source_editor = SOURCE_EDITOR_SCRIPT.new()
+	_source_editor_button = add_control_to_bottom_panel(_source_editor, "Cascade Source")
 	add_custom_type("CascadeBox", "Container", CASCADE_BOX_SCRIPT, null)
 	add_custom_type("CascadeStack", "Container", CASCADE_STACK_SCRIPT, null)
 	add_custom_type("CascadeGrid", "Container", CASCADE_GRID_SCRIPT, null)
@@ -89,6 +94,11 @@ func _exit_tree() -> void:
 		remove_control_from_docks(_preview_dock)
 		_preview_dock.queue_free()
 		_preview_dock = null
+	if _source_editor != null:
+		remove_control_from_bottom_panel(_source_editor)
+		_source_editor.queue_free()
+		_source_editor = null
+		_source_editor_button = null
 	if _inspector_plugin != null:
 		remove_inspector_plugin(_inspector_plugin)
 		_inspector_plugin = null
@@ -100,7 +110,10 @@ func _exit_tree() -> void:
 		_gxml_importer = null
 
 
-func _on_source_requested(path: String, _line: int, _column: int) -> void:
+func _on_source_requested(path: String, line: int, column: int) -> void:
 	if path.is_empty():
 		return
 	get_editor_interface().get_file_system_dock().navigate_to_path(path)
+	if _source_editor != null:
+		_source_editor.open_source(path, line, column)
+		make_bottom_panel_item_visible(_source_editor)

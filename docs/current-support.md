@@ -247,7 +247,7 @@ Use an `id` when an element must retain identity after sibling reordering. Unkey
 
 ## Editor tooling
 
-The editor plugin imports `.gxml`/`.gcss` sources into diagnostic resources and adds the **Cascade Preview** dock. The dock provides a watched native preview, error/warning status, hierarchy/style/layout rows, and GXML source navigation. Generated controls expose element metadata and resolved rectangles through a custom Inspector summary. See the [editor tooling guide](editor-tooling.md).
+The editor plugin imports `.gxml`/`.gcss` sources and adds **Cascade Preview** plus a dedicated **Cascade Source** `CodeEdit` panel. The source panel provides completion, hover documentation, conservative formatting, same-file definition/rename, and parser/schema diagnostics; preview activation opens the exact source line/column. A packageable VS Code extension provides the same six feature classes. Generated controls expose element metadata and resolved rectangles through a custom Inspector summary. See the [editor tooling guide](editor-tooling.md) and [language tooling guide](language-tooling.md).
 
 ## HTML migration expectations
 

@@ -1,0 +1,56 @@
+{
+  "name": "godot-cascade",
+  "displayName": "GodotCascade",
+  "description": "Focused language support for GodotCascade GXML and GCSS.",
+  "version": "0.1.0",
+  "publisher": "godotcascade",
+  "license": "Unlicense",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mfagerlund/GodotCascade.git"
+  },
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": ["Programming Languages", "Formatters", "Linters"],
+  "keywords": ["godot", "gxml", "gcss", "ui"],
+  "main": "./extension.js",
+  "activationEvents": ["onLanguage:gxml", "onLanguage:gcss", "onCommand:godotCascade.validateWorkspace"],
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "check": "node --check extension.js && node --check core.js && node --test test/*.test.js"
+  },
+  "contributes": {
+    "languages": [
+      {
+        "id": "gxml",
+        "aliases": ["GodotCascade GXML", "GXML"],
+        "extensions": [".gxml"],
+        "configuration": "./language-configuration-gxml.json"
+      },
+      {
+        "id": "gcss",
+        "aliases": ["GodotCascade GCSS", "GCSS"],
+        "extensions": [".gcss"],
+        "configuration": "./language-configuration-gcss.json"
+      }
+    ],
+    "grammars": [
+      {"language": "gxml", "scopeName": "text.gxml", "path": "./syntaxes/gxml.tmLanguage.json"},
+      {"language": "gcss", "scopeName": "source.gcss", "path": "./syntaxes/gcss.tmLanguage.json"}
+    ],
+    "commands": [
+      {"command": "godotCascade.validateWorkspace", "title": "GodotCascade: Validate Open GXML/GCSS Files"}
+    ],
+    "configuration": {
+      "title": "GodotCascade",
+      "properties": {
+        "godotCascade.diagnostics.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Publish focused syntax and support-surface diagnostics for open GXML and GCSS files."
+        }
+      }
+    }
+  }
+}

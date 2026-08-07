@@ -1,0 +1,30 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "GodotCascade GXML",
+  "scopeName": "text.gxml",
+  "patterns": [
+    {"include": "#comments"},
+    {"include": "#cdata"},
+    {"include": "#tags"},
+    {"include": "#bindings"}
+  ],
+  "repository": {
+    "comments": {"patterns": [{"name": "comment.block.gxml", "begin": "<!--", "end": "-->"}]},
+    "cdata": {"patterns": [{"name": "string.unquoted.cdata.gxml", "begin": "<!\\[CDATA\\[", "end": "\\]\\]>"}]},
+    "bindings": {"patterns": [{"name": "variable.other.binding.gxml", "match": "\\{(?:item|index|params|[A-Za-z_])[A-Za-z0-9_.]*\\}"}, {"name": "variable.other.generated.gxml", "match": "@[A-Za-z_][A-Za-z0-9_]*"}]},
+    "tags": {
+      "patterns": [{
+        "name": "meta.tag.gxml",
+        "begin": "(<)(/)?([A-Za-z_][A-Za-z0-9_.:-]*)",
+        "beginCaptures": {"1": {"name": "punctuation.definition.tag.begin.gxml"}, "2": {"name": "punctuation.definition.tag.close.gxml"}, "3": {"name": "entity.name.tag.gxml"}},
+        "end": "(/?>)",
+        "endCaptures": {"1": {"name": "punctuation.definition.tag.end.gxml"}},
+        "patterns": [
+          {"name": "entity.other.attribute-name.gxml", "match": "[A-Za-z_][A-Za-z0-9_-]*(?=\\s*=)"},
+          {"name": "string.quoted.double.gxml", "begin": "\"", "end": "\"", "patterns": [{"include": "#bindings"}]},
+          {"name": "string.quoted.single.gxml", "begin": "'", "end": "'", "patterns": [{"include": "#bindings"}]}
+        ]
+      }]
+    }
+  }
+}

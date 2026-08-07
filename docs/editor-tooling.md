@@ -25,7 +25,11 @@ Hover the binding column for exact property paths, dependency modes, invalidated
 
 The debugger retains only the latest invalidation, not an unbounded event log. `CascadeDocument.last_binding_trace()` exposes the same document-level record to runtime tooling, and `binding_trace_changed(trace)` fires after manual, observable, context-change, and native write-back refreshes. A trace reports its sequence, trigger, paths, `targeted`/`reconcile` strategy, reason, affected control IDs/keys, matched dependency count, success, and reconciliation statistics when applicable.
 
-Double-clicking a row selects its source file in the FileSystem dock and leaves the exact line/column in the preview status. This provides source navigation without pretending `.gxml` is a GDScript resource.
+Double-clicking a row selects its source file in the FileSystem dock and opens the **Cascade Source** panel at the exact authored line/column. This provides real source navigation without pretending `.gxml` is a GDScript resource.
+
+## Source language panel
+
+The **Cascade Source** bottom panel is a Godot-owned `CodeEdit` backed by the same focused GXML/GCSS language service used in headless tests. It opens project paths, marks parser/schema diagnostics, supplies completion and hover documentation, formats only when source meaning can be retained, navigates safe same-file definitions, previews safe rename edits, and saves explicitly. See the [language tooling reference](language-tooling.md) for the exact feature and safety boundaries and the companion VS Code extension.
 
 ## Generated-control Inspector
 

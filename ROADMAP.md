@@ -257,7 +257,7 @@ The first public preview should build a small settings menu from `.gxml` and a s
 - [x] Add the highest-value missing layout/style primitives: flex shrink/basis, opacity, transforms, gradients, and custom fonts
 - [x] Define SVG support through native Godot textures rather than a browser DOM
 - [x] Add authored autofocus, tab order, and modal focus-trap contracts
-- [ ] Provide completion, hover, formatting, go-to-definition, rename, and diagnostics in the Godot editor and VS Code
+- [x] Provide completion, hover, formatting, go-to-definition, rename, and diagnostics in the Godot editor and VS Code
 - [x] Split `cascade_builder.gd` into construction, validation, binding, and declaration-application services first
 
 ## Phase 13 — scale and platform confidence

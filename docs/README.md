@@ -16,6 +16,7 @@ GodotCascade 0.6.0 is the current experimental preview. It includes reusable typ
 - [Custom properties / calc experiment](artifacts/custom-properties-calc-experiments-2026-08-07.md) — selected semantics, rejected approaches, regressions, performance, and verification evidence
 - [Markup and state](markup-and-state.md) — reusable typed GXML components, slots, scoped IDs, keyed repeats, events, and native custom-component lifecycle
 - [Editor tooling](editor-tooling.md) — importers, live preview, generated-control Inspector, debugger, and source navigation
+- [Language tooling](language-tooling.md) — Godot CodeEdit and VS Code completion, hover, format, definition, rename, and diagnostics
 - [Production readiness](production-readiness.md) — transitions, responsive rules, navigation, accessibility, and release gates
 - [Release process](release-process.md) — reproducible packaging, clean-install smoke testing, and tag publishing
 - [Asset Library submission](asset-library-submission.md) — copy-ready 0.6.0 metadata, direct assets, and verified preflight
