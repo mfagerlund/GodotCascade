@@ -26,7 +26,7 @@ These are automated captures of the actual source-generated Godot scenes—not b
 | **Grid, stack, image, and box model** | **Bound telemetry and progress** |
 | ![Godot-rendered layout foundation with three responsive cards](docs/showcase/assets/layout-foundation-godot.png) | ![Godot-rendered telemetry dashboard with bound native progress controls](docs/showcase/assets/system-status-godot.png) |
 
-Run the same pages interactively with `python tools/showcase/run_showcase.py --godot "C:\path\to\godot.exe"`, or open the [HTML/native parity report](docs/showcase/index.html).
+Run the same pages interactively with `python tools/showcase/run_showcase.py --godot "C:\path\to\godot.exe"`, or open the [public HTML/native parity report](https://mfagerlund.github.io/GodotCascade/showcase/).
 
 ## Why GodotCascade?
 
@@ -353,7 +353,7 @@ Add a **CascadeButton** from the Create New Node dialog after enabling the addon
 
 ## HTML parity showcase
 
-The generated [parity showcase](docs/showcase/index.html) presents each demo as a fixed-viewport HTML reference beside an actual capture of its source-generated GodotCascade scene. It includes the executable `.gxml` and `.gcss` translation and a semantic mapping table. The current demos cover flex/box, grid/stack overlays, a telemetry dashboard, native form controls, and a semantic leaderboard that adds, removes, sorts, and drag-reorders keyed rows. The [runnable Godot app](docs/showcase-app.md) loads those same manifest entries for direct interaction testing.
+The generated [public parity showcase](https://mfagerlund.github.io/GodotCascade/showcase/) presents each demo as a fixed-viewport HTML reference beside an actual capture of its source-generated GodotCascade scene. It includes the executable `.gxml` and `.gcss` translation and a semantic mapping table. The current demos cover flex/box, grid/stack overlays, a telemetry dashboard, native form controls, and a semantic leaderboard that adds, removes, sorts, and drag-reorders keyed rows. The [runnable Godot app](docs/showcase-app.md) loads those same manifest entries for direct interaction testing; the [repository copy](docs/showcase/index.html) works offline.
 
 Showcases are registered in `examples/showcase/manifest.json`. A demo keeps four artifacts together:
 

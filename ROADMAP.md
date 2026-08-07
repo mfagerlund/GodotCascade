@@ -18,7 +18,7 @@ The latest completed vertical slices add optional typed C# binding generation wi
 
 The next work is deliberately ordered around external validation before large language expansion:
 
-1. **Public validation:** make the repository public, finalize the Asset Library listing, publish a short native-tree/live-reload demonstration, invite a Godot developer to build a real interface, and compare one production-shaped UI directly with GTML.
+1. **Public validation:** finalize the Asset Library listing, publish a short native-tree/live-reload demonstration, invite a Godot developer to build a real interface, and compare one production-shaped UI directly with GTML.
 2. **Focused reactivity and composition:** add dependency-tracked path invalidation, bind additional control state and resources, introduce explicit conditional rendering, and support reusable typed GXML components with slots and scoped IDs.
 3. **Language and tooling depth:** add the highest-value GCSS primitives, SVG textures and authored focus order, then provide completion, hover, formatting, rename, and navigation in Godot and VS Code.
 4. **Scale and platform confidence:** add incremental collection updates, item models and virtualization, benchmark realistic interfaces, extend CI across desktop platforms, and complete manual input/accessibility certification.
@@ -50,7 +50,7 @@ Phases 10–13 below turn this sequence into falsifiable deliverables. Correctne
 - [x] Correct the 0.4 publication status and distinguish automated tests from manual platform certification
 - [x] Select and add a software license before publishing 0.4 or submitting to the Godot Asset Library
 - [ ] Split the builder hotspot before substantially broadening the source language
-- [ ] Correct non-ASCII diagnostic offsets and add a regression test
+- [x] Correct non-ASCII diagnostic offsets and add a regression test
 - [ ] Add reconciler property-copy parity coverage before expanding custom component properties
 - [ ] Validate the approach with a non-showcase UI and publish an honest comparison with GTML
 
@@ -231,8 +231,9 @@ The first public preview should build a small settings menu from `.gxml` and a s
 - [x] Document the direct comparison with GTML, Reactive UI Toolkit, GUML, and native Godot
 - [x] Publish the 0.4 experimental-preview release
 - [x] Select, small-size test, and publish a square project and Asset Library icon
-- [ ] Make the repository public after verifying its release page and installation archive
-- [ ] Prepare the remaining Godot Asset Library metadata and testing-support submission
+- [x] Make the repository public after verifying its release page and installation archive
+- [x] Prepare and verify the remaining Godot Asset Library metadata for a testing-support submission
+- [ ] Submit the prepared 0.4.0 entry through the authenticated Godot Asset Library form
 - [ ] Share a short native-tree/live-reload demonstration with the Godot community
 - [ ] Invite at least one external Godot developer to build a real interface and record where the authoring model helps or obstructs them
 - [ ] Build one non-showcase production-shaped UI in both GodotCascade and GTML and publish the comparison

@@ -27,3 +27,9 @@ Before creating `vX.Y.Z`:
 3. Commit a clean tree and push it to `main`.
 4. Create and push the annotated version tag.
 5. Confirm the tag workflow passes. It packages the addon again, verifies its checksum, and creates the GitHub release with the matching notes, ZIP, and checksum.
+
+## Godot Asset Library
+
+Use the custom repository host for public releases so the library downloads the deterministic addon-only ZIP rather than a generated repository snapshot. The [copy-ready submission record](asset-library-submission.md) contains the current form values, direct raw-GitHub icon and preview URLs, and the preflight evidence required for the 0.4.0 testing-level entry.
+
+For a later release, update the version, release download URL, description, and `plugin.cfg` together. Re-run the complete local release gate before replacing the Asset Library download URL.

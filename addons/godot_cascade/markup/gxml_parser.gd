@@ -38,6 +38,7 @@ class Element:
 
 static func parse(source: String) -> Dictionary:
 	var diagnostics: Array[Dictionary] = []
+	var byte_to_character := _utf8_byte_to_character_offsets(source)
 	var xml := XMLParser.new()
 	var open_error := xml.open_buffer(source.to_utf8_buffer())
 	if open_error != OK:
@@ -54,7 +55,7 @@ static func parse(source: String) -> Dictionary:
 			XMLParser.NODE_ELEMENT:
 				var parent: Element = stack.back() if not stack.is_empty() else null
 				var element := Element.new(xml.get_node_name(), parent)
-				element.source_offset = xml.get_node_offset()
+				element.source_offset = _character_offset(byte_to_character, xml.get_node_offset())
 				var location := _diagnostic(source, element.source_offset, "")
 				element.source_line = location["line"]
 				element.source_column = location["column"]
@@ -68,7 +69,7 @@ static func parse(source: String) -> Dictionary:
 				else:
 					diagnostics.append(_diagnostic(
 						source,
-						xml.get_node_offset(),
+						_character_offset(byte_to_character, xml.get_node_offset()),
 						"GXML documents must contain exactly one root element."
 					))
 
@@ -80,13 +81,13 @@ static func parse(source: String) -> Dictionary:
 				if stack.is_empty():
 					diagnostics.append(_diagnostic(
 						source,
-						xml.get_node_offset(),
+						_character_offset(byte_to_character, xml.get_node_offset()),
 						"Unexpected closing tag </%s>." % closing_name
 					))
 				elif stack.back().tag_name != closing_name:
 					diagnostics.append(_diagnostic(
 						source,
-						xml.get_node_offset(),
+						_character_offset(byte_to_character, xml.get_node_offset()),
 						"Expected </%s> before </%s>." % [stack.back().tag_name, closing_name]
 					))
 					while not stack.is_empty() and stack.back().tag_name != closing_name:
@@ -104,7 +105,7 @@ static func parse(source: String) -> Dictionary:
 
 			XMLParser.NODE_CDATA:
 				if not stack.is_empty():
-					var cdata_text := _cdata_content(source, xml.get_node_offset())
+					var cdata_text := _cdata_content(source, _character_offset(byte_to_character, xml.get_node_offset()))
 					stack.back().text += cdata_text
 					stack.back().raw_text += cdata_text
 
@@ -113,7 +114,7 @@ static func parse(source: String) -> Dictionary:
 	if read_error != ERR_FILE_EOF:
 		diagnostics.append(_diagnostic(
 			source,
-			xml.get_node_offset(),
+			_character_offset(byte_to_character, xml.get_node_offset()),
 			"Malformed GXML near byte %s (error %s)." % [xml.get_node_offset(), read_error]
 		))
 	if not stack.is_empty():
@@ -141,6 +142,26 @@ static func _normalize_text(element: Element) -> void:
 	element.text = " ".join(normalized)
 	for child in element.children:
 		_normalize_text(child)
+
+
+static func _utf8_byte_to_character_offsets(source: String) -> PackedInt32Array:
+	var source_bytes := source.to_utf8_buffer()
+	var offsets := PackedInt32Array()
+	offsets.resize(source_bytes.size() + 1)
+	var byte_offset := 0
+	var character_offset := 0
+	for character in source:
+		var character_bytes := character.to_utf8_buffer().size()
+		for index in character_bytes:
+			offsets[byte_offset + index] = character_offset
+		byte_offset += character_bytes
+		character_offset += 1
+		offsets[byte_offset] = character_offset
+	return offsets
+
+
+static func _character_offset(byte_to_character: PackedInt32Array, byte_offset: int) -> int:
+	return byte_to_character[clampi(byte_offset, 0, byte_to_character.size() - 1)]
 
 
 static func _cdata_content(source: String, offset: int) -> String:

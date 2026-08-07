@@ -17,11 +17,12 @@ GodotCascade 0.4.0 is the current experimental preview, including typed C# bindi
 - [Editor tooling](editor-tooling.md) — importers, live preview, generated-control Inspector, debugger, and source navigation
 - [Production readiness](production-readiness.md) — transitions, responsive rules, navigation, accessibility, and release gates
 - [Release process](release-process.md) — reproducible packaging, clean-install smoke testing, and tag publishing
+- [Asset Library submission](asset-library-submission.md) — copy-ready 0.4.0 metadata, direct assets, and verified preflight
 - [Changelog](../CHANGELOG.md) — versioned user-visible changes
 - [Performance budgets](performance.md) — executable 500-item benchmark and allocation ceilings
 - [Migration notes](migrations.md) — source/API compatibility and upgrade instructions
 - [Public preview stability policy](api-stability.md) — current guarantees, unstable surfaces, and change process
-- [Roadmap](../ROADMAP.md) — completed preview, typed-binding, and semantic-table milestones plus ongoing platform certification
+- [Roadmap](../ROADMAP.md) — completed preview, typed-binding, semantic-table, and publication milestones plus ongoing platform certification
 - [Publication-readiness review](artifacts/publication-readiness-review-2026-08-07.md) — independent structure, completeness, ecosystem, and release assessment
 - [Logo development](artifacts/logo-concepts/README.md) — selected cascading-native-windows mark, vector master, size study, and earlier directions
 - [Runnable showcase app](showcase-app.md) — launch and manually verify every manifest page and event connection

@@ -184,6 +184,15 @@ func _test_gxml_parser() -> void:
 		_expect_int("GXML child count", result["root"].children.size(), 1)
 		_expect_true("GXML text normalization", result["root"].children[0].text == "Hello world")
 
+	var unicode_source := "<Page>\n  <Label>Rhéa 🚀</Label>\n  <Button id=\"apply\">Apply</Button>\n</Page>"
+	var unicode_result := GxmlParser.parse(unicode_source)
+	_expect_int("non-ASCII GXML diagnostics", unicode_result["diagnostics"].size(), 0)
+	if unicode_result["root"] != null and unicode_result["root"].children.size() == 2:
+		var unicode_button = unicode_result["root"].children[1]
+		_expect_int("non-ASCII GXML keeps following element line", unicode_button.source_line, 3)
+		_expect_int("non-ASCII GXML keeps following element column", unicode_button.source_column, 3)
+		_expect_int("non-ASCII GXML stores character offset", unicode_button.source_offset, unicode_source.find("<Button"))
+
 	var duplicate_ids := GxmlParser.parse("<Page>\n  <Label id=\"status\">One</Label>\n  <Panel><Label id=\"status\">Two</Label></Panel>\n</Page>")
 	var duplicate_build := CascadeBuilder.build(duplicate_ids["root"], [])
 	_expect_true("duplicate document ids are diagnosed", _has_error_diagnostics(duplicate_build["diagnostics"]))
