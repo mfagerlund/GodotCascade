@@ -1,0 +1,24 @@
+<Page class="certification" accessible-label="GodotCascade platform certification controls">
+    <Row class="heading-row">
+        <Column class="heading">
+            <Label class="eyebrow">GODOTCASCADE ADAPTER</Label>
+            <Label class="title">Native service certification</Label>
+        </Column>
+        <Button id="reload" class="secondary" on-pressed="_on_reload">Reload Cascade source</Button>
+    </Row>
+    <Label class="instructions">Exercise the same operation here and in the plain Godot controls to the right. Differences indicate an adapter regression; matching failures should be checked against Godot itself.</Label>
+    <Grid class="fields">
+        <Label class="field-label">Editable profile</Label>
+        <TextInput id="profile" bind-text="{profile}" placeholder="Profile name" accessible-label="Cascade editable profile" />
+        <Label class="field-label">Bound echo</Label>
+        <Label id="profile-echo" class="echo" text="{profile}" />
+        <Label class="field-label">Secret field</Label>
+        <TextInput id="secret" bind-text="{secret}" secret="true" accessible-label="Cascade secret value" />
+        <Label class="field-label">Read-only sample</Label>
+        <TextInput id="read-only" text="Read-only native selection sample" read-only="true" accessible-label="Cascade read-only sample" />
+        <Label class="field-label">Multiline and bidi</Label>
+        <TextInput id="notes" class="notes" multiline="true" bind-text="{notes}" accessible-label="Cascade multiline notes" />
+        <Label class="field-label">Multiline bound echo</Label>
+        <Label id="notes-echo" class="echo notes-echo" text="{notes}" />
+    </Grid>
+</Page>

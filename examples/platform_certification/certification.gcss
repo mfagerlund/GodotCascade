@@ -1,0 +1,21 @@
+Page.certification {
+    flex-direction: column;
+    gap: 14px;
+    padding: 20px;
+    background-color: #0b1220;
+}
+
+.heading-row { justify-content: space-between; align-items: center; gap: 12px; }
+.heading { flex-grow: 1; }
+.eyebrow { color: #65d6a7; font-size: 11px; }
+.title { color: #f5f8ff; font-size: 24px; }
+.instructions { color: #9fb0cc; }
+.fields { grid-template-columns: 150px 1fr; grid-template-rows: 38px 38px 38px 38px 132px 72px; column-gap: 12px; row-gap: 10px; }
+.field-label { color: #9fb0cc; align-self: center; }
+.echo { min-height: 34px; padding: 8px 10px; background-color: #111b2d; border: 1px solid #304160; border-radius: 7px; }
+.notes { min-height: 132px; }
+.notes-echo { min-height: 72px; }
+TextInput { min-height: 38px; padding: 8px 10px; background-color: #111b2d; border: 1px solid #405577; border-radius: 7px; }
+TextInput:focused { border-color: #65a2ff; }
+Button.secondary { min-height: 36px; padding: 8px 12px; background-color: #17243a; border: 1px solid #405577; border-radius: 7px; }
+Button.secondary:hover { background-color: #213451; }

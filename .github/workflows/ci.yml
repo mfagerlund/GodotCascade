@@ -58,6 +58,9 @@ jobs:
       - name: Verify generated showcase
         run: python tools/showcase/generate_showcase.py --check
 
+      - name: Verify platform-certification tooling
+        run: python -m unittest discover -s tools/platform -p "test_*.py"
+
       - name: Scan editor imports
         run: godot --headless --path . --import
 
@@ -74,6 +77,7 @@ jobs:
           godot --headless --path . --script res://tests/item_model_test.gd
           godot --headless --path . --script res://tests/collection_scaling_test.gd
           godot --headless --path . --script res://tests/virtualization_test.gd
+          godot --headless --path . --script res://tests/platform_certification_test.gd
 
       - name: Compile generated C# binding example
         run: dotnet build tests/codegen_compile/CodegenCompile.csproj --configuration Release
@@ -189,6 +193,7 @@ jobs:
           godot --headless --path . --script res://tests/collection_scaling_test.gd
           godot --headless --path . --script res://tests/virtualization_test.gd
           godot --headless --path . --script res://tests/editor_tooling_smoke_test.gd
+          godot --headless --path . --script res://tests/platform_certification_test.gd
 
   release:
     if: startsWith(github.ref, 'refs/tags/v')

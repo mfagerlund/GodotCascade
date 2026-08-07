@@ -40,6 +40,7 @@ godot --headless --path . --script benchmarks/workload_benchmark.gd
 godot --headless --path . --script tests/item_model_test.gd
 godot --headless --path . --script tests/collection_scaling_test.gd
 godot --headless --path . --script tests/virtualization_test.gd
+godot --headless --path . --script tests/platform_certification_test.gd
 ```
 
 Each benchmark prints one JSON measurement record and exits non-zero when a diagnostic, invariant, or budget fails. These are regression ceilings, not performance targets. Changes that intentionally raise a budget require an explanation in the roadmap or migration notes and a new representative fixture.

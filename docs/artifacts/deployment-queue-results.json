@@ -8,7 +8,7 @@
         "warnings": 0
       },
       "path": "docs/artifacts/deployment-queue-godotcascade.png",
-      "process_total_ms": 2802.114
+      "process_total_ms": 2268.616
     },
     "gtml": {
       "bytes": 81957,
@@ -18,12 +18,12 @@
         "warnings": 0
       },
       "path": "docs/artifacts/deployment-queue-gtml.png",
-      "process_total_ms": 3232.834
+      "process_total_ms": 2153.585
     }
   },
   "engine": {
-    "executable_name": "Godot_v4.7.1-stable_win64_console.exe",
-    "version_command_output": "4.7.1.stable.official.a13da4feb"
+    "executable_name": "Godot_v4.7.1-stable_mono_win64_console.exe",
+    "version_command_output": "4.7.1.stable.mono.official.a13da4feb"
   },
   "gtml": {
     "commit": "7ddabfe3cffa69d7c8abd12b8d69bf80de49e59f",
@@ -32,7 +32,7 @@
       "script_errors": 0,
       "warnings": 1
     },
-    "import_process_total_ms": 8194.918,
+    "import_process_total_ms": 8489.029,
     "plugin_version": "0.8.4",
     "project_feature": "4.6",
     "upstream": "https://github.com/Niekvdm/godot-plugins-gtml.git"
@@ -79,40 +79,53 @@
         "script_errors": 0,
         "warnings": 0
       },
-      "process_total_ms": 22413.845,
+      "process_total_ms": 4559.376,
       "timings": {
-        "cold_build_median_ms": 185.36,
+        "cold_build_median_ms": 91.014,
         "cold_build_samples_ms": [
-          184.462,
-          177.283,
-          195.557,
-          203.024,
-          179.514,
-          186.258,
-          175.923,
-          204.23,
-          173.37,
-          187.35
+          93.275,
+          87.767,
+          92.613,
+          94.789,
+          89.449,
+          88.253,
+          87.434,
+          89.534,
+          94.498,
+          92.494
         ],
         "keyed_reorder_batch": {
-          "average_ms_per_operation": 302.726,
+          "average_ms_per_operation": 24.671075,
           "operations": 40,
+          "reconcile_stats": {
+            "candidate_native_controls": 0,
+            "created": 0,
+            "full_document_candidates": 0,
+            "keys_scanned": 12,
+            "removed": 0,
+            "repeat_candidates": 0,
+            "replaced": 0,
+            "retained_array_refreshes": 1,
+            "retained_reorders": 1,
+            "reused": 12
+          },
           "rendered_endpoint": true,
           "rendered_first_id": "job-004",
-          "total_ms": 12109.04
+          "total_ms": 986.843,
+          "zero_candidate_retained": true
         },
         "scalar_coalesced_batch": {
-          "amortized_ms_per_mutation": 0.40894,
+          "amortized_ms_per_mutation": 0.00987,
           "mutations": 100,
           "render_refreshes": 1,
           "rendered_endpoint": true,
-          "total_ms": 40.894
+          "total_ms": 0.987
         },
         "scalar_update_batch": {
-          "average_ms_per_operation": 43.57338,
+          "average_ms_per_operation": 0.5079,
           "operations": 100,
           "rendered_endpoint": true,
-          "total_ms": 4357.338
+          "total_ms": 50.79
         }
       }
     },
@@ -142,33 +155,33 @@
         "script_errors": 0,
         "warnings": 1
       },
-      "process_total_ms": 1846.156,
+      "process_total_ms": 1610.525,
       "timings": {
-        "cold_build_median_ms": 39.4515,
+        "cold_build_median_ms": 33.949,
         "cold_build_samples_ms": [
-          41.542,
-          36.278,
-          38.125,
-          39.397,
-          46.711,
-          37.607,
-          40.145,
-          35.619,
-          39.506,
-          39.899
+          34.064,
+          31.64,
+          36.958,
+          33.834,
+          33.207,
+          35.23,
+          34.104,
+          32.597,
+          33.283,
+          37.918
         ],
         "keyed_reorder_batch": {
-          "average_ms_per_operation": 0.5943,
+          "average_ms_per_operation": 0.6237,
           "operations": 40,
           "rendered_endpoint": true,
           "rendered_first_id": "job-004",
-          "total_ms": 23.772
+          "total_ms": 24.948
         },
         "scalar_update_batch": {
-          "average_ms_per_operation": 0.01045,
+          "average_ms_per_operation": 0.01208,
           "operations": 100,
           "rendered_endpoint": true,
-          "total_ms": 1.045
+          "total_ms": 1.208
         }
       }
     }
@@ -177,12 +190,12 @@
   "source_metrics": {
     "godot-cascade": {
       "files": {
-        "godot-cascade/deployment_queue.gd": 247,
+        "godot-cascade/deployment_queue.gd": 250,
         "godot-cascade/deployment_state.gd": 31,
         "godot-cascade/interface.gxml": 58,
         "godot-cascade/style.gcss": 45
       },
-      "nonblank_physical_lines": 381
+      "nonblank_physical_lines": 384
     },
     "gtml": {
       "files": {

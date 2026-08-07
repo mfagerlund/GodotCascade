@@ -34,22 +34,24 @@ All values below are complete synchronous operations in milliseconds—never per
 
 | Measurement | GodotCascade | GTML | Interpretation |
 |---|---:|---:|---|
-| Cold build median | 185.360 ms | 39.452 ms | GTML was 4.7× faster in this fixture |
-| 100 individually rendered scalar updates | 4,357.338 ms total | 1.045 ms total | Cascade's current explicit per-update Repeat refresh is the wrong granularity for high-frequency scalar changes |
-| 100 scalar mutations, one Cascade refresh | 40.894 ms total | n/a | Coalescing cuts Cascade's measured batch by about 99.06%, but it remains an explicit application responsibility |
-| 40 keyed priority reorders | 12,109.040 ms total | 23.772 ms total | GTML's retained reactive list path was about 509× faster |
+| Cold build median | 91.014 ms | 33.949 ms | GTML was about 2.68× faster in this fixture |
+| 100 individually rendered top-level scalar updates | 50.790 ms total | 1.208 ms total | Retained dependency routing removed about 98.83% of Cascade's original batch time; GTML remained about 42.05× faster |
+| 100 scalar mutations, one Cascade refresh | 0.987 ms total | n/a | Coalescing remains the cheapest Cascade path, at about 0.010 ms per mutation in this batch |
+| 40 pure keyed priority reorders | 986.843 ms total | 24.948 ms total | Zero-candidate retained row moves removed about 91.85% of Cascade's original batch time; GTML remained about 39.56× faster |
 | Native controls after build | 103 | 132 | Neither implementation materializes a browser DOM; the structures differ |
 | Nonblank runtime UI source | 381 lines | 329 lines | Cascade used about 16% more physical source in this implementation |
 
-The extreme scalar ratio needs context. The GodotCascade implementation deliberately rendered each mutation through its current localized Repeat-candidate/reconciliation path; GTML updated its retained reactive tree. The coalesced Cascade sample demonstrates the supported mitigation, but does not erase the architectural gap. This experiment therefore closes a roadmap validation item while also creating a clear optimization target: property-only changes inside retained rows must avoid rebuilding a Repeat candidate.
+The first published run measured 185.360 ms cold build, 4,357.338 ms for the scalar batch, 40.894 ms for the coalesced batch, and 12,109.040 ms for the reorder batch. That run exposed three full-tree taxes: uncached focus property inspection, full-tree dependency/trace routing for named paths, and Repeat-candidate construction for an Array containing the same keyed item objects in a new order. The rerun above uses retained binding/dependency indexes and an atomic pure-reorder path. Named `item.status`-style invalidations now update matching materialized row controls directly; structural/class dependencies, replaced item identities, changed keys, nested Repeats, and virtual windows still fall back to validated candidate reconciliation.
 
-These are local microbenchmarks of one screen, not general throughput rankings. They exclude import/editor startup, use one Windows machine, and do not measure GPU frame time, memory, authoring time, or team familiarity. GTML's HTML-like authoring and reactive updates are materially more mature for frequently changing retained lists. GodotCascade's advantages in this fixture are native semantic table structure, stricter source diagnostics, last-valid reload behavior, explicit fixed contracts, and a dependency-free addon surface.
+The scalar batch changes the top-level `status_message`; it never was a per-frame measurement and does not exercise Repeat reconstruction. The keyed batch is deliberately the narrow safe reorder case. These distinctions matter: the result demonstrates that the identified hot paths were removed, not that arbitrary collection replacement is now free.
+
+These are local microbenchmarks of one screen, not general throughput rankings. They exclude import/editor startup, use one Windows machine, and do not measure GPU frame time, memory, authoring time, or team familiarity. GTML's HTML-like authoring and reactive updates remain materially faster here. GodotCascade's advantages in this fixture are native semantic table structure, stricter source diagnostics, last-valid reload behavior, explicit fixed contracts, and a dependency-free addon surface.
 
 ## Conclusion
 
-The comparison does not make GodotCascade pointless, but it does rule out claiming that it is already a faster or more ergonomic general replacement for GTML. GodotCascade is useful when a project values native Godot controls, GCSS-style owned layout components, semantic tables/forms, deterministic diagnostics, and last-valid source reloads. GTML is the stronger choice today when HTML familiarity and fine-grained reactive update performance dominate.
+The comparison does not make GodotCascade pointless, but it still rules out claiming that it is a faster or more ergonomic general replacement for GTML. GodotCascade is useful when a project values native Godot controls, GCSS-style owned layout components, semantic tables/forms, deterministic diagnostics, and last-valid source reloads. GTML is the stronger choice when HTML familiarity and maximum fine-grained reactive throughput dominate.
 
-Publishing GodotCascade as an experimental project remains worthwhile if communication is equally direct about this performance gap and asks the Godot community to validate the authoring model on real interfaces. The next technical response should be retained property-level row invalidation, followed by rerunning this exact pinned comparison—not a new showcase benchmark.
+Publishing GodotCascade as an experimental project remains worthwhile if communication is equally direct about the remaining performance gap and asks the Godot community to validate the authoring model on real interfaces. The prescribed technical response—retained property-level routing, zero-candidate pure keyed reorders, and an exact pinned rerun—is now complete. Replaced items and structural row changes intentionally retain the slower transactional candidate path.
 
 ## Reproduce
 

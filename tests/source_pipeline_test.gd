@@ -82,6 +82,7 @@ func _run() -> void:
 	await _test_observable_binding_context()
 	await _test_writable_binding_pipeline()
 	await _test_repeated_writable_binding_pipeline()
+	await _test_retained_array_safety()
 	await _test_markup_state_features()
 	await _test_reusable_gxml_components()
 	await _test_identity_preserving_reload()
@@ -1165,8 +1166,8 @@ func _test_observable_binding_context() -> void:
 	var stylesheet_path := "user://cascade_observable_binding_test.gcss"
 	var markup := """<Page>
 		<TextInput id="profile" bind-text="{player.name}" accessible-label="Player name" />
-		<Label id="name" text="{player.name}" />
 		<Label id="status" text="{status}" />
+		<Label id="name" text="{player.name}" />
 	</Page>"""
 	_expect_true("write observable-binding markup", _write_text(markup_path, markup))
 	_expect_true("write observable-binding stylesheet", _write_text(stylesheet_path, "Page { gap: 4px; }"))
@@ -1224,6 +1225,7 @@ func _test_observable_binding_context() -> void:
 	_expect_true("observable full invalidation refreshes name", name_label.get("text") == "Vega")
 	_expect_true("observable full invalidation refreshes status", status_label.get("text") == "All refreshed")
 	_expect_true("full invalidation trace records wildcard", document.last_binding_trace()["paths"] == PackedStringArray(["*"]) and document.last_binding_trace()["affected_bindings"] == 3)
+	_expect_true("indexed trace preserves depth-first control order", document.last_binding_trace()["affected_controls"] == ["profile", "status", "name"])
 	document.queue_free()
 	await process_frame
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(markup_path))
@@ -1345,6 +1347,12 @@ func _test_repeated_writable_binding_pipeline() -> void:
 	_expect_int("repeated writable toggle count", toggles.size(), 2)
 	_expect_int("repeated writable text count", names.size(), 2)
 	var alpha_toggle_id := toggles[0].get_instance_id()
+	var alpha_name_id := names[0].get_instance_id()
+	first["name"] = "Alpha retained"
+	_expect_true("named repeated-item invalidation stays targeted", document.refresh_binding_paths(PackedStringArray(["item.name"])) and document.last_binding_trace().get("strategy", "") == "targeted")
+	_expect_true("named repeated-item invalidation updates retained row", names[0].get("text") == "Alpha retained" and names[0].get_instance_id() == alpha_name_id and names[1].get("text") == "Beta")
+	second["name"] = "Beta collection refresh"
+	_expect_true("same-order collection invalidation refreshes in-place item values", document.refresh_binding_paths(PackedStringArray(["entries"])) and names[1].get("text") == "Beta collection refresh" and int(document.last_binding_trace().get("reconcile_stats", {}).get("retained_array_refreshes", 0)) == 1 and int(document.last_binding_trace().get("reconcile_stats", {}).get("retained_reorders", -1)) == 0)
 	toggles[0].set("button_pressed", false)
 	toggles[0].emit_signal("toggled", false)
 	names[0].set("text", "Alpha Prime")
@@ -1354,13 +1362,25 @@ func _test_repeated_writable_binding_pipeline() -> void:
 	_expect_true("repeated text writes backing item", first["name"] == "Alpha Prime")
 	_expect_true("repeated write refreshes same-scope dependent label", _find_by_class(document.generated_root(), "entry-output")[0].get("text") == "false")
 	context["entries"] = [second, first]
-	_expect_true("repeated writable reorder refreshes", document.refresh_bindings())
+	_expect_true("repeated writable reorder refreshes", document.refresh_binding_paths(PackedStringArray(["entries"])))
+	_expect_true("unchanged keyed Array reorder builds no candidate", int(document.last_binding_trace().get("reconcile_stats", {}).get("retained_reorders", 0)) == 1 and int(document.last_binding_trace().get("reconcile_stats", {}).get("repeat_candidates", -1)) == 0)
 	toggles = _find_by_class(document.generated_root(), "entry-enabled")
 	_expect_true("keyed repeated writable control follows its item", toggles[1].get_instance_id() == alpha_toggle_id)
+	var reordered_repeat: Control = toggles[0].get_parent().get_parent()
+	_expect_true("retained reorder refreshes repeat index metadata", int(reordered_repeat.get_child(0).get_meta("cascade_repeat_index", -1)) == 0 and int(reordered_repeat.get_child(1).get_meta("cascade_repeat_index", -1)) == 1)
+	_expect_int("retained reorder reports scanned keys", int(document.last_binding_trace().get("reconcile_stats", {}).get("keys_scanned", 0)), 2)
+	second["name"] = "Beta retained"
+	_expect_true("target index follows keyed reorder", document.refresh_binding_paths(PackedStringArray(["item.name"])) and _find_by_class(document.generated_root(), "entry-name")[0].get("text") == "Beta retained")
 	toggles[0].set("button_pressed", true)
 	toggles[0].emit_signal("toggled", true)
 	await process_frame
 	_expect_true("reordered repeated write targets current keyed item", second["enabled"])
+	var replacement_second: Dictionary = second.duplicate(true)
+	replacement_second["name"] = "Beta replacement"
+	var replacement_first: Dictionary = first.duplicate(true)
+	context["entries"] = [replacement_second, replacement_first]
+	_expect_true("replacement item identities fall back to candidate reconciliation", document.refresh_binding_paths(PackedStringArray(["entries"])) and int(document.last_binding_trace().get("reconcile_stats", {}).get("repeat_candidates", 0)) == 1)
+	_expect_true("candidate fallback applies replacement item values", _find_by_class(document.generated_root(), "entry-name")[0].get("text") == "Beta replacement")
 	document.queue_free()
 	await process_frame
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(markup_path))
@@ -1371,6 +1391,63 @@ func _test_repeated_writable_binding_pipeline() -> void:
 	_expect_true("repeat index writable binding is an explicit error", _has_error_diagnostics(invalid_build["diagnostics"]))
 	if invalid_build["root"] != null:
 		invalid_build["root"].free()
+
+
+func _test_retained_array_safety() -> void:
+	var markup_path := "user://cascade_retained_array_safety_test.gxml"
+	var stylesheet_path := "user://cascade_retained_array_safety_test.gcss"
+	_expect_true("write retained-array safety stylesheet", _write_text(stylesheet_path, "Page { gap: 4px; } Row { gap: 4px; }"))
+
+	var conditional_markup := """<Page>
+		<Repeat id="conditional-rows" items="{entries}" key="id">
+			<Row><Label class="conditional-label" if="{item.show}" text="{item.label}" /></Row>
+		</Repeat>
+	</Page>"""
+	_expect_true("write retained conditional markup", _write_text(markup_path, conditional_markup))
+	var conditional_item := {"id": "alpha", "show": false, "label": "Visible now"}
+	var conditional_document: Control = CascadeDocument.new()
+	conditional_document.load_on_ready = false
+	conditional_document.log_diagnostics_to_console = false
+	conditional_document.watch_sources = false
+	conditional_document.binding_context = {"entries": [conditional_item]}
+	conditional_document.markup_path = markup_path
+	conditional_document.stylesheet_path = stylesheet_path
+	root.add_child(conditional_document)
+	_expect_true("retained conditional document loads", conditional_document.reload_document())
+	_expect_int("false descendant conditional starts absent", _find_by_class(conditional_document.generated_root(), "conditional-label").size(), 0)
+	conditional_item["show"] = true
+	_expect_true("descendant conditional collection invalidation succeeds", conditional_document.refresh_binding_paths(PackedStringArray(["entries"])))
+	_expect_true("descendant conditional falls back to candidate creation", _find_by_class(conditional_document.generated_root(), "conditional-label").size() == 1 and int(conditional_document.last_binding_trace().get("reconcile_stats", {}).get("repeat_candidates", 0)) == 1)
+	conditional_document.queue_free()
+	await process_frame
+
+	var recovery_markup := """<Page>
+		<Repeat id="recovery-rows" items="{entries}" key="id">
+			<Row><Button class="recovery-button" text="{item.label}" /><Label text="{item.missing}" /></Row>
+		</Repeat>
+	</Page>"""
+	_expect_true("write retained diagnostic recovery markup", _write_text(markup_path, recovery_markup))
+	var recovery_item := {"id": "recover", "label": ""}
+	var recovery_document: Control = CascadeDocument.new()
+	recovery_document.load_on_ready = false
+	recovery_document.log_diagnostics_to_console = false
+	recovery_document.watch_sources = false
+	recovery_document.binding_context = {"entries": [recovery_item]}
+	recovery_document.markup_path = markup_path
+	recovery_document.stylesheet_path = stylesheet_path
+	root.add_child(recovery_document)
+	_expect_true("retained diagnostic recovery document loads with warnings", recovery_document.reload_document())
+	_expect_true("missing repeated value reports binding and accessibility warnings", recovery_document.diagnostics.any(func(d): return d.get("binding_path", "") == "item.missing") and recovery_document.diagnostics.any(func(d): return d.get("category", "") == "accessibility"))
+	recovery_item["label"] = "Recovered"
+	recovery_item["missing"] = "Also recovered"
+	_expect_true("same-identity retained refresh recovers missing value", recovery_document.refresh_binding_paths(PackedStringArray(["entries"])))
+	_expect_true("retained refresh clears recovered diagnostics", not recovery_document.diagnostics.any(func(d): return d.get("binding_path", "") == "item.missing" or d.get("category", "") == "accessibility"))
+	_expect_true("retained refresh updates recovered button", _find_by_class(recovery_document.generated_root(), "recovery-button")[0].get("text") == "Recovered")
+	recovery_document.queue_free()
+	await process_frame
+
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(markup_path))
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(stylesheet_path))
 
 
 func _test_markup_state_features() -> void:

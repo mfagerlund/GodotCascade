@@ -146,6 +146,7 @@ func _run_verification() -> void:
 		and bool(result["timings"]["scalar_update_batch"].get("rendered_endpoint", false))
 		and bool(result["timings"]["scalar_coalesced_batch"].get("rendered_endpoint", false))
 		and bool(result["timings"]["keyed_reorder_batch"].get("rendered_endpoint", false))
+		and bool(result["timings"]["keyed_reorder_batch"].get("zero_candidate_retained", false))
 	)
 	print("COMPARISON_JSON=" + JSON.stringify(result))
 	get_tree().quit(0 if result["functional"]["passed"] else 1)
@@ -225,13 +226,15 @@ func _benchmark_batches() -> Dictionary:
 	var expected_first_control := _find_control_by_key_suffix(generated_root(), expected_first_id)
 	var repeat_control := get_element_by_id("jobs")
 	var reorder_rendered := repeat_control != null and repeat_control.get_child_count() > 0 and expected_first_control == repeat_control.get_child(0)
+	var reorder_stats: Dictionary = last_binding_trace().get("reconcile_stats", {})
+	var zero_candidate_retained := int(reorder_stats.get("repeat_candidates", -1)) == 0 and int(reorder_stats.get("retained_reorders", 0)) == 1
 	var reorder_total := (Time.get_ticks_usec() - reorder_started) / 1000.0
 	return {
 		"cold_build_samples_ms": cold_samples,
 		"cold_build_median_ms": _median(cold_samples),
 		"scalar_update_batch": {"operations": SCALAR_UPDATE_COUNT, "total_ms": scalar_total, "average_ms_per_operation": scalar_total / SCALAR_UPDATE_COUNT, "rendered_endpoint": scalar_rendered},
 		"scalar_coalesced_batch": {"mutations": SCALAR_UPDATE_COUNT, "render_refreshes": 1, "total_ms": coalesced_total, "amortized_ms_per_mutation": coalesced_total / SCALAR_UPDATE_COUNT, "rendered_endpoint": coalesced_rendered},
-		"keyed_reorder_batch": {"operations": REORDER_COUNT, "total_ms": reorder_total, "average_ms_per_operation": reorder_total / REORDER_COUNT, "rendered_endpoint": reorder_rendered, "rendered_first_id": expected_first_id},
+		"keyed_reorder_batch": {"operations": REORDER_COUNT, "total_ms": reorder_total, "average_ms_per_operation": reorder_total / REORDER_COUNT, "rendered_endpoint": reorder_rendered, "rendered_first_id": expected_first_id, "zero_candidate_retained": zero_candidate_retained, "reconcile_stats": reorder_stats},
 	}
 
 

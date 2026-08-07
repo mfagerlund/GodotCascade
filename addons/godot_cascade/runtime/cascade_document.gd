@@ -76,6 +76,10 @@ var _item_model_connections: Array[Dictionary] = []
 var _pending_item_models: Array[CascadeItemModel] = []
 var _collection_transaction_blocked := false
 var _virtual_scroll_connections: Array[Dictionary] = []
+var _binding_targets_by_path: Dictionary = {}
+var _dependency_targets_by_path: Dictionary = {}
+var _dependency_index_order := 0
+var _traced_controls: Array[Control] = []
 
 
 func _ready() -> void:
@@ -92,6 +96,9 @@ func _ready() -> void:
 func _exit_tree() -> void:
 	_disconnect_virtual_scrolls()
 	_disconnect_item_models()
+	_binding_targets_by_path.clear()
+	_dependency_targets_by_path.clear()
+	_traced_controls.clear()
 	if _generated_root != null:
 		ComponentRegistry.unmount_tree(_generated_root)
 
@@ -169,6 +176,8 @@ func reload_document() -> bool:
 			ComponentRegistry.mount_tree(_generated_root)
 	BindingTrace.clear(_generated_root)
 	_last_binding_trace = {}
+	_traced_controls.clear()
+	_rebuild_binding_target_index()
 	_suppress_focus_contract_refresh = true
 	_refresh_bindings(false)
 	_applying_bindings = was_applying_bindings
@@ -184,6 +193,7 @@ func reload_document() -> bool:
 		for diagnostic in AccessibilityAudit.audit(_generated_root):
 			var stamped: Dictionary = diagnostic.duplicate()
 			stamped["path"] = markup_path
+			stamped["category"] = "accessibility"
 			diagnostics.append(stamped)
 	document_reloaded.emit(_generated_root)
 	_publish_diagnostics()
@@ -325,20 +335,150 @@ func _refresh_named_bindings(paths: PackedStringArray, trigger: String, publish:
 	var strategy := "targeted"
 	var reason := "property"
 	var success: bool
-	if _generated_root != null and _tree_has_matching_rebuild_binding_outside_repeat(_generated_root, normalized):
+	if _generated_root != null and _indexed_requires_full_reconcile(normalized):
 		strategy = "reconcile"
 		reason = "rebuild_dependency"
 		success = reload_document()
-	elif _generated_root != null and reconcile_collections and (_tree_has_matching_collection_binding(_generated_root, normalized) or _tree_has_matching_repeat_rebuild_binding(_generated_root, normalized) or _tree_has_matching_virtual_binding(_generated_root, normalized)):
+	elif _generated_root != null and reconcile_collections and _indexed_requires_collection_patch(normalized):
 		strategy = "collection_patch"
 		reason = "collection"
 		var matching_repeats: Array[Control] = []
 		_collect_matching_outer_repeats(_generated_root, normalized, matching_repeats)
-		success = _refresh_collections(publish, matching_repeats)
+		var retained_reorder := _try_retained_array_reorder(matching_repeats, normalized, publish)
+		success = bool(retained_reorder["success"]) if bool(retained_reorder["handled"]) else _refresh_collections(publish, matching_repeats)
 	else:
 		success = _refresh_binding_paths(normalized, publish)
 	_record_binding_trace(normalized, trigger, strategy, reason, success)
 	return success
+
+
+func _try_retained_array_reorder(repeats: Array[Control], paths: PackedStringArray, publish: bool) -> Dictionary:
+	if repeats.is_empty() or _collection_transaction_blocked:
+		return {"handled": false, "success": false}
+	var plans: Array[Dictionary] = []
+	var scanned_keys := 0
+	for repeat in repeats:
+		if bool(repeat.get_meta("cascade_virtual", false)) or not bool(repeat.get_meta("cascade_collection_is_array", false)):
+			return {"handled": false, "success": false}
+		var element: Variant = repeat.get_meta("cascade_repeat_element") if repeat.has_meta("cascade_repeat_element") else null
+		if element == null or element.children.size() != 1 or _element_tree_has_condition(element.children[0]):
+			return {"handled": false, "success": false}
+		var collection_path := str(repeat.get_meta("cascade_collection_binding", ""))
+		var resolved := BindingResolver.resolve(_binding_context_for(repeat, collection_path), collection_path)
+		var collection: Variant = resolved.get("value") if resolved.get("found", false) else null
+		if not collection is Array:
+			return {"handled": false, "success": false}
+		var old_keys: PackedStringArray = repeat.get_meta("cascade_repeat_keys", PackedStringArray())
+		var rows: Array[Control] = []
+		for child in repeat.get_children():
+			if child is Control:
+				rows.append(child)
+		if rows.size() != old_keys.size() or collection.size() != old_keys.size():
+			return {"handled": false, "success": false}
+		var key_property := _repeat_key_property(repeat)
+		var new_keys := PackedStringArray()
+		var new_items: Array = []
+		var seen_keys: Dictionary = {}
+		for index in collection.size():
+			scanned_keys += 1
+			var item: Variant = collection[index]
+			var key_result := BindingResolver.resolve(item, key_property) if not key_property.is_empty() else {"found": true, "value": index}
+			if not bool(key_result.get("found", false)):
+				return {"handled": false, "success": false}
+			var item_key := str(key_result["value"])
+			if seen_keys.has(item_key):
+				return {"handled": false, "success": false}
+			seen_keys[item_key] = true
+			new_keys.append(item_key)
+			new_items.append(item)
+		var ordered_rows: Array[Control] = []
+		for index in new_keys.size():
+			var old_index := old_keys.find(new_keys[index])
+			if old_index < 0:
+				return {"handled": false, "success": false}
+			var row := rows[old_index]
+			var scope: Dictionary = row.get_meta("cascade_binding_scope", {})
+			if not scope.has("item") or not is_same(scope["item"], new_items[index]):
+				return {"handled": false, "success": false}
+			if _tree_has_rebuild_binding(row) or _tree_has_focus_validation_contract(row) or _contains_element(row, "repeat"):
+				return {"handled": false, "success": false}
+			ordered_rows.append(row)
+		plans.append({"repeat": repeat, "rows": ordered_rows, "keys": new_keys, "items": new_items, "reordered": new_keys != old_keys})
+
+	# Match normal collection reconciliation: recovered row-binding and
+	# collection-audit diagnostics must disappear before fresh results append.
+	diagnostics = diagnostics.filter(func(diagnostic):
+		if diagnostic.get("path", "") == "collection" or diagnostic.get("category", "") == "accessibility":
+			return false
+		return diagnostic.get("path", "") != "binding" or not _binding_path_matches(
+			str(diagnostic.get("binding_path", "")),
+			PackedStringArray(["item", "index"])
+		)
+	)
+	var was_applying_bindings := _applying_bindings
+	_applying_bindings = true
+	var reused_rows := 0
+	var retained_reorders := 0
+	for plan in plans:
+		var repeat: Control = plan["repeat"]
+		var ordered_rows: Array[Control] = plan["rows"]
+		var items: Array = plan["items"]
+		for index in ordered_rows.size():
+			var row := ordered_rows[index]
+			row.set_meta("cascade_repeat_index", index)
+			_update_retained_repeat_scope(row, items[index], index)
+			# A collection invalidation may combine a reorder with in-place item
+			# mutations. Refresh every scoped item/index property while retaining
+			# structure; otherwise unchanged key order could hide changed values.
+			_apply_bindings(row, PackedStringArray(["item", "index"]))
+			repeat.move_child(row, index)
+			reused_rows += 1
+		if bool(plan["reordered"]):
+			retained_reorders += 1
+		repeat.set_meta("cascade_repeat_keys", plan["keys"])
+		repeat.set_meta("cascade_array_key_cache_valid", true)
+		repeat.set_meta("cascade_collection_transaction_valid", true)
+		if repeat is Container:
+			(repeat as Container).queue_sort()
+		if repeat.get_parent() is Container:
+			(repeat.get_parent() as Container).queue_sort()
+	_applying_bindings = was_applying_bindings
+	_rebuild_binding_target_index()
+	_refresh_binding_paths(paths, false)
+	_refresh_focus_contracts(false)
+	if audit_accessibility:
+		_append_accessibility_diagnostics(AccessibilityAudit.audit(_generated_root), "collection")
+	last_reconcile_stats = {
+		"reused": reused_rows,
+		"created": 0,
+		"replaced": 0,
+		"removed": 0,
+		"repeat_candidates": 0,
+		"candidate_native_controls": 0,
+		"full_document_candidates": 0,
+		"keys_scanned": scanned_keys,
+		"retained_array_refreshes": plans.size(),
+		"retained_reorders": retained_reorders,
+	}
+	last_collection_stats = last_reconcile_stats.duplicate(true)
+	var patched: Array[Control] = []
+	for plan in plans:
+		patched.append(plan["repeat"])
+	collection_updated.emit(patched, last_collection_stats.duplicate(true))
+	if publish:
+		_publish_diagnostics()
+	return {"handled": true, "success": not _has_errors()}
+
+
+func _update_retained_repeat_scope(node: Node, item: Variant, index: int) -> void:
+	if node is Control:
+		var scope: Dictionary = node.get_meta("cascade_binding_scope", {})
+		if scope.has("item") and scope.has("index"):
+			scope["item"] = item
+			scope["index"] = index
+			node.set_meta("cascade_binding_scope", scope)
+	for child in node.get_children():
+		_update_retained_repeat_scope(child, item, index)
 
 
 func _refresh_collections(publish: bool, requested_repeats: Array[Control] = [], preserve_anchor: bool = true) -> bool:
@@ -348,7 +488,7 @@ func _refresh_collections(publish: bool, requested_repeats: Array[Control] = [],
 		if publish:
 			_publish_diagnostics()
 		return false
-	diagnostics = diagnostics.filter(func(diagnostic): return diagnostic.get("path", "") != "collection")
+	diagnostics = diagnostics.filter(func(diagnostic): return diagnostic.get("path", "") != "collection" and diagnostic.get("category", "") != "accessibility")
 	var repeats: Array[Control] = requested_repeats.duplicate()
 	if preserve_anchor and _collection_transaction_blocked:
 		repeats.clear()
@@ -412,6 +552,7 @@ func _refresh_collections(publish: bool, requested_repeats: Array[Control] = [],
 						if not key_cache is Array:
 							repeat_keys_scanned += int(desired.get_meta("cascade_repeat_keys_scanned", 0))
 			_apply_bindings(desired)
+			_append_collection_diagnostics(FocusManager.validate(desired))
 			_append_collection_diagnostics(_validate_virtual_repeat_candidate(desired))
 			_stamp_source_path(desired)
 			candidates.append({"existing": repeat, "desired": desired, "anchor": anchor, "keys_scanned": repeat_keys_scanned})
@@ -487,14 +628,14 @@ func _refresh_collections(publish: bool, requested_repeats: Array[Control] = [],
 	combined["virtual_ranges"] = virtual_ranges
 	last_reconcile_stats = combined
 	last_collection_stats = combined.duplicate(true)
+	_rebuild_binding_target_index()
 	_suppress_focus_contract_refresh = true
 	_refresh_bindings(false)
 	_applying_bindings = was_applying_bindings
 	_refresh_writable_bindings(false)
 	_refresh_events(false)
 	if audit_accessibility:
-		for repeat in patched:
-			_append_collection_diagnostics(AccessibilityAudit.audit(repeat))
+		_append_accessibility_diagnostics(AccessibilityAudit.audit(_generated_root), "collection")
 	_pending_item_models.clear()
 	_collection_transaction_blocked = false
 	_refresh_item_model_connections()
@@ -608,9 +749,9 @@ func _refresh_binding_paths(paths: PackedStringArray, publish: bool) -> bool:
 		return _generated_root != null
 	var was_applying_bindings := _applying_bindings
 	_applying_bindings = true
-	_apply_bindings(_generated_root, paths)
+	_apply_indexed_binding_paths(paths)
 	_applying_bindings = was_applying_bindings
-	if not _suppress_focus_contract_refresh:
+	if not _suppress_focus_contract_refresh and _indexed_paths_affect_focus(paths):
 		_refresh_focus_contracts(false)
 	_schedule_virtual_scroll_sync()
 	if publish:
@@ -618,34 +759,144 @@ func _refresh_binding_paths(paths: PackedStringArray, publish: bool) -> bool:
 	return not _has_errors()
 
 
-func _apply_bindings(node: Node, paths: PackedStringArray = PackedStringArray()) -> void:
+func _rebuild_binding_target_index() -> void:
+	_binding_targets_by_path.clear()
+	_dependency_targets_by_path.clear()
+	_dependency_index_order = 0
+	_index_binding_targets(_generated_root)
+
+
+func _index_binding_targets(node: Node, inside_repeat: bool = false, inside_virtual_repeat: bool = false) -> void:
+	if node == null:
+		return
+	var next_inside_repeat := inside_repeat
+	var next_inside_virtual_repeat := inside_virtual_repeat
 	if node is Control:
 		var control := node as Control
+		var is_repeat := str(control.get_meta("cascade_element_type", "")).to_lower() == "repeat"
+		next_inside_repeat = inside_repeat or is_repeat
+		next_inside_virtual_repeat = inside_virtual_repeat or (is_repeat and bool(control.get_meta("cascade_virtual", false)))
 		var bindings: Dictionary = control.get_meta("cascade_bindings", {})
-		var range_values := {}
-		var range_touched := false
-		if control.has_method("set_range_values"):
-			range_values = {
-				"min_value": control.get("min_value"),
-				"max_value": control.get("max_value"),
-				"value": control.get("value"),
-			}
 		for property_name in bindings:
-			var property_key := str(property_name)
 			var binding_path := str(bindings[property_name])
-			if not paths.is_empty() and not _binding_path_matches(binding_path, paths):
+			if binding_path.is_empty():
 				continue
-			if not range_values.is_empty() and property_key in ["min_value", "max_value", "value"]:
-				range_touched = true
-				var numeric := _resolve_numeric_binding(control, property_key, binding_path)
-				if numeric["found"]:
-					range_values[property_key] = numeric["value"]
-			else:
-				_apply_binding(control, property_key, binding_path)
-		if not range_values.is_empty() and range_touched:
-			control.call("set_range_values", range_values["min_value"], range_values["max_value"], range_values["value"])
+			if not _binding_targets_by_path.has(binding_path):
+				_binding_targets_by_path[binding_path] = []
+			_binding_targets_by_path[binding_path].append({"control": control, "property": str(property_name)})
+		for dependency in BindingTrace.dependencies(control):
+			var dependency_path := str(dependency.get("path", ""))
+			if dependency_path.is_empty():
+				continue
+			if not _dependency_targets_by_path.has(dependency_path):
+				_dependency_targets_by_path[dependency_path] = []
+			_dependency_targets_by_path[dependency_path].append({
+				"control": control,
+				"dependency": dependency,
+				"order": _dependency_index_order,
+				"inside_repeat": next_inside_repeat,
+				"inside_virtual_repeat": next_inside_virtual_repeat,
+			})
+			_dependency_index_order += 1
+	for child in node.get_children():
+		_index_binding_targets(child, next_inside_repeat, next_inside_virtual_repeat)
+
+
+func _indexed_requires_full_reconcile(paths: PackedStringArray) -> bool:
+	for dependency_path_value in _dependency_targets_by_path:
+		var dependency_path := str(dependency_path_value)
+		if not _binding_path_matches(dependency_path, paths):
+			continue
+		for entry in _dependency_targets_by_path[dependency_path]:
+			var dependency: Dictionary = entry["dependency"]
+			if str(dependency.get("mode", "")) == "reconcile" and not bool(entry.get("inside_repeat", false)):
+				return true
+	return false
+
+
+func _indexed_requires_collection_patch(paths: PackedStringArray) -> bool:
+	for dependency_path_value in _dependency_targets_by_path:
+		var dependency_path := str(dependency_path_value)
+		if not _binding_path_matches(dependency_path, paths):
+			continue
+		for entry in _dependency_targets_by_path[dependency_path]:
+			var dependency: Dictionary = entry["dependency"]
+			var mode := str(dependency.get("mode", ""))
+			if mode == "collection":
+				return true
+			if bool(entry.get("inside_repeat", false)) and mode == "reconcile":
+				return true
+			if bool(entry.get("inside_virtual_repeat", false)) and mode in ["one-way", "two-way"]:
+				return true
+	return false
+
+
+func _matching_indexed_controls(paths: PackedStringArray) -> Array[Control]:
+	var controls: Array[Control] = []
+	var seen: Dictionary = {}
+	for binding_path_value in _binding_targets_by_path:
+		var binding_path := str(binding_path_value)
+		if not _binding_path_matches(binding_path, paths):
+			continue
+		for entry in _binding_targets_by_path[binding_path]:
+			var control: Variant = entry.get("control")
+			if not control is Control or not is_instance_valid(control):
+				continue
+			var instance_id: int = control.get_instance_id()
+			if seen.has(instance_id):
+				continue
+			seen[instance_id] = true
+			controls.append(control)
+	return controls
+
+
+func _apply_indexed_binding_paths(paths: PackedStringArray) -> void:
+	for control in _matching_indexed_controls(paths):
+		_apply_control_bindings(control, paths)
+
+
+func _indexed_paths_affect_focus(paths: PackedStringArray) -> bool:
+	for binding_path_value in _binding_targets_by_path:
+		var binding_path := str(binding_path_value)
+		if not _binding_path_matches(binding_path, paths):
+			continue
+		for entry in _binding_targets_by_path[binding_path]:
+			if str(entry.get("property", "")) in ["visible", "disabled"]:
+				return true
+	return false
+
+
+func _apply_bindings(node: Node, paths: PackedStringArray = PackedStringArray()) -> void:
+	if node is Control:
+		_apply_control_bindings(node as Control, paths)
 	for child in node.get_children():
 		_apply_bindings(child, paths)
+
+
+func _apply_control_bindings(control: Control, paths: PackedStringArray = PackedStringArray()) -> void:
+	var bindings: Dictionary = control.get_meta("cascade_bindings", {})
+	var range_values := {}
+	var range_touched := false
+	if control.has_method("set_range_values"):
+		range_values = {
+			"min_value": control.get("min_value"),
+			"max_value": control.get("max_value"),
+			"value": control.get("value"),
+		}
+	for property_name in bindings:
+		var property_key := str(property_name)
+		var binding_path := str(bindings[property_name])
+		if not paths.is_empty() and not _binding_path_matches(binding_path, paths):
+			continue
+		if not range_values.is_empty() and property_key in ["min_value", "max_value", "value"]:
+			range_touched = true
+			var numeric := _resolve_numeric_binding(control, property_key, binding_path)
+			if numeric["found"]:
+				range_values[property_key] = numeric["value"]
+		else:
+			_apply_binding(control, property_key, binding_path)
+	if not range_values.is_empty() and range_touched:
+		control.call("set_range_values", range_values["min_value"], range_values["max_value"], range_values["value"])
 
 
 func _apply_binding(control: Control, property_name: String, path: String) -> void:
@@ -817,7 +1068,15 @@ func _on_binding_paths_invalidated(paths: PackedStringArray) -> void:
 func _record_binding_trace(paths: PackedStringArray, trigger: String, strategy: String, reason: String, success: bool) -> void:
 	_binding_trace_sequence += 1
 	var stats := last_reconcile_stats if strategy in ["reconcile", "collection_patch", "virtual_window"] else {}
-	_last_binding_trace = BindingTrace.record(
+	var matching_entries: Array[Dictionary] = []
+	for dependency_path_value in _dependency_targets_by_path:
+		var dependency_path := str(dependency_path_value)
+		if _binding_path_matches(dependency_path, paths):
+			matching_entries.append_array(_dependency_targets_by_path[dependency_path])
+	matching_entries.sort_custom(func(left: Dictionary, right: Dictionary):
+		return int(left.get("order", 0)) < int(right.get("order", 0))
+	)
+	var indexed := BindingTrace.record_indexed(
 		_generated_root,
 		paths,
 		trigger,
@@ -825,8 +1084,12 @@ func _record_binding_trace(paths: PackedStringArray, trigger: String, strategy: 
 		reason,
 		_binding_trace_sequence,
 		success,
+		matching_entries,
+		_traced_controls,
 		stats
 	)
+	_last_binding_trace = indexed["trace"]
+	_traced_controls = indexed["controls"]
 	binding_trace_changed.emit(_last_binding_trace.duplicate(true))
 
 
@@ -863,6 +1126,28 @@ func _tree_has_rebuild_binding(node: Node) -> bool:
 			return true
 	for child in node.get_children():
 		if _tree_has_rebuild_binding(child):
+			return true
+	return false
+
+
+func _tree_has_focus_validation_contract(node: Node) -> bool:
+	if node is Control:
+		var control := node as Control
+		if bool(control.get_meta("cascade_focus_trap", false)) or bool(control.get_meta("cascade_autofocus", false)):
+			return true
+	for child in node.get_children():
+		if _tree_has_focus_validation_contract(child):
+			return true
+	return false
+
+
+func _element_tree_has_condition(element: Variant) -> bool:
+	if element == null:
+		return false
+	if not str(element.attributes.get("if", "")).strip_edges().is_empty():
+		return true
+	for child in element.children:
+		if _element_tree_has_condition(child):
 			return true
 	return false
 
@@ -1488,6 +1773,14 @@ func _append_collection_diagnostics(source_diagnostics: Array) -> void:
 	for source_diagnostic in source_diagnostics:
 		var diagnostic: Dictionary = source_diagnostic.duplicate()
 		diagnostic["path"] = "collection"
+		diagnostics.append(diagnostic)
+
+
+func _append_accessibility_diagnostics(source_diagnostics: Array, path: String) -> void:
+	for source_diagnostic in source_diagnostics:
+		var diagnostic: Dictionary = source_diagnostic.duplicate()
+		diagnostic["path"] = path
+		diagnostic["category"] = "accessibility"
 		diagnostics.append(diagnostic)
 
 

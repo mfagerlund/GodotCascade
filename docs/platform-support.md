@@ -13,12 +13,12 @@ GodotCascade is a GDScript addon targeting Godot 4.7 and later 4.x maintenance r
 
 | Godot | Windows desktop | Linux desktop | macOS desktop | Android | iOS |
 | --- | --- | --- | --- | --- | --- |
-| 4.7 stable | Supported locally: import, ten suites, and both benchmarks | Smoke-tested in current CI | Expected; no current 4.7 macOS job | Unverified | Unverified |
+| 4.7 stable | Supported locally: import, eleven suites, and both benchmarks | Smoke-tested in current CI | Expected; no current 4.7 macOS job | Unverified | Unverified |
 | 4.7.1 stable | Supported locally plus current CI smoke | Supported in the full release gate | Smoke-tested in current CI | Unverified | Unverified |
 | Earlier than 4.7 | Unsupported | Unsupported | Unsupported | Unsupported | Unsupported |
 | Later 4.x | Expected, CI update required | Expected, CI update required | Expected, CI update required | Unverified | Unverified |
 
-The full CI/release job runs on Ubuntu with Godot 4.7.1. A separate matrix runs the source pipeline, editor-tooling smoke, item-model, localized collection, and virtualization suites on the minimum Godot 4.7 Linux runner and current Windows/macOS runners. Tagged releases wait for both jobs.
+The full CI/release job runs on Ubuntu with Godot 4.7.1. A separate matrix runs the source pipeline, editor-tooling smoke, item-model, localized collection, virtualization, and side-by-side certification-fixture suites on the minimum Godot 4.7 Linux runner and current Windows/macOS runners. Tagged releases wait for both jobs.
 
 The current matrix passed for commit `31557ac` in [GitHub Actions run 31220031925](https://github.com/mfagerlund/GodotCascade/actions/runs/31220031925): full Godot 4.7.1/Linux verification, Godot 4.7/Linux smoke, Godot 4.7.1/Windows smoke, and Godot 4.7.1/macOS smoke. Each downloaded official archive was checked against its published SHA-512 sum.
 

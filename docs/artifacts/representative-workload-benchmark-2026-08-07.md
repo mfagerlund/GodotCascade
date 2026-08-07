@@ -27,7 +27,26 @@ Ordinary rendered frames do not repeat these cold costs. GXML parsing, GCSS reso
 
 The native workload baselines are executable in [`benchmarks/native_workload_baselines.gd`](../../benchmarks/native_workload_baselines.gd). They reproduce semantic content and native-control shape without GodotCascade or a custom visual theme; they are not claimed to be pixel-identical showcase implementations.
 
-## Results: official Godot 4.7.1 stable standard build, Windows
+## Post-0.7 retained-index rerun
+
+After the original 0.7 evidence below exposed full-tree binding/focus inspection, main added cached focus-property checks and retained binding/dependency indexes. Both official standard Windows builds were rerun through the unchanged workload harness. Every suite invariant and ceiling still passed.
+
+| Engine | Workload | Cascade total | Native total | Cascade/native ratio |
+| --- | --- | ---: | ---: | ---: |
+| 4.7.1 | Settings | 115.750 ms | 13.766 ms | 8.41× |
+| 4.7.1 | System status/dashboard | 66.417 ms | 13.802 ms | 4.81× |
+| 4.7.1 | Leaderboard | 82.804 ms | 13.795 ms | 6.00× |
+| 4.7.1 | 10k virtual inventory | 318.000 ms | 44.198 ms | 7.19× |
+| 4.7 | Settings | 136.219 ms | 13.804 ms | 9.87× |
+| 4.7 | System status/dashboard | 76.431 ms | 13.792 ms | 5.54× |
+| 4.7 | Leaderboard | 102.684 ms | 13.802 ms | 7.44× |
+| 4.7 | 10k virtual inventory | 378.402 ms | 51.924 ms | 7.29× |
+
+The 10k visible typed-model update plus two frames measured 97.098 ms on 4.7.1 and 110.515 ms on 4.7, still with one changed key scanned, 14 rows realized, one validated virtual Repeat candidate, and zero full-document candidates. The specialized `ItemList` totals were 278.347 ms and 273.058 ms respectively. The corresponding 500-control pipeline reruns also passed: literal/expression cold builds were 138.512/171.235 ms on 4.7.1 and 132.434/172.436 ms on 4.7. These are complete named operations, not per-frame costs.
+
+The original tables remain below as release-era evidence rather than being silently overwritten.
+
+## 0.7 baseline: official Godot 4.7.1 stable standard build, Windows
 
 Each time is the median **total cold construction plus two complete frames** across five samples.
 
@@ -42,7 +61,7 @@ The inventory collection update plus two complete frames had a 158.727 ms median
 
 Result: pass, one JSON record, zero benchmark failures, and no warnings/errors outside the record.
 
-## Results: official Godot 4.7.0 stable standard build, Windows
+## 0.7 baseline: official Godot 4.7.0 stable standard build, Windows
 
 Each time is the median **total cold construction plus two complete frames** across five samples.
 

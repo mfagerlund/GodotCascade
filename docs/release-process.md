@@ -9,6 +9,7 @@ Run every headless suite and both performance gates listed in `.github/workflows
 ```powershell
 python tools/ci/verify_repo.py
 python tools/showcase/generate_showcase.py --check
+python -m unittest discover -s tools/platform -p "test_*.py"
 dotnet build tests/codegen_compile/CodegenCompile.csproj --configuration Release
 python tools/release/package_addon.py
 python tools/release/clean_install_smoke.py --godot path/to/godot
@@ -28,7 +29,7 @@ Before creating `vX.Y.Z`:
 4. Create and push the annotated version tag.
 5. Confirm the tag workflow passes. It packages the addon again, verifies its checksum, and creates the GitHub release with the matching notes, ZIP, and checksum.
 
-The tag job waits for the full Linux release gate plus the minimum-version Linux and current Windows/macOS runtime smoke matrix. Manual IME, touch, virtual-keyboard, clipboard, and screen-reader certification is recorded separately and must never be inferred from a green headless job.
+The tag job waits for the full Linux release gate plus the minimum-version Linux and current Windows/macOS runtime smoke matrix. The matrix loads the side-by-side certification fixture, but manual IME, touch, virtual-keyboard, clipboard, and screen-reader certification is recorded separately and must never be inferred from a green headless job.
 
 ## Godot Asset Library
 

@@ -2,6 +2,8 @@ extends RefCounted
 
 ## Authored focus ordering, autofocus selection, and modal focus-scope helpers.
 
+const PropertyCache := preload("res://addons/godot_cascade/runtime/property_cache.gd")
+
 
 static func validate(root: Control) -> Array[Dictionary]:
 	var diagnostics: Array[Dictionary] = []
@@ -168,7 +170,4 @@ static func _diagnostic(control: Control, message: String) -> Dictionary:
 
 
 static func _has_property(target: Object, property_name: String) -> bool:
-	for property in target.get_property_list():
-		if property.name == property_name:
-			return true
-	return false
+	return PropertyCache.has(target, property_name)

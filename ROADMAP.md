@@ -201,7 +201,7 @@ The first public preview should build a small settings menu from `.gxml` and a s
 ## Ongoing platform-dependent certification
 
 - [x] Publish the automated and platform-dependent [TextInput certification matrix](docs/text-input-certification.md)
-- [ ] Complete manual IME, screen-reader, touch selection, and clipboard certification on each supported platform
+- Manual service evidence is tracked by the single Phase 13 certification gate below.
 
 ## Phase 8 — typed C# bindings — complete
 
@@ -238,9 +238,9 @@ The first public preview should build a small settings menu from `.gxml` and a s
 - [x] Prepare a candid Godot community announcement and structured feedback questions
 - [x] Publish the maintainer-approved live-reload artifact on the project site
 - [ ] Share the public demonstration through an authenticated Godot community account
-- [ ] Invite at least one external Godot developer to build a real interface and record where the authoring model helps or obstructs them
+- [ ] Invite at least one external Godot developer to follow the [real-interface evaluation protocol](docs/external-evaluation.md) and record where the authoring model helps or obstructs them
 - [x] Build one non-showcase production-shaped UI in both GodotCascade and GTML and publish the [reproducible comparison](docs/artifacts/godotcascade-vs-gtml-deployment-queue.md)
-- [ ] Collect structured feedback on authoring speed, diagnostics, binding ergonomics, runtime cost, and missing controls
+- [ ] Collect structured feedback on authoring speed, diagnostics, binding ergonomics, runtime cost, and missing controls using the [evaluation record](docs/artifacts/external-evaluation-template.md)
 
 ## Phase 11 — focused reactivity and composition
 
@@ -263,8 +263,10 @@ The first public preview should build a small settings menu from `.gxml` and a s
 ## Phase 13 — scale and platform confidence
 
 - [x] Avoid rebuilding a complete off-tree candidate for collection-only updates
+- [x] Retain indexed scalar/repeated-item invalidation and zero-candidate pure keyed Array reorders, with structural fallback
 - [x] Add item-model adapters and virtualization for large lists and tables
 - [x] Benchmark real settings, inventory, dashboard, and leaderboard workloads against native scenes and close alternatives ([verified report](docs/artifacts/representative-workload-benchmark-2026-08-07.md))
 - [x] Add Windows and macOS CI coverage where the engine runner permits it ([support matrix and green run](docs/platform-support.md))
-- [ ] Complete manual IME, clipboard, touch-selection, virtual-keyboard, and screen-reader certification
+- [x] Add a side-by-side Cascade/plain-Godot fixture plus create/validate tooling for reproducible manual evidence
+- [ ] Complete and record manual IME, clipboard, touch-selection, virtual-keyboard, and screen-reader certification on every claimed platform
 - [x] Publish tested support levels per Godot version and desktop/mobile platform ([support matrix](docs/platform-support.md))

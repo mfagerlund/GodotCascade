@@ -20,6 +20,6 @@ GodotCascade 0.7.0 adapts Godot 4.7 `LineEdit` and `TextEdit` for single-line an
 | Touch selection and virtual keyboard behavior | Native `LineEdit`/`TextEdit` and Godot display server | Hardware-dependent; not certified headlessly |
 | Screen-reader value and selection announcements | Native Godot accessibility bridge | Assistive-technology-dependent; not certified headlessly |
 
-The automated gate runs on the Windows development environment and a clean Ubuntu GitHub runner. Passing it proves that GodotCascade preserves and configures the native control without replacing these behaviors; it does not claim certification for every OS input method, clipboard manager, touch stack, or screen reader.
+The automated gate runs locally on Windows and in the current Linux, Windows, and macOS CI matrix. Passing it proves that GodotCascade preserves and configures the native control without replacing these behaviors; it does not claim certification for any OS input method, clipboard manager, touch stack, virtual keyboard, or screen reader.
 
 Report platform-specific failures with the OS, Godot build, input method or assistive technology, minimal GXML, and whether the equivalent plain `LineEdit` or `TextEdit` reproduces the issue.

@@ -109,6 +109,49 @@ def check_license_copies(failures: list[str]) -> None:
         failures.append("LICENSE and addons/godot_cascade/LICENSE must match exactly")
 
 
+def check_deployment_comparison(failures: list[str]) -> None:
+    result_path = ROOT / "docs" / "artifacts" / "deployment-queue-results.json"
+    report_path = ROOT / "docs" / "artifacts" / "godotcascade-vs-gtml-deployment-queue.md"
+    try:
+        payload = json.loads(result_path.read_text(encoding="utf-8"))
+        report = report_path.read_text(encoding="utf-8")
+        cascade = payload["results"]["godot-cascade"]
+        gtml = payload["results"]["gtml"]
+    except (OSError, KeyError, TypeError, json.JSONDecodeError) as error:
+        failures.append(f"deployment comparison artifacts are invalid: {error}")
+        return
+    if not cascade.get("functional", {}).get("passed", False):
+        failures.append("deployment comparison: GodotCascade functional result is not passing")
+    if not gtml.get("functional", {}).get("passed", False):
+        failures.append("deployment comparison: GTML functional result is not passing")
+    try:
+        cascade_reorder = cascade["timings"]["keyed_reorder_batch"]
+        measurements = (
+            cascade["timings"]["cold_build_median_ms"],
+            gtml["timings"]["cold_build_median_ms"],
+            cascade["timings"]["scalar_update_batch"]["total_ms"],
+            gtml["timings"]["scalar_update_batch"]["total_ms"],
+            cascade["timings"]["scalar_coalesced_batch"]["total_ms"],
+            cascade_reorder["total_ms"],
+            gtml["timings"]["keyed_reorder_batch"]["total_ms"],
+        )
+    except (KeyError, TypeError) as error:
+        failures.append(f"deployment comparison measurements are invalid: {error}")
+        return
+    if not cascade_reorder.get("zero_candidate_retained", False):
+        failures.append("deployment comparison: Cascade keyed reorder did not prove its retained zero-candidate path")
+    if int(cascade_reorder.get("reconcile_stats", {}).get("repeat_candidates", -1)) != 0:
+        failures.append("deployment comparison: Cascade keyed reorder unexpectedly built a Repeat candidate")
+    for measurement in measurements:
+        rendered = f"{float(measurement):,.3f}"
+        if rendered not in report:
+            failures.append(f"deployment comparison report is missing current measurement {rendered} ms")
+    for capture in payload.get("captures", {}).values():
+        capture_path = ROOT / str(capture.get("path", ""))
+        if not capture_path.is_file() or capture_path.stat().st_size != int(capture.get("bytes", -1)):
+            failures.append(f"deployment comparison capture does not match JSON metadata: {capture_path}")
+
+
 def main() -> int:
     files = tracked_files()
     failures: list[str] = []
@@ -116,6 +159,7 @@ def main() -> int:
     check_json(files, failures)
     check_markdown_links(files, failures)
     check_license_copies(failures)
+    check_deployment_comparison(failures)
 
     if failures:
         print("Repository verification failed:", file=sys.stderr)
@@ -124,7 +168,7 @@ def main() -> int:
         return 1
     print(
         f"Repository verification passed for {len(files)} repository files "
-        "(formatting, JSON, relative links/images, and license copies)."
+        "(formatting, JSON, relative links/images, license copies, and comparison artifacts)."
     )
     return 0
 

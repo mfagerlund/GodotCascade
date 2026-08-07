@@ -210,7 +210,7 @@ GodotCascade is not the only declarative UI project for Godot. The closest alter
 
 Choose GodotCascade when you want a reviewable source format, native controls, CSS-like cascade and layout, deterministic diagnostics, and no embedded expression runtime. Choose one of the alternatives when automatic reactivity, arbitrary expressions, every Godot node, React-style composition, or .NET-only compile-time generation matters more.
 
-The reproducible [deployment-queue comparison](docs/artifacts/godotcascade-vs-gtml-deployment-queue.md) implements and verifies the same non-showcase workflow in GodotCascade and pinned GTML. Both pass, but GTML is materially faster for fine-grained scalar and keyed-list updates; the report publishes native captures, complete timings, source metrics, diagnostic differences, and the resulting GodotCascade optimization target.
+The reproducible [deployment-queue comparison](docs/artifacts/godotcascade-vs-gtml-deployment-queue.md) implements and verifies the same non-showcase workflow in GodotCascade and pinned GTML. Both pass, and GTML remains faster for fine-grained scalar and keyed-list updates. The report publishes native captures, complete timings, source metrics, diagnostic differences, and the rerun after GodotCascade added retained dependency indexes and zero-candidate pure keyed reorders.
 
 ### Capabilities the alternatives currently have that GodotCascade lacks
 
@@ -328,6 +328,7 @@ godot --headless --path . --script res://tests/editor_tooling_smoke_test.gd
 godot --headless --path . --script res://tests/item_model_test.gd
 godot --headless --path . --script res://tests/collection_scaling_test.gd
 godot --headless --path . --script res://tests/virtualization_test.gd
+godot --headless --path . --script res://tests/platform_certification_test.gd
 ```
 
 ## Using `CascadeBox`

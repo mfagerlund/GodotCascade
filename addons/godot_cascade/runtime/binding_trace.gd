@@ -62,6 +62,69 @@ static func record(
 	return trace
 
 
+## Records a trace from a retained dependency index. The caller supplies the
+## entries whose paths overlap this invalidation and the controls stamped by the
+## previous trace, avoiding an otherwise complete native-tree traversal.
+static func record_indexed(
+	root: Control,
+	paths: PackedStringArray,
+	trigger: String,
+	strategy: String,
+	reason: String,
+	sequence: int,
+	success: bool,
+	matching_entries: Array[Dictionary],
+	previous_controls: Array[Control],
+	reconcile_stats: Dictionary = {}
+) -> Dictionary:
+	for control in previous_controls:
+		if is_instance_valid(control) and control.has_meta(TRACE_META):
+			control.remove_meta(TRACE_META)
+
+	var grouped: Dictionary = {}
+	var ordered_controls: Array[Control] = []
+	for entry in matching_entries:
+		var control: Variant = entry.get("control")
+		var dependency: Variant = entry.get("dependency")
+		if not control is Control or not is_instance_valid(control) or not dependency is Dictionary:
+			continue
+		var instance_id: int = control.get_instance_id()
+		if not grouped.has(instance_id):
+			grouped[instance_id] = []
+			ordered_controls.append(control)
+		grouped[instance_id].append(dependency.duplicate(true))
+
+	var affected_controls: Array[String] = []
+	var affected_bindings := 0
+	for control in ordered_controls:
+		var matches: Array = grouped[control.get_instance_id()]
+		control.set_meta(TRACE_META, {
+			"sequence": sequence,
+			"trigger": trigger,
+			"strategy": strategy,
+			"reason": reason,
+			"paths": paths,
+			"matches": matches,
+		})
+		affected_controls.append(_control_identity(control))
+		affected_bindings += matches.size()
+
+	var trace := {
+		"sequence": sequence,
+		"trigger": trigger,
+		"strategy": strategy,
+		"reason": reason,
+		"paths": paths,
+		"affected_controls": affected_controls,
+		"affected_bindings": affected_bindings,
+		"success": success,
+		"reconcile_stats": reconcile_stats.duplicate(true),
+	}
+	if root != null:
+		root.set_meta(DOCUMENT_TRACE_META, trace)
+	return {"trace": trace, "controls": ordered_controls}
+
+
 static func clear(root: Control) -> void:
 	if root == null:
 		return

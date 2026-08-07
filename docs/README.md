@@ -13,6 +13,7 @@ GodotCascade 0.7.0 is the current experimental preview. It includes retained typ
 - [TextInput certification matrix](text-input-certification.md) — automated evidence and platform-dependent limits
 - [Platform support matrix](platform-support.md) — tested Godot/OS levels and mobile boundaries
 - [Manual platform certification](platform-certification.md) — clipboard, IME, touch, virtual-keyboard, and screen-reader protocol
+- [External evaluator protocol](external-evaluation.md) — reproducible real-interface brief and structured response contract
 - [Native control compatibility tiers](compatibility-tiers.md) — exact, adapted, and layout-only classification and diagnostics
 - [Style system](style-system.md) — token spans, typed values, selectors, inheritance, computed caching, and theme adapters
 - [Custom properties / calc experiment](artifacts/custom-properties-calc-experiments-2026-08-07.md) — selected semantics, rejected approaches, regressions, performance, and verification evidence

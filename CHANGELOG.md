@@ -4,6 +4,10 @@ All notable changes to GodotCascade are documented here. Versions follow semanti
 
 ## [Unreleased]
 
+- Added retained binding/dependency indexes so named scalar and repeated-item invalidations update only matching native controls while preserving exact debugger traces.
+- Added an atomic zero-candidate path for pure keyed Array reorders whose item identities and row structure are unchanged, with candidate reconciliation retained as the correctness fallback.
+- Added a cross-platform side-by-side Cascade/plain-Godot manual certification fixture, evidence-record validator, and external-developer evaluation protocol without overstating headless accessibility coverage.
+
 ## [0.7.0] — 2026-08-07
 
 - Added weighted `flex-shrink`/`flex-basis`, descendant opacity, Godot 4.7 container-safe translate/rotate/scale, rounded two-stop linear gradients, and inherited project-local `Font` resources.
