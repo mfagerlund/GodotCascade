@@ -1,21 +1,21 @@
 # Godot Asset Library submission
 
-This is the copy-ready submission record for the GodotCascade 0.5.0 experimental preview. New community entries are published at the Asset Library's **testing** support level; that level is assigned by the library and is not a field in the public submission form.
+This is the copy-ready submission record for the GodotCascade 0.6.0 experimental preview. New community entries are published at the Asset Library's **testing** support level; that level is assigned by the library and is not a field in the public submission form.
 
 ## Submission fields
 
 | Field | Value |
 | --- | --- |
 | Asset name | `GodotCascade` |
-| Description | `GodotCascade is an experimental retained-mode UI framework for Godot 4.7. It builds native Control trees from declarative GXML and CSS-inspired GCSS, with deterministic flex, grid, stack, and table layout; targeted and writable bindings; exact boolean conditions; keyed hot reload; source-aware diagnostics; and editor preview tools.` |
+| Description | `GodotCascade is an experimental retained-mode UI framework for Godot 4.7. It builds native Control trees from declarative GXML and CSS-inspired GCSS, with deterministic flex, grid, stack, and table layout; reusable typed components; focused variables and arithmetic; targeted and writable bindings; keyed hot reload; source-aware diagnostics; and editor preview tools.` |
 | Category | `Tools` |
 | License | `The Unlicense License` (`Unlicense`) |
 | Repository host | `Custom` |
 | Repository URL | `https://github.com/mfagerlund/GodotCascade` |
 | Issues URL | `https://github.com/mfagerlund/GodotCascade/issues` |
 | Minimum Godot version | `4.7` |
-| Asset version | `0.5.0` |
-| Download URL | `https://github.com/mfagerlund/GodotCascade/releases/download/v0.5.0/godot-cascade-0.5.0.zip` |
+| Asset version | `0.6.0` |
+| Download URL | `https://github.com/mfagerlund/GodotCascade/releases/download/v0.6.0/godot-cascade-0.6.0.zip` |
 | Icon URL | `https://raw.githubusercontent.com/mfagerlund/GodotCascade/main/icon.png` |
 
 The custom provider deliberately points at the deterministic addon-only release archive instead of a generated repository snapshot. The archive installs only `addons/godot_cascade/` and retains the packaged README and license.
@@ -33,7 +33,7 @@ Enable three image previews. The image and thumbnail URL can be the same direct 
 - [x] The public repository, issues page, release page, archive, checksum, icon, and preview URLs resolve without repository credentials.
 - [x] The icon is a square 512×512 PNG, exceeding the required 128×128 minimum.
 - [x] `LICENSE` and the copy packaged under `addons/godot_cascade/` contain the matching Unlicense text and the 2026 copyright statement.
-- [x] `plugin.cfg` identifies version 0.5.0 and the release ZIP contains the complete addon directory.
+- [x] `plugin.cfg` identifies version 0.6.0 and the release ZIP contains the complete addon directory.
 - [x] The clean-install smoke test and the five native Godot suites pass against the packaged addon.
 - [x] The name and plain-text description are English, describe the experimental status, and do not claim HTML/CSS compatibility.
 

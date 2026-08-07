@@ -4,6 +4,8 @@ All notable changes to GodotCascade are documented here. Versions follow semanti
 
 ## [Unreleased]
 
+## [0.6.0] — 2026-08-07
+
 - Added reusable source-level GXML components with checked `String`/`bool`/`int`/`float`/`Variant` parameters, default and named slots, scoped IDs, source-aware diagnostics, and identity-preserving reconciliation.
 - Added bounded binding dependency and invalidation traces to `CascadeDocument`, `DebugSnapshot`, and the editor layout debugger, including targeted-versus-reconcile reasons and affected controls.
 - Added case-sensitive, cascading/inherited GCSS custom properties with lazy `var()` fallback plus typed NUMBER/LENGTH/TIME `calc()` arithmetic, source-located diagnostics, shorthand precedence guarantees, full viewport cache keys, showcase coverage, and an expression-heavy benchmark.
@@ -71,7 +73,8 @@ The first public preview provides:
 
 See the [0.1.0 release notes](docs/releases/0.1.0.md) for installation and known boundaries.
 
-[Unreleased]: https://github.com/mfagerlund/GodotCascade/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/mfagerlund/GodotCascade/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/mfagerlund/GodotCascade/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/mfagerlund/GodotCascade/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/mfagerlund/GodotCascade/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/mfagerlund/GodotCascade/compare/v0.2.0...v0.3.0

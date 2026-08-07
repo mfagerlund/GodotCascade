@@ -1,5 +1,9 @@
 # Migration notes
 
+## 0.6.0 composition, traces, and GCSS expressions
+
+Version 0.6.0 is backward-compatible with the documented 0.5 source-format version 1 surface; no existing GXML or GCSS migration is required. Reusable typed components, debugger dependency/invalidation traces, case-sensitive custom properties, and typed `calc()` are additive. Ordinary property names remain case-insensitive. Custom property names are intentionally case-sensitive, and unsupported expression dimensions remain recoverable errors rather than browser-compatible token preservation.
+
 ## 0.5.0 focused reactivity and conditions
 
 Version 0.5.0 is backward-compatible with the documented 0.4 source-format version 1 surface; no existing GXML or GCSS migration is required. `ObservableBindingContext`, broader one-way state targets, bound class rematching, and exact boolean `if="{path}"` conditions are additive. A false conditional genuinely removes its native subtree, so controls inside that branch are recreated if it later returns; stable siblings continue to reconcile in place.
