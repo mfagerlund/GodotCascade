@@ -4,6 +4,8 @@ All notable changes to GodotCascade are documented here. Versions follow semanti
 
 ## [Unreleased]
 
+- Made release-archive entry ordering explicitly platform-independent after uppercase license files exposed Windows/Linux `Path` sorting differences.
+
 ## [0.4.0] — 2026-08-07
 
 - Added optional typed C# binding generation from GXML, including partial getter/setter contracts, verbatim formatter/parser bodies, source-mapped compiler diagnostics, native signal wiring, and hot-reload reconnection.
