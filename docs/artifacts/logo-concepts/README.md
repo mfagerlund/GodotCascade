@@ -10,6 +10,18 @@ The clearest connection to the product name and native UI output. It has the str
 
 Prompt direction: three cascading rounded UI panels forming a clean `C`, suggesting layered style rules and native controls; navy, interface blue, and mint.
 
+### Developed mark
+
+![Production-oriented vector mark with three cascading native windows](godot-cascade-mark.svg)
+
+The selected direction is now expressed as deterministic SVG geometry with flat fills from the showcase palette. The nested windows form the `C` rather than placing a separate letter over them. Minimal title-bar controls preserve the native-window reading without depending on detail.
+
+- [Open the 128/64/32/16 px comparison](concept-1-size-study.html)
+- [Open the SVG master](godot-cascade-mark.svg)
+- [Open the transparent 512 px PNG](godot-cascade-mark-512.png)
+- [Open the Asset Library-sized 128 px PNG](godot-cascade-mark-128.png)
+- [Open the image-model refinement study](concept-1-refinement-study.png)
+
 ## 2. Markup to native tree
 
 ![Markup angle brackets surrounding a descending native-node tree](concept-2-markup-tree.png)

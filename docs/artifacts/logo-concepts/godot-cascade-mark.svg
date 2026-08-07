@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">GodotCascade</title>
+  <desc id="description">Three native application windows cascade into a bold C-shaped mark.</desc>
+
+  <!-- Back window: interface blue. -->
+  <path fill="#246BCE" d="M96 48h320c27 0 48 21 48 48v90h-88v-18c0-18-14-32-32-32H192c-18 0-32 14-32 32v176c0 18 14 32 32 32h184v88H96c-27 0-48-21-48-48V96c0-27 21-48 48-48Z"/>
+  <circle cx="101" cy="91" r="10" fill="#FFFFFF"/>
+  <rect x="124" y="83" width="72" height="16" rx="8" fill="#FFFFFF"/>
+
+  <!-- Middle window: live-state mint. -->
+  <path fill="#65D6A7" d="M128 92h288c27 0 48 21 48 48v90h-88v-18c0-18-14-32-32-32H224c-18 0-32 14-32 32v132c0 18 14 32 32 32h152v88H128c-27 0-48-21-48-48V140c0-27 21-48 48-48Z"/>
+  <circle cx="133" cy="135" r="10" fill="#0B1220"/>
+  <rect x="156" y="127" width="72" height="16" rx="8" fill="#0B1220"/>
+
+  <!-- Front window: dark native output. Its open right side completes the C. -->
+  <path fill="#0B1220" d="M160 136h256c27 0 48 21 48 48v62c0 27-21 48-48 48H288c-18 0-32 14-32 32s14 32 32 32h128c27 0 48 21 48 48v10c0 27-21 48-48 48H160c-27 0-48-21-48-48V184c0-27 21-48 48-48Z"/>
+  <circle cx="165" cy="179" r="10" fill="#FFFFFF"/>
+  <rect x="188" y="171" width="72" height="16" rx="8" fill="#FFFFFF"/>
+</svg>
