@@ -13,6 +13,7 @@ const GcssParser := preload("res://addons/godot_cascade/style/gcss_parser.gd")
 const CascadeBuilder := preload("res://addons/godot_cascade/runtime/cascade_builder.gd")
 const CascadeReconciler := preload("res://addons/godot_cascade/runtime/cascade_reconciler.gd")
 const BindingResolver := preload("res://addons/godot_cascade/runtime/binding_resolver.gd")
+const ObservableBindingContext := preload("res://addons/godot_cascade/runtime/observable_binding_context.gd")
 const ComponentRegistry := preload("res://addons/godot_cascade/runtime/component_registry.gd")
 const AccessibilityAudit := preload("res://addons/godot_cascade/runtime/accessibility_audit.gd")
 
@@ -39,7 +40,9 @@ var diagnostics: Array[Dictionary] = []
 var last_reconcile_stats := {"reused": 0, "created": 0, "replaced": 0, "removed": 0}
 var binding_context: Variant:
 	set(value):
+		_disconnect_binding_observable()
 		binding_context = value
+		_connect_binding_observable()
 		if _generated_root != null:
 			refresh_bindings()
 var event_context: Object:
@@ -104,7 +107,7 @@ func reload_document() -> bool:
 		return false
 
 	_last_build_size = size
-	var build_result := CascadeBuilder.build(markup_result["root"], style_result["rules"], binding_context, size)
+	var build_result := CascadeBuilder.build(markup_result["root"], style_result["rules"], _binding_root_context(), size)
 	_append_diagnostics(build_result["diagnostics"], "builder")
 	if _has_errors() or build_result["root"] == null:
 		_publish_diagnostics()
@@ -166,6 +169,21 @@ func refresh_bindings() -> bool:
 	if _generated_root != null and _contains_element(_generated_root, "repeat"):
 		return reload_document()
 	return _refresh_bindings(true)
+
+
+## Reapplies only bindings that overlap one of the named paths.
+## Parent and child paths overlap: invalidating `settings` refreshes
+## `settings.profile`, and invalidating `settings.profile.name` also refreshes
+## a control bound to `settings.profile`.
+func refresh_binding_paths(paths: PackedStringArray) -> bool:
+	var normalized := _normalized_binding_paths(paths)
+	if normalized.is_empty():
+		return false
+	if "*" in normalized:
+		return refresh_bindings()
+	if _generated_root != null and _contains_element(_generated_root, "repeat"):
+		return reload_document()
+	return _refresh_binding_paths(normalized, true)
 
 
 ## Reconnects authored on-* signal bindings without disturbing user connections.
@@ -241,7 +259,7 @@ func _diagnostic(severity: String, path: String, message: String) -> Dictionary:
 
 func _refresh_bindings(publish: bool) -> bool:
 	diagnostics = diagnostics.filter(func(diagnostic): return diagnostic.get("path", "") != "binding")
-	if _generated_root == null or binding_context == null:
+	if _generated_root == null or _binding_root_context() == null:
 		if publish:
 			_publish_diagnostics()
 		return _generated_root != null
@@ -254,11 +272,29 @@ func _refresh_bindings(publish: bool) -> bool:
 	return not _has_errors()
 
 
-func _apply_bindings(node: Node) -> void:
+func _refresh_binding_paths(paths: PackedStringArray, publish: bool) -> bool:
+	diagnostics = diagnostics.filter(func(diagnostic):
+		return diagnostic.get("path", "") != "binding" or not _binding_path_matches(str(diagnostic.get("binding_path", "")), paths)
+	)
+	if _generated_root == null or _binding_root_context() == null:
+		if publish:
+			_publish_diagnostics()
+		return _generated_root != null
+	var was_applying_bindings := _applying_bindings
+	_applying_bindings = true
+	_apply_bindings(_generated_root, paths)
+	_applying_bindings = was_applying_bindings
+	if publish:
+		_publish_diagnostics()
+	return not _has_errors()
+
+
+func _apply_bindings(node: Node, paths: PackedStringArray = PackedStringArray()) -> void:
 	if node is Control:
 		var control := node as Control
 		var bindings: Dictionary = control.get_meta("cascade_bindings", {})
 		var range_values := {}
+		var range_touched := false
 		if control.has_method("set_range_values"):
 			range_values = {
 				"min_value": control.get("min_value"),
@@ -267,31 +303,31 @@ func _apply_bindings(node: Node) -> void:
 			}
 		for property_name in bindings:
 			var property_key := str(property_name)
+			var binding_path := str(bindings[property_name])
+			if not paths.is_empty() and not _binding_path_matches(binding_path, paths):
+				continue
 			if not range_values.is_empty() and property_key in ["min_value", "max_value", "value"]:
-				var numeric := _resolve_numeric_binding(control, property_key, str(bindings[property_name]))
+				range_touched = true
+				var numeric := _resolve_numeric_binding(control, property_key, binding_path)
 				if numeric["found"]:
 					range_values[property_key] = numeric["value"]
 			else:
-				_apply_binding(control, property_key, str(bindings[property_name]))
-		if not range_values.is_empty():
+				_apply_binding(control, property_key, binding_path)
+		if not range_values.is_empty() and range_touched:
 			control.call("set_range_values", range_values["min_value"], range_values["max_value"], range_values["value"])
 	for child in node.get_children():
-		_apply_bindings(child)
+		_apply_bindings(child, paths)
 
 
 func _apply_binding(control: Control, property_name: String, path: String) -> void:
 	var result := BindingResolver.resolve(_binding_context_for(control, path), path)
 	if not result["found"]:
-		diagnostics.append(_diagnostic(
-			"warning",
-			"binding",
-			"%s on %s: %s" % [property_name, control.get_meta("cascade_key", control.name), result["message"]]
-		))
+		_append_binding_warning(control, property_name, path, result["message"])
 		return
 	var value: Variant = result["value"]
 	if property_name == "selected_value" and control.has_method("select_value"):
 		if not control.call("select_value", value):
-			diagnostics.append(_diagnostic("warning", "binding", "selected_value on %s has no option '%s'." % [control.get_meta("cascade_key", control.name), value]))
+			_append_binding_warning(control, property_name, path, "No option '%s'." % value)
 		return
 	if property_name == "text":
 		var rendered := str(value)
@@ -378,7 +414,7 @@ func _write_binding(control: Control, property_name: String, path: String, value
 		_publish_diagnostics()
 		return
 	binding_value_changed.emit(path, value, control)
-	_refresh_bindings(false)
+	_refresh_binding_paths(PackedStringArray([path]), false)
 	_publish_diagnostics()
 
 
@@ -399,11 +435,7 @@ func _validate_node(control: Control) -> void:
 func _resolve_numeric_binding(control: Control, property_name: String, path: String) -> Dictionary:
 	var result := BindingResolver.resolve(_binding_context_for(control, path), path)
 	if not result["found"]:
-		diagnostics.append(_diagnostic(
-			"warning",
-			"binding",
-			"%s on %s: %s" % [property_name, control.get_meta("cascade_key", control.name), result["message"]]
-		))
+		_append_binding_warning(control, property_name, path, result["message"])
 		return {"found": false, "value": 0.0}
 	var value: Variant = result["value"]
 	if value is int or value is float:
@@ -411,18 +443,65 @@ func _resolve_numeric_binding(control: Control, property_name: String, path: Str
 	var rendered := str(value)
 	if rendered.is_valid_float():
 		return {"found": true, "value": rendered.to_float()}
-	diagnostics.append(_diagnostic(
-		"warning",
-		"binding",
-		"%s on %s requires a number, got '%s'." % [property_name, control.get_meta("cascade_key", control.name), rendered]
-	))
+	_append_binding_warning(control, property_name, path, "Requires a number, got '%s'." % rendered)
 	return {"found": false, "value": 0.0}
 
 
 func _binding_context_for(control: Control, path: String) -> Variant:
 	var scope: Dictionary = control.get_meta("cascade_binding_scope", {})
 	var first_segment := path.get_slice(".", 0)
-	return scope if scope.has(first_segment) else binding_context
+	return scope if scope.has(first_segment) else _binding_root_context()
+
+
+func _binding_root_context() -> Variant:
+	return binding_context.value if binding_context is ObservableBindingContext else binding_context
+
+
+func _connect_binding_observable() -> void:
+	if binding_context is ObservableBindingContext and not binding_context.paths_invalidated.is_connected(_on_binding_paths_invalidated):
+		binding_context.paths_invalidated.connect(_on_binding_paths_invalidated)
+
+
+func _disconnect_binding_observable() -> void:
+	if binding_context is ObservableBindingContext and binding_context.paths_invalidated.is_connected(_on_binding_paths_invalidated):
+		binding_context.paths_invalidated.disconnect(_on_binding_paths_invalidated)
+
+
+func _on_binding_paths_invalidated(paths: PackedStringArray) -> void:
+	refresh_binding_paths(paths)
+
+
+func _normalized_binding_paths(paths: PackedStringArray) -> PackedStringArray:
+	var normalized := PackedStringArray()
+	for path in paths:
+		var candidate := path.strip_edges()
+		if candidate == "*":
+			return PackedStringArray(["*"])
+		if not ObservableBindingContext.is_valid_path(candidate):
+			continue
+		if candidate not in normalized:
+			normalized.append(candidate)
+	return normalized
+
+
+func _binding_path_matches(binding_path: String, invalidated_paths: PackedStringArray) -> bool:
+	if binding_path.is_empty():
+		return false
+	for invalidated_path in invalidated_paths:
+		if invalidated_path == "*" or binding_path == invalidated_path:
+			return true
+		if binding_path.begins_with(invalidated_path + ".") or invalidated_path.begins_with(binding_path + "."):
+			return true
+	return false
+
+
+func _append_binding_warning(control: Control, property_name: String, binding_path: String, message: String) -> void:
+	diagnostics.append({
+		"severity": "warning",
+		"path": "binding",
+		"binding_path": binding_path,
+		"message": "%s on %s: %s" % [property_name, control.get_meta("cascade_key", control.name), message],
+	})
 
 
 func _refresh_events(publish: bool) -> bool:
@@ -432,8 +511,8 @@ func _refresh_events(publish: bool) -> bool:
 			_publish_diagnostics()
 		return false
 	var target: Object = event_context
-	if target == null and binding_context is Object:
-		target = binding_context
+	if target == null and _binding_root_context() is Object:
+		target = _binding_root_context()
 	if target == null:
 		target = self
 	_apply_events(_generated_root, target)

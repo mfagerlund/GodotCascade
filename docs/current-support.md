@@ -83,7 +83,7 @@ The one-way property-binding surface is:
 - `text` on `Label`, `Button`, `TextInput`, `TableHeaderCell`, and `TableCell`;
 - `min`, `max`, and `value` on `Progress` and `Slider`.
 
-`BindingResolver` traverses typed Godot object properties, Arrays using numeric path segments, and Dictionaries. Typed `RefCounted` or `Resource` models are recommended for application state; Dictionaries remain useful for JSON-shaped data and prototypes. The resolver does not execute expressions or call methods. Assigning a new `CascadeDocument.binding_context` refreshes automatically; nested mutations require `refresh_bindings()`.
+`BindingResolver` traverses typed Godot object properties, Arrays using numeric path segments, and Dictionaries. Typed `RefCounted` or `Resource` models are recommended for application state; Dictionaries remain useful for JSON-shaped data and prototypes. The resolver does not execute expressions or call methods. Assigning a new `CascadeDocument.binding_context` refreshes automatically. After nested mutations, call `refresh_bindings()` or wrap the model in `ObservableBindingContext` and call `invalidate("named.path")`; exact, parent, and child dependencies are refreshed without polling. Repeated documents still reconcile when a named path is invalidated because collection topology may have changed.
 
 `Repeat` accepts an array path through `items="{path}"`; its template can bind through local `item` and `index` scopes while retaining access to root paths. A `key` path relative to each item enables identity-preserving reorder/add/remove reconciliation.
 

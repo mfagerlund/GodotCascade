@@ -197,7 +197,7 @@ GodotCascade is not the only declarative UI project for Godot. The closest alter
 | --- | --- | --- | --- | --- |
 | Primary model | Focused GXML + GCSS | HTML/CSS + Vue-style directives | Compiled JSX-like GDScript + hooks | QML/XAML-like Godot .NET markup |
 | Runtime output | Native `Control` tree | Native `Control` tree | Any instantiable Godot `Node` | Built-in Godot `Control` types |
-| State updates | Typed paths, explicit refresh, opt-in write-back | Automatic reactive store + expressions | Fiber rendering, hooks, signals, context | Generated one/two-way C# bindings |
+| State updates | Typed paths, targeted invalidation, opt-in write-back | Automatic reactive store + expressions | Fiber rendering, hooks, signals, context | Generated one/two-way C# bindings |
 | Styling | Constrained cascade with deterministic box/flex/grid/table layout | Broad CSS-like surface with variables, calculations, transforms, gradients, SVG, and fonts | Godot properties, themes, state styleboxes | Godot properties through generated markup |
 | Reload model | Last-valid candidate + keyed native reconciliation | Live reactive reconciliation | Fast Refresh with hook-state preservation | Compile-time Roslyn generation |
 | Main trade-off | Small language and explicit unsupported diagnostics | Broader runtime and expression surface | React-scale framework and concepts | Requires Godot .NET |
@@ -206,7 +206,7 @@ Choose GodotCascade when you want a reviewable source format, native controls, C
 
 ### Capabilities the alternatives currently have that GodotCascade lacks
 
-- automatic dependency-tracked reactivity; nested mutations currently require `refresh_bindings()`;
+- automatic dependency-tracked reactivity; mutations still require an explicit full or named-path invalidation;
 - general expressions, conditionals, dynamic class/visibility attributes, and Vue/JSX-style control flow;
 - reusable markup components with typed parameters rather than native factory registration;
 - an open vocabulary covering every built-in `Control` or arbitrary `Node`;

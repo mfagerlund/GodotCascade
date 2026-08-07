@@ -9,6 +9,7 @@ const CascadeBuilder := preload("res://addons/godot_cascade/runtime/cascade_buil
 const CascadeReconciler := preload("res://addons/godot_cascade/runtime/cascade_reconciler.gd")
 const CascadeDocument := preload("res://addons/godot_cascade/runtime/cascade_document.gd")
 const BindingResolver := preload("res://addons/godot_cascade/runtime/binding_resolver.gd")
+const ObservableBindingContext := preload("res://addons/godot_cascade/runtime/observable_binding_context.gd")
 const GcssTokenizer := preload("res://addons/godot_cascade/style/gcss_tokenizer.gd")
 const GcssValue := preload("res://addons/godot_cascade/style/gcss_value.gd")
 const ComputedStyleCache := preload("res://addons/godot_cascade/style/computed_style_cache.gd")
@@ -72,6 +73,7 @@ func _run() -> void:
 	_test_reconciler_property_copy_parity()
 	_test_parser_recovery()
 	_test_binding_resolver()
+	await _test_observable_binding_context()
 	await _test_writable_binding_pipeline()
 	await _test_repeated_writable_binding_pipeline()
 	await _test_markup_state_features()
@@ -814,6 +816,59 @@ func _test_binding_resolver() -> void:
 	_expect_true("binding assigns existing array index", array_write["written"] and context["player"]["inventory"][1] == "atlas")
 	var missing_write := BindingResolver.assign(context, "player.health", 10)
 	_expect_true("binding refuses to invent missing path", not missing_write["written"])
+
+
+func _test_observable_binding_context() -> void:
+	var markup_path := "user://cascade_observable_binding_test.gxml"
+	var stylesheet_path := "user://cascade_observable_binding_test.gcss"
+	var markup := """<Page>
+		<TextInput id="profile" bind-text="{player.name}" accessible-label="Player name" />
+		<Label id="name" text="{player.name}" />
+		<Label id="status" text="{status}" />
+	</Page>"""
+	_expect_true("write observable-binding markup", _write_text(markup_path, markup))
+	_expect_true("write observable-binding stylesheet", _write_text(stylesheet_path, "Page { gap: 4px; }"))
+	var state := {"player": {"name": "Rhea"}, "status": "Ready"}
+	var observable := ObservableBindingContext.new(state)
+	var document: Control = CascadeDocument.new()
+	document.load_on_ready = false
+	document.log_diagnostics_to_console = false
+	document.watch_sources = false
+	document.binding_context = observable
+	document.markup_path = markup_path
+	document.stylesheet_path = stylesheet_path
+	root.add_child(document)
+	_expect_true("observable-binding document loads", document.reload_document())
+	var input: LineEdit = _find_by_id(document.generated_root(), "profile")[0]
+	var name_label: Control = _find_by_id(document.generated_root(), "name")[0]
+	var status_label: Control = _find_by_id(document.generated_root(), "status")[0]
+	var name_instance := name_label.get_instance_id()
+	state["player"]["name"] = "Nova"
+	state["status"] = "Changed but not invalidated"
+	_expect_true("observable accepts exact named path", observable.invalidate("player.name"))
+	_expect_true("observable refreshes matching dependency", name_label.get("text") == "Nova")
+	_expect_true("observable leaves unrelated dependency untouched", status_label.get("text") == "Ready")
+	_expect_true("observable refresh preserves native identity", name_label.get_instance_id() == name_instance)
+	state["player"]["name"] = "Rhea Prime"
+	_expect_true("observable parent path invalidates child dependency", observable.invalidate("player"))
+	_expect_true("observable parent refresh updates child binding", name_label.get("text") == "Rhea Prime")
+	_expect_true("observable rejects expression-like invalidation", not observable.invalidate("player.name + status"))
+	_expect_true("direct named refresh updates one path", document.refresh_binding_paths(PackedStringArray(["status"])))
+	_expect_true("direct named refresh applies pending value", status_label.get("text") == "Changed but not invalidated")
+	input.text = "Orion"
+	input.text_changed.emit(input.text)
+	await process_frame
+	_expect_true("observable wrapper supports writable binding", state["player"]["name"] == "Orion")
+	_expect_true("observable writable update refreshes matching label", name_label.get("text") == "Orion")
+	state["player"]["name"] = "Vega"
+	state["status"] = "All refreshed"
+	observable.invalidate_all()
+	_expect_true("observable full invalidation refreshes name", name_label.get("text") == "Vega")
+	_expect_true("observable full invalidation refreshes status", status_label.get("text") == "All refreshed")
+	document.queue_free()
+	await process_frame
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(markup_path))
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(stylesheet_path))
 
 
 func _test_writable_binding_pipeline() -> void:

@@ -72,7 +72,7 @@ The current one-way surface is:
 | `TableHeaderCell`, `TableCell` | `text` |
 | `Progress`, `Slider` | `min`, `max`, `value` |
 
-Assigning a new `binding_context` refreshes automatically. Mutating a nested value does not notify GodotCascade, so call `refresh_bindings()` afterward:
+Assigning a new `binding_context` refreshes automatically. The simplest explicit boundary after mutating a nested value is `refresh_bindings()`:
 
 ```gdscript
 model.scale = 115.0
@@ -80,6 +80,31 @@ refresh_bindings()
 ```
 
 The update changes compatible controls in place. It does not rebuild a non-repeated document or replace user-created signal connections.
+
+### Named-path invalidation
+
+For models with many independent bindings, wrap the same typed object or Dictionary in `ObservableBindingContext`:
+
+```gdscript
+const ObservableBindingContext := preload(
+    "res://addons/godot_cascade/runtime/observable_binding_context.gd"
+)
+
+var model := SettingsViewModel.new()
+var observable := ObservableBindingContext.new(model)
+
+func _ready() -> void:
+    binding_context = observable
+    super()
+
+func set_scale(value: float) -> void:
+    model.scale = value
+    observable.invalidate("scale")
+```
+
+`invalidate(path)` emits synchronously and a non-repeated `CascadeDocument` reapplies only bindings whose path overlaps the invalidated path. Parent and child paths overlap: invalidating `settings` refreshes `settings.profile`, while invalidating `settings.profile.name` also refreshes a control bound to `settings.profile`. Use `invalidate_many(PackedStringArray([...]))` to coalesce several paths, or `invalidate_all()` for the full boundary. `CascadeDocument.refresh_binding_paths()` exposes the same targeted operation without a wrapper.
+
+Paths use the existing identifier/numeric-segment grammar. Expressions, method calls, wildcards, and property interception are not introduced. The adapter does not watch mutations or perform dependency tracking; application code remains responsible for naming what changed. A document containing `Repeat` conservatively rebuilds its candidate tree and performs keyed reconciliation after adapter invalidation because a collection change may alter native topology.
 
 Interpolation is not supported. This is invalid as a binding:
 
