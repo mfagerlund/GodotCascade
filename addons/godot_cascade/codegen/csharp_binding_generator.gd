@@ -13,7 +13,9 @@ const WRITABLE_ATTRIBUTES := {
 const ONE_WAY_ATTRIBUTES := {
 	"text": "text",
 	"checked": "button_pressed",
+	"disabled": "disabled",
 	"selected": "selected_value",
+	"visible": "visible",
 	"min": "min_value",
 	"max": "max_value",
 	"value": "value",

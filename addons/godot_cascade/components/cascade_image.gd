@@ -35,6 +35,25 @@ func _ready() -> void:
 	clip_contents = true
 
 
+## Applies a Texture2D or a resource path and returns an empty string on success.
+func set_source(source: Variant) -> String:
+	if source is Texture2D:
+		texture = source
+		return ""
+	if not source is String and not source is StringName:
+		return "Image source must be a Texture2D or resource path."
+	var path := str(source).strip_edges()
+	if path.is_empty():
+		return "Image requires a non-empty 'src' resource path."
+	if not ResourceLoader.exists(path):
+		return "Image resource does not exist: '%s'." % path
+	var resource := ResourceLoader.load(path)
+	if not resource is Texture2D:
+		return "Image 'src' must load a Texture2D, got '%s'." % path
+	texture = resource
+	return ""
+
+
 func _get_minimum_size() -> Vector2:
 	var intrinsic := texture.get_size() if texture != null else Vector2.ZERO
 	var outer := BoxPainter.outer_minimum_size(

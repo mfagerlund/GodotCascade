@@ -5,6 +5,7 @@ All notable changes to GodotCascade are documented here. Versions follow semanti
 ## [Unreleased]
 
 - Added an observable binding-context adapter with exact parent/child path invalidation, targeted native updates, writable-binding support, and no polling or expression runtime.
+- Extended one-way bindings to visibility, disabled and checked state, select values, image sources, and selector-rematched class lists.
 - Split document validation, binding compilation, and declaration application out of the builder hotspot into focused runtime services.
 - Made release-archive entry ordering explicitly platform-independent after uppercase license files exposed Windows/Linux `Path` sorting differences.
 - Adopted the cascading-native-windows logo, with a deterministic SVG master and square PNG for project and Asset Library use.

@@ -46,10 +46,15 @@ func _verify_layout_page(app: Control) -> void:
 	var inspect_button := _find_by_id(scene, "inspect")
 	_expect_true("layout inspect button exists", inspect_button != null)
 	if inspect_button != null:
+		var inspect_instance := inspect_button.get_instance_id()
 		inspect_button.emit_signal("pressed")
 		await process_frame
 		var status := _find_by_class(scene, "status")
 		_expect_true("layout button reaches event context", status != null and status.get("text") == "Layout inspection requested")
+		inspect_button = _find_by_id(scene, "inspect")
+		_expect_true("layout bound class reload preserves button identity", inspect_button != null and inspect_button.get_instance_id() == inspect_instance)
+		_expect_true("layout bound disabled state updates", inspect_button != null and inspect_button.get("disabled"))
+		_expect_true("layout bound class rematches descendant style", status != null and status.get("text_color") == Color("65d6a7"))
 
 
 func _verify_system_status_page(app: Control) -> void:

@@ -96,7 +96,7 @@ static func _copy_properties(existing: Control, desired: Control) -> void:
 	var runtime_state := existing.call("capture_runtime_state") if existing.has_method("capture_runtime_state") else {}
 	existing.name = desired.name
 	existing.visible = desired.visible
-	for metadata_name in ["cascade_element_type", "cascade_id", "cascade_classes", "cascade_key", "cascade_bindings", "cascade_writable_bindings", "cascade_events", "cascade_binding_scope", "cascade_source_path", "cascade_source_line", "cascade_source_column", "cascade_transition_properties", "cascade_transition_duration", "cascade_explicit_accessible_label", "cascade_authored_accessible_description", "cascade_compatibility_tier", "cascade_adapted_properties", "cascade_table_role"]:
+	for metadata_name in ["cascade_element_type", "cascade_id", "cascade_classes", "cascade_key", "cascade_bindings", "cascade_rebuild_bindings", "cascade_writable_bindings", "cascade_events", "cascade_binding_scope", "cascade_source_path", "cascade_source_line", "cascade_source_column", "cascade_transition_properties", "cascade_transition_duration", "cascade_explicit_accessible_label", "cascade_authored_accessible_description", "cascade_compatibility_tier", "cascade_adapted_properties", "cascade_table_role"]:
 		if desired.has_meta(metadata_name):
 			existing.set_meta(metadata_name, desired.get_meta(metadata_name))
 		elif existing.has_meta(metadata_name):

@@ -51,6 +51,7 @@ static func _build_element(
 	binding_scope: Dictionary = {},
 	key_scope: String = ""
 ) -> Control:
+	var class_binding_path := _resolve_bound_classes(element, binding_context, binding_scope, diagnostics)
 	var control: Control
 	if element.tag_name.to_lower() == "repeat" and element.children.size() == 1 and element.children[0].tag_name.to_lower() == "tablerow":
 		control = CascadeTablePart.new()
@@ -67,6 +68,7 @@ static func _build_element(
 	var local_key: String = "#" + element.element_id() if not element.element_id().is_empty() else key_path
 	control.set_meta("cascade_key", "%s/%s" % [key_scope, local_key] if not key_scope.is_empty() else local_key)
 	control.set_meta("cascade_bindings", {})
+	control.set_meta("cascade_rebuild_bindings", PackedStringArray([class_binding_path]) if not class_binding_path.is_empty() else PackedStringArray())
 	control.set_meta("cascade_writable_bindings", {})
 	control.set_meta("cascade_events", {})
 	control.set_meta("cascade_binding_scope", binding_scope)
@@ -419,6 +421,8 @@ static func _apply_attributes(
 ) -> void:
 	BindingCompiler.apply_event_attributes(control, attributes, diagnostics)
 	BindingCompiler.apply_writable_attributes(control, attributes, diagnostics)
+	_apply_boolean_attribute(control, attributes, "visible", "visible", diagnostics)
+	_apply_boolean_attribute(control, attributes, "disabled", "disabled", diagnostics)
 	if control is CascadeLabel or control is CascadeButton or control is CascadeTableCell or _is_text_input(control):
 		var raw_text := str(attributes.get("text", element_text))
 		if raw_text.begins_with("@"):
@@ -473,7 +477,7 @@ static func _apply_attributes(
 
 static func _apply_text_input_attributes(control: Control, attributes: Dictionary, diagnostics: Array[Dictionary]) -> void:
 	control.placeholder_text = str(attributes.get("placeholder", ""))
-	for attribute_name in ["read-only", "disabled", "secret", "required"]:
+	for attribute_name in ["read-only", "secret", "required"]:
 		if not attributes.has(attribute_name):
 			continue
 		var parsed: Variant = _parse_bool_attribute(attribute_name, str(attributes[attribute_name]), diagnostics)
@@ -482,7 +486,6 @@ static func _apply_text_input_attributes(control: Control, attributes: Dictionar
 		match attribute_name:
 			"read-only":
 				control.read_only = parsed
-			"disabled": control.disabled = parsed
 			"secret":
 				if control is CascadeTextArea and parsed:
 					diagnostics.append(_diagnostic("error", "TextInput secret=true is only supported by the single-line LineEdit adapter."))
@@ -504,18 +507,14 @@ static func _apply_text_input_attributes(control: Control, attributes: Dictionar
 
 
 static func _apply_image_attributes(control: Control, attributes: Dictionary, diagnostics: Array[Dictionary]) -> void:
-	var source := str(attributes.get("src", "")).strip_edges()
-	if source.is_empty():
-		diagnostics.append(_diagnostic("error", "Image requires a non-empty 'src' resource path."))
+	var raw_source := str(attributes.get("src", "")).strip_edges()
+	if raw_source.begins_with("@"):
 		return
-	if not ResourceLoader.exists(source):
-		diagnostics.append(_diagnostic("error", "Image resource does not exist: '%s'." % source))
+	if BindingCompiler.record_one_way(control, "image_source", raw_source):
 		return
-	var resource := ResourceLoader.load(source)
-	if not resource is Texture2D:
-		diagnostics.append(_diagnostic("error", "Image 'src' must load a Texture2D, got '%s'." % source))
-		return
-	control.set("texture", resource)
+	var error_message := str(control.call("set_source", raw_source))
+	if not error_message.is_empty():
+		diagnostics.append(_diagnostic("error", error_message))
 
 
 static func _apply_button_attributes(
@@ -524,18 +523,15 @@ static func _apply_button_attributes(
 	diagnostics: Array[Dictionary],
 	button_groups: Dictionary
 ) -> void:
-	for attribute_name in ["disabled", "checked"]:
-		if not attributes.has(attribute_name):
-			continue
-		var parsed: Variant = _parse_bool_attribute(attribute_name, str(attributes[attribute_name]), diagnostics)
-		if parsed == null:
-			continue
-		if attribute_name == "disabled":
-			control.disabled = parsed
-		elif not control.toggle_mode:
+	if attributes.has("checked"):
+		if not control.toggle_mode:
 			diagnostics.append(_diagnostic("error", "Attribute 'checked' requires a toggle control."))
-		else:
-			control.button_pressed = parsed
+		elif str(attributes["checked"]).strip_edges().begins_with("@"):
+			pass
+		elif not BindingCompiler.record_one_way(control, "button_pressed", str(attributes["checked"])):
+			var parsed: Variant = _parse_bool_attribute("checked", str(attributes["checked"]), diagnostics)
+			if parsed != null:
+				control.button_pressed = parsed
 
 	if not control is CascadeRadioButton:
 		return
@@ -579,6 +575,8 @@ static func _apply_select_options(
 	var selected := str(element.attributes.get("selected", "")).strip_edges()
 	if selected.is_empty():
 		return
+	if selected.begins_with("@") or BindingCompiler.record_one_way(control, "selected_value", selected):
+		return
 	var selected_index := -1
 	if selected.is_valid_int():
 		selected_index = selected.to_int()
@@ -591,6 +589,69 @@ static func _apply_select_options(
 		diagnostics.append(_diagnostic("error", "Select attribute 'selected' does not match an option: '%s'." % selected))
 		return
 	control.set("selected_index", selected_index)
+
+
+static func _apply_boolean_attribute(
+	control: Control,
+	attributes: Dictionary,
+	attribute_name: String,
+	property_name: String,
+	diagnostics: Array[Dictionary]
+) -> void:
+	if not attributes.has(attribute_name):
+		return
+	if not _has_property(control, property_name):
+		diagnostics.append(_diagnostic("error", "Attribute '%s' is not supported on <%s>." % [attribute_name, control.get_meta("cascade_element_type", control.get_class())]))
+		return
+	if str(attributes[attribute_name]).strip_edges().begins_with("@"):
+		return
+	if BindingCompiler.record_one_way(control, property_name, str(attributes[attribute_name])):
+		return
+	var parsed: Variant = _parse_bool_attribute(attribute_name, str(attributes[attribute_name]), diagnostics)
+	if parsed != null:
+		control.set(property_name, parsed)
+
+
+static func _resolve_bound_classes(
+	element,
+	binding_context: Variant,
+	binding_scope: Dictionary,
+	diagnostics: Array[Dictionary]
+) -> String:
+	var raw_value := str(element.attributes.get("class", ""))
+	if raw_value.strip_edges().begins_with("@"):
+		element.attributes["class"] = ""
+		return ""
+	var path := BindingCompiler.binding_path(raw_value)
+	if path.is_empty():
+		return ""
+	var first_segment := path.get_slice(".", 0)
+	var context: Variant = binding_scope if binding_scope.has(first_segment) else binding_context
+	var result := BindingResolver.resolve(context, path)
+	if not result["found"]:
+		element.attributes["class"] = ""
+		diagnostics.append(_diagnostic("warning", "class binding: %s" % result["message"]))
+		return path
+	var class_result := _class_string(result["value"])
+	if not class_result["valid"]:
+		element.attributes["class"] = ""
+		diagnostics.append(_diagnostic("warning", "class binding '%s' requires a String or an Array of class names." % path))
+		return path
+	element.attributes["class"] = class_result["value"]
+	return path
+
+
+static func _class_string(value: Variant) -> Dictionary:
+	if value is String or value is StringName:
+		return {"valid": true, "value": str(value)}
+	if value is Array or value is PackedStringArray:
+		var names := PackedStringArray()
+		for item in value:
+			var name := str(item).strip_edges()
+			if not name.is_empty():
+				names.append(name)
+		return {"valid": true, "value": " ".join(names)}
+	return {"valid": false, "value": ""}
 
 
 

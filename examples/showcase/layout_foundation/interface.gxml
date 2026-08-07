@@ -30,8 +30,8 @@
         </Panel>
     </Grid>
 
-    <Row class="actions">
+    <Row class="{ui.action_classes}">
         <Label class="status" text="{ui.status}" />
-        <Button id="inspect" on-pressed="_on_inspect_layout">Inspect layout</Button>
+        <Button id="inspect" disabled="{ui.inspected}" on-pressed="_on_inspect_layout">Inspect layout</Button>
     </Row>
 </Page>

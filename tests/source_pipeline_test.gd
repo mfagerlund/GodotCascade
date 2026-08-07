@@ -73,6 +73,7 @@ func _run() -> void:
 	_test_reconciler_property_copy_parity()
 	_test_parser_recovery()
 	_test_binding_resolver()
+	await _test_one_way_state_bindings()
 	await _test_observable_binding_context()
 	await _test_writable_binding_pipeline()
 	await _test_repeated_writable_binding_pipeline()
@@ -329,6 +330,7 @@ func _test_csharp_binding_generator() -> void:
 	<Bindings class="SettingsBindings" namespace="Showcase" document="CascadeDocument">
 		<Using namespace="System.Text" />
 		<Binding name="Scale" type="double" get="GetScale" set="SetScale" />
+		<Binding name="Busy" type="bool" get="GetBusy" />
 		<Formatter name="Percent" input="double" output="string"><![CDATA[
 return $"{value:0}%";
 		]]></Formatter>
@@ -339,6 +341,8 @@ return double.TryParse(value.TrimEnd('%'), out result);
 	<Slider id="scale" min="75" max="125" bind-value="@Scale" />
 	<Label id="scale-output" text="@Scale" format-text="Percent" />
 	<TextInput id="scale-input" bind-text="@Scale" parse-text="ParsePercent" />
+	<Button id="save" disabled="@Busy">Save</Button>
+	<Label id="busy-label" visible="@Busy">Saving</Label>
 </Page>"""
 	var generated := CsharpBindingGenerator.generate(source, "res://examples/settings/interface.gxml")
 	_expect_int("C# binding generator diagnostics", generated["diagnostics"].size(), 0)
@@ -350,6 +354,8 @@ return double.TryParse(value.TrimEnd('%'), out result);
 	_expect_true("C# binding generator maps source lines", code.contains("#line ") and code.contains("\"res://examples/settings/interface.gxml\""))
 	_expect_true("C# binding generator wires slider changes", code.contains("Callable.From<double>"))
 	_expect_true("C# binding generator refreshes formatted labels", code.contains("Percent(GetScale())"))
+	_expect_true("C# binding generator supports disabled state", code.contains("Set(\"disabled\", GetBusy())"))
+	_expect_true("C# binding generator supports visibility", code.contains("Set(\"visible\", GetBusy())"))
 	var example_source := FileAccess.get_file_as_string("res://examples/codegen/settings_bindings.gxml")
 	var example_generated := CsharpBindingGenerator.generate(example_source, "res://examples/codegen/settings_bindings.gxml")
 	_expect_true(
@@ -361,7 +367,7 @@ return double.TryParse(value.TrimEnd('%'), out result);
 	var build := CascadeBuilder.build(markup["root"], [])
 	_expect_int("generated binding metadata is non-visual", build["diagnostics"].size(), 0)
 	if build["root"] != null:
-		_expect_int("Bindings element is omitted from native tree", build["root"].get_child_count(), 3)
+		_expect_int("Bindings element is omitted from native tree", build["root"].get_child_count(), 5)
 		build["root"].free()
 
 	var invalid := CsharpBindingGenerator.generate("<Page><Bindings class=\"Broken\"><Binding name=\"Value\" type=\"double\" get=\"GetValue\" /></Bindings><Slider bind-value=\"@Value\" /></Page>")
@@ -816,6 +822,77 @@ func _test_binding_resolver() -> void:
 	_expect_true("binding assigns existing array index", array_write["written"] and context["player"]["inventory"][1] == "atlas")
 	var missing_write := BindingResolver.assign(context, "player.health", 10)
 	_expect_true("binding refuses to invent missing path", not missing_write["written"])
+
+
+func _test_one_way_state_bindings() -> void:
+	var markup_path := "user://cascade_state_binding_test.gxml"
+	var stylesheet_path := "user://cascade_state_binding_test.gcss"
+	var markup := """<Page>
+		<Panel id="card" class="{ui.classes}">
+			<Label id="conditional" visible="{ui.visible}">Conditional detail</Label>
+			<Button id="action" disabled="{ui.disabled}">Apply</Button>
+			<Checkbox id="toggle" checked="{ui.checked}">Enabled</Checkbox>
+			<Select id="quality" selected="{ui.quality}"><Option value="low">Low</Option><Option value="high">High</Option></Select>
+			<Image id="preview" src="{ui.image}" accessible-label="Bound preview" />
+		</Panel>
+	</Page>"""
+	var stylesheet := ".cold { background: #112233; } .hot { background: #445566; } Image { width: 32px; height: 18px; }"
+	_expect_true("write state-binding markup", _write_text(markup_path, markup))
+	_expect_true("write state-binding stylesheet", _write_text(stylesheet_path, stylesheet))
+	var state := {"ui": {
+		"classes": PackedStringArray(["cold"]),
+		"visible": true,
+		"disabled": false,
+		"checked": true,
+		"quality": "low",
+		"image": "res://docs/showcase/assets/layout-foundation-godot.png",
+	}}
+	var document: Control = CascadeDocument.new()
+	document.load_on_ready = false
+	document.log_diagnostics_to_console = false
+	document.watch_sources = false
+	document.binding_context = state
+	document.markup_path = markup_path
+	document.stylesheet_path = stylesheet_path
+	root.add_child(document)
+	_expect_true("state-binding document loads", document.reload_document())
+	var card: Control = _find_by_id(document.generated_root(), "card")[0]
+	var conditional: Control = _find_by_id(document.generated_root(), "conditional")[0]
+	var action: BaseButton = _find_by_id(document.generated_root(), "action")[0]
+	var toggle: BaseButton = _find_by_id(document.generated_root(), "toggle")[0]
+	var select: Control = _find_by_id(document.generated_root(), "quality")[0]
+	var preview: Control = _find_by_id(document.generated_root(), "preview")[0]
+	_expect_true("bound class participates in initial selector matching", card.get("cascade_style").background_color == Color("112233"))
+	_expect_true("bound visibility initializes", conditional.visible)
+	_expect_true("bound disabled initializes", not action.disabled)
+	_expect_true("bound checked initializes", toggle.button_pressed)
+	_expect_true("bound selected value initializes", select.call("selected_value") == "low")
+	_expect_true("bound image source initializes", preview.get("texture") is Texture2D)
+	state["ui"]["visible"] = false
+	state["ui"]["disabled"] = true
+	state["ui"]["checked"] = false
+	state["ui"]["quality"] = "high"
+	_expect_true("state bindings refresh as a named batch", document.refresh_binding_paths(PackedStringArray([
+		"ui.visible", "ui.disabled", "ui.checked", "ui.quality",
+	])))
+	_expect_true("bound visibility updates", not conditional.visible)
+	_expect_true("bound disabled updates", action.disabled)
+	_expect_true("bound checked updates", not toggle.button_pressed)
+	_expect_true("bound selected value updates", select.call("selected_value") == "high")
+	var card_instance := card.get_instance_id()
+	state["ui"]["classes"] = ["hot"]
+	_expect_true("bound class refresh reconciles", document.refresh_binding_paths(PackedStringArray(["ui.classes"])))
+	card = _find_by_id(document.generated_root(), "card")[0]
+	_expect_true("bound class rematches selectors", card.get("cascade_style").background_color == Color("445566"))
+	_expect_true("bound class reconciliation preserves native identity", card.get_instance_id() == card_instance)
+	state["ui"]["visible"] = "not a boolean"
+	_expect_true("invalid state binding remains recoverable", document.refresh_binding_paths(PackedStringArray(["ui.visible"])))
+	_expect_true("invalid boolean binding retains previous native value", not conditional.visible)
+	_expect_true("invalid boolean binding publishes warning", document.diagnostics.any(func(diagnostic): return diagnostic.get("binding_path", "") == "ui.visible"))
+	document.queue_free()
+	await process_frame
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(markup_path))
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(stylesheet_path))
 
 
 func _test_observable_binding_context() -> void:

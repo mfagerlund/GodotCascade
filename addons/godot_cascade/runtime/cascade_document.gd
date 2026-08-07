@@ -166,7 +166,7 @@ func generated_root() -> Control:
 ## Reapplies every {dot.separated.path} binding to the existing native tree.
 ## Call this after mutating binding_context; compatible controls keep identity.
 func refresh_bindings() -> bool:
-	if _generated_root != null and _contains_element(_generated_root, "repeat"):
+	if _generated_root != null and (_contains_element(_generated_root, "repeat") or _tree_has_rebuild_binding(_generated_root)):
 		return reload_document()
 	return _refresh_bindings(true)
 
@@ -181,7 +181,7 @@ func refresh_binding_paths(paths: PackedStringArray) -> bool:
 		return false
 	if "*" in normalized:
 		return refresh_bindings()
-	if _generated_root != null and _contains_element(_generated_root, "repeat"):
+	if _generated_root != null and (_contains_element(_generated_root, "repeat") or _tree_has_matching_rebuild_binding(_generated_root, normalized)):
 		return reload_document()
 	return _refresh_binding_paths(normalized, true)
 
@@ -325,6 +325,17 @@ func _apply_binding(control: Control, property_name: String, path: String) -> vo
 		_append_binding_warning(control, property_name, path, result["message"])
 		return
 	var value: Variant = result["value"]
+	if property_name in ["visible", "disabled", "button_pressed"]:
+		if not value is bool:
+			_append_binding_warning(control, property_name, path, "Requires a boolean value.")
+			return
+		control.set(property_name, value)
+		return
+	if property_name == "image_source" and control.has_method("set_source"):
+		var error_message := str(control.call("set_source", value))
+		if not error_message.is_empty():
+			_append_binding_warning(control, property_name, path, error_message)
+		return
 	if property_name == "selected_value" and control.has_method("select_value"):
 		if not control.call("select_value", value):
 			_append_binding_warning(control, property_name, path, "No option '%s'." % value)
@@ -414,7 +425,11 @@ func _write_binding(control: Control, property_name: String, path: String, value
 		_publish_diagnostics()
 		return
 	binding_value_changed.emit(path, value, control)
-	_refresh_binding_paths(PackedStringArray([path]), false)
+	var changed_paths := PackedStringArray([path])
+	if _tree_has_matching_rebuild_binding(_generated_root, changed_paths):
+		reload_document()
+		return
+	_refresh_binding_paths(changed_paths, false)
 	_publish_diagnostics()
 
 
@@ -491,6 +506,26 @@ func _binding_path_matches(binding_path: String, invalidated_paths: PackedString
 		if invalidated_path == "*" or binding_path == invalidated_path:
 			return true
 		if binding_path.begins_with(invalidated_path + ".") or invalidated_path.begins_with(binding_path + "."):
+			return true
+	return false
+
+
+func _tree_has_rebuild_binding(node: Node) -> bool:
+	if node is Control and not (node as Control).get_meta("cascade_rebuild_bindings", PackedStringArray()).is_empty():
+		return true
+	for child in node.get_children():
+		if _tree_has_rebuild_binding(child):
+			return true
+	return false
+
+
+func _tree_has_matching_rebuild_binding(node: Node, paths: PackedStringArray) -> bool:
+	if node is Control:
+		for binding_path in (node as Control).get_meta("cascade_rebuild_bindings", PackedStringArray()):
+			if _binding_path_matches(str(binding_path), paths):
+				return true
+	for child in node.get_children():
+		if _tree_has_matching_rebuild_binding(child, paths):
 			return true
 	return false
 

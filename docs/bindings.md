@@ -62,6 +62,8 @@ An entire supported attribute value may be an exact brace-wrapped path:
 <Button text="{status}" />
 <Progress min="0" max="125" value="{scale}" />
 <Slider min="75" max="125" value="{scale}" />
+<Button disabled="{saving}">Save</Button>
+<Select selected="{quality}">…</Select>
 ```
 
 The current one-way surface is:
@@ -71,6 +73,14 @@ The current one-way surface is:
 | `Label`, `Button`, `TextInput` | `text` |
 | `TableHeaderCell`, `TableCell` | `text` |
 | `Progress`, `Slider` | `min`, `max`, `value` |
+| Any visual element | `visible` |
+| Any element | `class` as a space-separated `String` or class-name Array |
+| Interactive controls | `disabled` |
+| `Checkbox`, `Switch`, `RadioButton`/`Radio` | `checked` |
+| `Select` | `selected` by option value |
+| `Image` | `src` as a `Texture2D` or resource path |
+
+Boolean targets require actual boolean model values; strings such as `"false"` are diagnosed rather than coerced. A bound `class` value participates in selector matching. Changing it rebuilds an off-tree candidate and performs keyed reconciliation so descendant selectors and computed styles update while compatible native controls keep identity. Other state targets update directly in place.
 
 Assigning a new `binding_context` refreshes automatically. The simplest explicit boundary after mutating a nested value is `refresh_bindings()`:
 
@@ -298,6 +308,8 @@ godot --headless --path . --script res://addons/godot_cascade/codegen/csharp_bin
 An explicit second argument overrides the contract's `output` path. Relative output paths are resolved beside the GXML file. Generation fails on missing declarations, duplicate names or IDs, writable bindings without setters, and unknown formatters or parsers.
 
 The generated class derives from `Control` and expects its `CascadeDocumentPath`—`CascadeDocument` by default—to locate a child `CascadeDocument`. It owns `_Ready()`, connects to `document_reloaded`, reconnects native writable signals after hot reload, and exposes `RefreshGeneratedBindings()` for application-driven changes.
+
+Generated one-way `@Name` targets currently cover `text`, `min`, `max`, `value`, `checked`, `selected`, `visible`, and `disabled`. Runtime `{path}` additionally supports bound `class` and `Image.src`; those two require runtime resource loading or selector rematching and are intentionally not generated C# targets.
 
 Implement the required partial methods in the permanent file:
 

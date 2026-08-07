@@ -245,7 +245,7 @@ The first public preview should build a small settings menu from `.gxml` and a s
 ## Phase 11 — focused reactivity and composition
 
 - [x] Add an observable adapter that can invalidate named paths without polling or a general expression runtime
-- [ ] Extend one-way targets to documented state such as visibility, disabled state, classes, image source, and selected values
+- [x] Extend one-way targets to documented state such as visibility, disabled state, classes, image source, and selected values
 - [ ] Design explicit conditional rendering that remains diagnosable and does not evaluate arbitrary code
 - [ ] Add reusable GXML components with typed parameters, slots, scoped IDs, and source-aware diagnostics
 - [ ] Preserve keyed identity and native editing state across conditional/component boundaries

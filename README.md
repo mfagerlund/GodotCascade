@@ -83,6 +83,7 @@ Bindings connect the interface to game state:
 ```xml
 <Label text="{player.name}" />
 <Progress value="{player.health}" max="100" />
+<Button disabled="{player.busy}">Repair</Button>
 <TextInput bind-text="{player.name}" required="true" />
 ```
 
@@ -273,7 +274,7 @@ state.player.health = 54.0
 document.refresh_bindings()
 ```
 
-Assigning a new context refreshes automatically. The current focused slice supports text on `Label`/`Button` and `min`, `max`, and `value` on `Progress`; unresolved paths produce binding diagnostics instead of executing expressions or methods.
+Assigning a new context refreshes automatically. The focused one-way surface covers text and ranges plus visibility, disabled/checked state, select values, image sources, and dynamic class lists. Use `ObservableBindingContext.invalidate("player.health")` for targeted updates without polling. Bound class changes rematch selectors through keyed reconciliation; unresolved paths and wrong value types produce diagnostics instead of executing expressions or methods.
 
 ### Writable form binding and validation
 

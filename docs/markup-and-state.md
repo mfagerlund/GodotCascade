@@ -28,6 +28,8 @@ Ordinary `{path}` values are one-way. Form controls opt into write-back with a `
 <Select bind-selected="{settings.quality}">…</Select>
 ```
 
+Ordinary one-way paths also support `visible`, interactive `disabled`, toggle `checked`, `Select.selected`, `Image.src`, and `class`. Class bindings accept a space-separated String or class-name Array and rematch GCSS selectors through keyed reconciliation when changed. Boolean state targets require booleans rather than truthy strings.
+
 The path must already resolve to a Dictionary key, Array index, or Godot object property. Native changes assign the value, emit `CascadeDocument.binding_value_changed(path, value, control)`, and refresh other one-way controls. The resolver does not create missing objects, evaluate expressions, call methods, or run converters.
 
 Inside a `Repeat` template, writable bindings may target an existing nested item property such as `bind-checked="{item.enabled}"`. The control carries the current item scope through keyed reconciliation, so a reorder keeps native identity while later edits reach the correct backing item. `index` and bare `item` are read-only: replacing collection entries is an application-level operation rather than an implicit form write.
