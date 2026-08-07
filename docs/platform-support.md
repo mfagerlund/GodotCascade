@@ -20,7 +20,7 @@ GodotCascade is a GDScript addon targeting Godot 4.7 and later 4.x maintenance r
 
 The full CI/release job runs on Ubuntu with Godot 4.7.1. A separate matrix runs the source pipeline, editor-tooling smoke, item-model, localized collection, virtualization, and side-by-side certification-fixture suites on the minimum Godot 4.7 Linux runner and current Windows/macOS runners. Tagged releases wait for both jobs.
 
-The current matrix passed for commit `31557ac` in [GitHub Actions run 31220031925](https://github.com/mfagerlund/GodotCascade/actions/runs/31220031925): full Godot 4.7.1/Linux verification, Godot 4.7/Linux smoke, Godot 4.7.1/Windows smoke, and Godot 4.7.1/macOS smoke. Each downloaded official archive was checked against its published SHA-512 sum.
+The current matrix passed for commit `38ec6ec` in [GitHub Actions run 31223633168](https://github.com/mfagerlund/GodotCascade/actions/runs/31223633168): full Godot 4.7.1/Linux verification, Godot 4.7/Linux smoke, Godot 4.7.1/Windows smoke, and Godot 4.7.1/macOS smoke. Each downloaded official archive was checked against its published SHA-512 sum.
 
 The local Windows results used SHA-512-verified official Godot 4.7 and 4.7.1 standard builds. The 500-control benchmark measures complete named operations; no reported value is a per-frame cost.
 
