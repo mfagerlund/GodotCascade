@@ -28,9 +28,12 @@ const BindingResolver := preload("res://addons/godot_cascade/runtime/binding_res
 const DocumentValidator := preload("res://addons/godot_cascade/runtime/document_validator.gd")
 const BindingCompiler := preload("res://addons/godot_cascade/runtime/binding_compiler.gd")
 const DeclarationApplier := preload("res://addons/godot_cascade/runtime/declaration_applier.gd")
+const GxmlParser := preload("res://addons/godot_cascade/markup/gxml_parser.gd")
 const GxmlComponentExpander := preload("res://addons/godot_cascade/runtime/gxml_component_expander.gd")
 const GcssExpression := preload("res://addons/godot_cascade/style/gcss_expression.gd")
 const FocusManager := preload("res://addons/godot_cascade/runtime/focus_manager.gd")
+const CascadeItemModel := preload("res://addons/godot_cascade/runtime/cascade_item_model.gd")
+const CascadeVirtualWindow := preload("res://addons/godot_cascade/runtime/virtual_window.gd")
 
 const INHERITED_PROPERTIES: PackedStringArray = ["color", "font-size", "font-source"]
 
@@ -53,6 +56,51 @@ static func build(root_element, rules: Array, binding_context: Variant = null, v
 	return {"root": root_control, "diagnostics": diagnostics}
 
 
+## Builds only one previously prepared Repeat subtree. The repeat descriptor and
+## indexed rules are retained as metadata during the successful full build, so a
+## collection refresh never needs to construct an off-tree document candidate.
+static func rebuild_repeat(
+	repeat_control: Control,
+	binding_context: Variant,
+	viewport_size: Vector2 = Vector2.ZERO,
+	validated_model_keys: Variant = null,
+	keys_scanned: int = -1,
+	shared_button_groups: Variant = null
+) -> Dictionary:
+	var element: Variant = repeat_control.get_meta("cascade_repeat_element") if repeat_control != null else null
+	var rule_index: Dictionary = repeat_control.get_meta("cascade_repeat_rule_index", {}) if repeat_control != null else {}
+	if element == null or rule_index.is_empty():
+		return {"root": null, "diagnostics": [_diagnostic("error", "Repeat does not have a retained build descriptor.")]}
+	var diagnostics: Array[Dictionary] = []
+	element = _clone_element_surface(element)
+	element.attributes.erase("__validated_model_keys")
+	element.attributes.erase("__keys_scanned")
+	for metadata_name in ["cascade_virtual_scroll_offset", "cascade_virtual_viewport_extent", "cascade_virtual_pinned_index", "cascade_virtual_pinned_key"]:
+		if repeat_control.has_meta(metadata_name):
+			element.attributes["__" + metadata_name.trim_prefix("cascade_")] = repeat_control.get_meta(metadata_name)
+	if validated_model_keys is Array:
+		element.attributes["__validated_model_keys"] = validated_model_keys
+		element.attributes["__keys_scanned"] = maxi(keys_scanned, 0)
+	var button_groups: Dictionary = shared_button_groups if shared_button_groups is Dictionary else {}
+	var rebuild_bindings := PackedStringArray()
+	DeclarationApplier.begin_build(viewport_size)
+	var root := _build_element(
+		element,
+		rule_index,
+		diagnostics,
+		str(repeat_control.get_meta("cascade_repeat_key_path", "0")),
+		button_groups,
+		binding_context,
+		repeat_control.get_meta("cascade_binding_scope", {}),
+		str(repeat_control.get_meta("cascade_repeat_key_scope", "")),
+		rebuild_bindings
+	)
+	if root != null:
+		root.set_meta("cascade_document_rebuild_bindings", rebuild_bindings)
+		diagnostics.append_array(FocusManager.validate(root))
+	return {"root": root, "diagnostics": diagnostics}
+
+
 static func _build_element(
 	element,
 	rule_index: Dictionary,
@@ -64,9 +112,14 @@ static func _build_element(
 	key_scope: String = "",
 	document_rebuild_bindings: PackedStringArray = PackedStringArray()
 ) -> Control:
+	var source_element: Variant = element
 	if not _condition_allows(element, binding_context, binding_scope, diagnostics, document_rebuild_bindings, key_path == "0"):
 		return null
-	var class_binding_path := _resolve_bound_classes(element, binding_context, binding_scope, diagnostics)
+	var class_resolution := _resolve_bound_classes(element, binding_context, binding_scope, diagnostics)
+	var class_binding_path := str(class_resolution["path"])
+	if bool(class_resolution["bound"]):
+		element = _clone_element_surface(element)
+		element.attributes["class"] = class_resolution["value"]
 	var control: Control
 	if element.tag_name.to_lower() == "repeat" and element.children.size() == 1 and element.children[0].tag_name.to_lower() == "tablerow":
 		control = CascadeTablePart.new()
@@ -117,6 +170,10 @@ static func _build_element(
 		_apply_select_options(control, element, rule_index, diagnostics)
 		return control
 	if element.tag_name.to_lower() == "repeat":
+		control.set_meta("cascade_repeat_element", source_element)
+		control.set_meta("cascade_repeat_rule_index", rule_index)
+		control.set_meta("cascade_repeat_key_path", key_path)
+		control.set_meta("cascade_repeat_key_scope", key_scope)
 		_build_repeat_children(control, element, rule_index, diagnostics, key_path, button_groups, binding_context, key_scope, document_rebuild_bindings)
 		return control
 
@@ -155,25 +212,129 @@ static func _build_repeat_children(
 	if not resolved["found"]:
 		diagnostics.append(_diagnostic("error", "Repeat could not resolve items: %s" % resolved["message"]))
 		return
-	if not resolved["value"] is Array:
-		diagnostics.append(_diagnostic("error", "Repeat 'items' must resolve to an Array."))
+	var collection: Variant = resolved["value"]
+	if not collection is Array and not collection is CascadeItemModel:
+		diagnostics.append(_diagnostic("error", "Repeat 'items' must resolve to an Array or CascadeItemModel."))
 		return
+	if collection is CascadeItemModel:
+		control.set_meta("cascade_collection_model", collection)
 	var key_property := str(element.attributes.get("key", "")).strip_edges()
-	var seen_keys := {}
-	var items: Array = resolved["value"]
-	for index in items.size():
-		var item: Variant = items[index]
-		var item_key := str(index)
-		if not key_property.is_empty():
-			var key_result := BindingResolver.resolve(item, key_property)
-			if not key_result["found"]:
-				diagnostics.append(_diagnostic("error", "Repeat key '%s' could not be resolved for item %s." % [key_property, index]))
+	var repeat_keys := PackedStringArray()
+	var collection_count: int = collection.size() if collection is Array else collection.item_count()
+	var virtual := _raw_boolean_attribute(element.attributes, "virtual")
+	var scanned_key_entries: Array = []
+	var key_counts: Dictionary = {}
+	var duplicate_keys: Dictionary = {}
+	var missing_key_count := 0
+	var scanned_count := 0
+	var validated_keys: Variant = element.attributes.get("__validated_model_keys")
+	if validated_keys is Array:
+		if not virtual:
+			diagnostics.append(_diagnostic("error", "A retained key cache can only rebuild a virtual Repeat."))
+			return
+		if validated_keys.size() != collection_count:
+			diagnostics.append(_diagnostic("error", "Retained Repeat key cache count does not match the item model; emit RESET to resynchronize it."))
+			return
+		scanned_key_entries = validated_keys
+		repeat_keys = PackedStringArray(validated_keys)
+		scanned_count = int(element.attributes.get("__keys_scanned", 0))
+	else:
+		for index in collection_count:
+			var key_item: Variant = collection[index] if collection is Array else collection.item_at(index)
+			var scanned_key := str(index)
+			var key_found := true
+			if not key_property.is_empty():
+				var key_result := BindingResolver.resolve(key_item, key_property)
+				if not key_result["found"]:
+					key_found = false
+					missing_key_count += 1
+					diagnostics.append(_diagnostic("error", "Repeat key '%s' could not be resolved for item %s." % [key_property, index]))
+				else:
+					scanned_key = str(key_result["value"])
+			elif collection is CascadeItemModel:
+				scanned_key = str(collection.key_at(index))
+			scanned_count += 1
+			if not key_found:
+				scanned_key_entries.append(null)
 				continue
-			item_key = str(key_result["value"])
-		if seen_keys.has(item_key):
-			diagnostics.append(_diagnostic("error", "Repeat key '%s' is duplicated." % item_key))
-			continue
-		seen_keys[item_key] = true
+			scanned_key_entries.append(scanned_key)
+			repeat_keys.append(scanned_key)
+			var next_count := int(key_counts.get(scanned_key, 0)) + 1
+			key_counts[scanned_key] = next_count
+			if next_count > 1:
+				duplicate_keys[scanned_key] = next_count
+		for duplicate_key in duplicate_keys:
+			diagnostics.append(_diagnostic("error", "Repeat key '%s' is duplicated." % duplicate_key))
+	control.set_meta("cascade_repeat_keys_scanned", scanned_count)
+	if collection is Array:
+		control.set_meta("cascade_collection_is_array", true)
+		control.set_meta("cascade_array_key_cache_valid", missing_key_count == 0 and duplicate_keys.is_empty())
+	if collection is CascadeItemModel:
+		control.set_meta("cascade_item_model_key_cache", scanned_key_entries)
+		control.set_meta("cascade_item_model_key_counts", key_counts)
+		control.set_meta("cascade_item_model_duplicate_keys", duplicate_keys)
+		control.set_meta("cascade_item_model_missing_key_count", missing_key_count)
+		control.set_meta("cascade_item_model_cache_valid", missing_key_count == 0 and duplicate_keys.is_empty())
+		control.set_meta("cascade_item_model_cache_model_id", collection.get_instance_id())
+		control.set_meta("cascade_item_model_cache_key_property", key_property)
+		control.set_meta("cascade_item_model_cache_from_full_scan", not validated_keys is Array)
+	if missing_key_count > 0 or not duplicate_keys.is_empty():
+		return
+	var item_height := 0.0
+	var overscan := 3
+	var realized_indices: Array[int] = []
+	if virtual:
+		if key_property.is_empty():
+			diagnostics.append(_diagnostic("error", "Virtual Repeat requires an explicit stable 'key'."))
+			return
+		if not str(element.children[0].attributes.get("if", "")).strip_edges().is_empty():
+			diagnostics.append(_diagnostic("error", "Virtual Repeat item roots cannot use 'if'; filter the item model before binding it."))
+			return
+		item_height = _positive_pixel_attribute(element, "item-height", diagnostics)
+		if item_height <= 0.0:
+			return
+		var raw_overscan := str(element.attributes.get("overscan", "3")).strip_edges()
+		if not raw_overscan.is_valid_int() or raw_overscan.to_int() < 0:
+			diagnostics.append(_diagnostic("error", "Virtual Repeat 'overscan' requires a non-negative integer."))
+			return
+		overscan = raw_overscan.to_int()
+		if control is CascadeBox and (control.wrap or control.direction != CascadeBox.FlowDirection.COLUMN):
+			diagnostics.append(_diagnostic("error", "Virtual Repeat requires a non-wrapping vertical layout."))
+			return
+		var viewport_extent := float(element.attributes.get("__virtual_viewport_extent", rule_index.get("viewport_size", Vector2(0.0, 600.0)).y))
+		if viewport_extent <= 0.0:
+			viewport_extent = 600.0
+		var layout_gap := float(control.get("gap")) if control is CascadeBox else 0.0
+		var window := CascadeVirtualWindow.new(collection_count, item_height + layout_gap, viewport_extent, overscan)
+		window.set_scroll_offset(float(element.attributes.get("__virtual_scroll_offset", 0.0)))
+		for index in range(window.first_index, window.end_index):
+			realized_indices.append(index)
+		var pinned_key := str(element.attributes.get("__virtual_pinned_key", ""))
+		var pinned_index := repeat_keys.find(pinned_key) if not pinned_key.is_empty() else -1
+		if pinned_index >= 0 and pinned_index < collection_count and pinned_index not in realized_indices:
+			realized_indices.append(pinned_index)
+			realized_indices.sort()
+		control.set_meta("cascade_virtual", true)
+		control.set_meta("cascade_virtual_item_height", item_height)
+		control.set_meta("cascade_virtual_item_extent", item_height + layout_gap)
+		control.set_meta("cascade_virtual_overscan", overscan)
+		control.set_meta("cascade_virtual_model_count", collection_count)
+		control.set_meta("cascade_virtual_first_index", window.first_index)
+		control.set_meta("cascade_virtual_end_index", window.end_index)
+		control.set_meta("cascade_virtual_scroll_offset", window.scroll_offset)
+		control.set_meta("cascade_virtual_viewport_extent", viewport_extent)
+		control.set_meta("cascade_virtual_pinned_index", pinned_index)
+		control.set_meta("cascade_virtual_pinned_key", pinned_key if pinned_index >= 0 else "")
+	else:
+		for index in collection_count:
+			realized_indices.append(index)
+	var next_index := 0
+	var actual_realized_count := 0
+	for index in realized_indices:
+		if virtual and index > next_index:
+			_add_virtual_spacer(control, next_index, index - next_index, item_height)
+		var item: Variant = collection[index] if collection is Array else collection.item_at(index)
+		var item_key := repeat_keys[index]
 		var repeated_scope := {
 			"item": item,
 			"index": index,
@@ -192,7 +353,75 @@ static func _build_repeat_children(
 			document_rebuild_bindings
 		)
 		if child != null:
+			actual_realized_count += 1
+			child.set_meta("cascade_repeat_index", index)
+			if virtual:
+				if _virtual_item_has_vertical_margin(child):
+					diagnostics.append(_diagnostic("error", "Virtual Repeat item roots cannot use vertical margins; include spacing in item-height or the Repeat gap."))
+				_apply_virtual_item_height(child, item_height)
+				var measured_height := maxf(child.get_minimum_size().y, child.custom_minimum_size.y)
+				if measured_height > item_height + 0.01:
+					diagnostics.append(_diagnostic("error", "Virtual Repeat item minimum height %.2fpx exceeds item-height %.2fpx; increase item-height or reduce the row content." % [measured_height, item_height]))
 			control.add_child(child)
+		next_index = index + 1
+	if virtual and next_index < collection_count:
+		_add_virtual_spacer(control, next_index, collection_count - next_index, item_height)
+	control.set_meta("cascade_repeat_keys", repeat_keys)
+	control.set_meta("cascade_virtual_realized_count", actual_realized_count if virtual else collection_count)
+	control.set_meta("cascade_collection_transaction_valid", true)
+
+
+static func _positive_pixel_attribute(element, attribute_name: String, diagnostics: Array[Dictionary]) -> float:
+	var raw_value := str(element.attributes.get(attribute_name, "")).strip_edges().to_lower()
+	if raw_value.ends_with("px"):
+		raw_value = raw_value.trim_suffix("px").strip_edges()
+	if not raw_value.is_valid_float() or raw_value.to_float() <= 0.0:
+		diagnostics.append(_diagnostic("error", "Virtual Repeat '%s' requires a positive pixel length." % attribute_name))
+		return 0.0
+	return raw_value.to_float()
+
+
+static func _add_virtual_spacer(control: Control, start_index: int, count: int, item_height: float) -> void:
+	if count <= 0:
+		return
+	var gap := float(control.get("gap")) if control is CascadeBox else 0.0
+	var spacer_height := maxf(0.0, float(count) * (item_height + gap) - gap)
+	var spacer: Control
+	if control is CascadeTablePart:
+		var row := CascadeTablePart.new()
+		row.semantic_role = "row"
+		var cell := CascadeTableCell.new()
+		cell.set_meta("cascade_table_role", "cell")
+		cell.custom_minimum_size = Vector2(0.0, spacer_height)
+		row.add_child(cell)
+		spacer = row
+	else:
+		spacer = Control.new()
+		spacer.custom_minimum_size = Vector2(0.0, spacer_height)
+	spacer.name = "VirtualSpacer"
+	spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	spacer.focus_mode = Control.FOCUS_NONE
+	spacer.set_meta("cascade_element_type", "virtual-spacer")
+	spacer.set_meta("cascade_key", "__virtual_spacer:%s:%s" % [start_index, count])
+	spacer.set_meta("cascade_virtual_spacer", true)
+	spacer.set_meta("cascade_virtual_start_index", start_index)
+	spacer.set_meta("cascade_virtual_count", count)
+	control.add_child(spacer)
+
+
+static func _apply_virtual_item_height(control: Control, item_height: float) -> void:
+	control.custom_minimum_size.y = maxf(control.custom_minimum_size.y, item_height)
+	if str(control.get_meta("cascade_table_role", "")) == "row":
+		for child in control.get_children():
+			if child is Control and str(child.get_meta("cascade_table_role", "")) in ["cell", "columnheader"]:
+				child.custom_minimum_size.y = maxf(child.custom_minimum_size.y, item_height)
+
+
+static func _virtual_item_has_vertical_margin(control: Control) -> bool:
+	if not _has_property(control, "cascade_style"):
+		return false
+	var style: CascadeStyle = control.get("cascade_style")
+	return style != null and (style.margin_top > 0.0 or style.margin_bottom > 0.0)
 
 
 static func _create_control(element, diagnostics: Array[Dictionary]) -> Control:
@@ -675,6 +904,35 @@ static func _apply_button_attributes(
 	if not button_groups.has(group_name):
 		button_groups[group_name] = ButtonGroup.new()
 	control.button_group = button_groups[group_name]
+	control.set_meta("cascade_radio_group_name", group_name)
+
+
+static func collect_button_groups(document_root: Node) -> Dictionary:
+	var result: Dictionary = {}
+	if document_root != null:
+		_collect_button_groups(document_root, result)
+	return result
+
+
+static func remap_button_groups(root: Node, document_groups: Dictionary) -> void:
+	if root is BaseButton and root.has_meta("cascade_radio_group_name"):
+		var group_name := str(root.get_meta("cascade_radio_group_name"))
+		var candidate_group: ButtonGroup = root.get("button_group")
+		if not document_groups.has(group_name):
+			document_groups[group_name] = candidate_group if candidate_group != null else ButtonGroup.new()
+		root.set("button_group", document_groups[group_name])
+	for child in root.get_children():
+		remap_button_groups(child, document_groups)
+
+
+static func _collect_button_groups(node: Node, result: Dictionary) -> void:
+	if node is BaseButton and node.has_meta("cascade_radio_group_name"):
+		var group_name := str(node.get_meta("cascade_radio_group_name"))
+		var group: ButtonGroup = node.get("button_group")
+		if not group_name.is_empty() and group != null and not result.has(group_name):
+			result[group_name] = group
+	for child in node.get_children():
+		_collect_button_groups(child, result)
 
 
 static func _apply_select_options(
@@ -750,28 +1008,50 @@ static func _resolve_bound_classes(
 	binding_context: Variant,
 	binding_scope: Dictionary,
 	diagnostics: Array[Dictionary]
-) -> String:
+) -> Dictionary:
 	var raw_value := str(element.attributes.get("class", ""))
 	if raw_value.strip_edges().begins_with("@"):
-		element.attributes["class"] = ""
-		return ""
+		return {"path": "", "value": "", "bound": true}
 	var path := BindingCompiler.binding_path(raw_value)
 	if path.is_empty():
-		return ""
+		return {"path": "", "value": raw_value, "bound": false}
 	var first_segment := path.get_slice(".", 0)
 	var context: Variant = binding_scope if binding_scope.has(first_segment) else binding_context
 	var result := BindingResolver.resolve(context, path)
 	if not result["found"]:
-		element.attributes["class"] = ""
 		diagnostics.append(_diagnostic("warning", "class binding: %s" % result["message"]))
-		return path
+		return {"path": path, "value": "", "bound": true}
 	var class_result := _class_string(result["value"])
 	if not class_result["valid"]:
-		element.attributes["class"] = ""
 		diagnostics.append(_diagnostic("warning", "class binding '%s' requires a String or an Array of class names." % path))
-		return path
-	element.attributes["class"] = class_result["value"]
-	return path
+		return {"path": path, "value": "", "bound": true}
+	return {"path": path, "value": class_result["value"], "bound": true}
+
+
+static func _clone_element_surface(element):
+	var clone := GxmlParser.Element.new(element.tag_name, element.parent_element())
+	clone.attributes = element.attributes.duplicate(true)
+	clone.text = element.text
+	clone.raw_text = element.raw_text
+	clone.source_offset = element.source_offset
+	clone.source_line = element.source_line
+	clone.source_column = element.source_column
+	for child in element.children:
+		clone.children.append(_clone_element_with_parent(child, clone))
+	return clone
+
+
+static func _clone_element_with_parent(element, parent):
+	var clone := GxmlParser.Element.new(element.tag_name, parent)
+	clone.attributes = element.attributes.duplicate(true)
+	clone.text = element.text
+	clone.raw_text = element.raw_text
+	clone.source_offset = element.source_offset
+	clone.source_line = element.source_line
+	clone.source_column = element.source_column
+	for child in element.children:
+		clone.children.append(_clone_element_with_parent(child, clone))
+	return clone
 
 
 static func _condition_allows(
@@ -792,9 +1072,9 @@ static func _condition_allows(
 	if path.is_empty():
 		diagnostics.append(_diagnostic("error", "Conditional 'if' requires an exact {dot.separated.path}."))
 		return false
-	if path not in document_rebuild_bindings:
-		document_rebuild_bindings.append(path)
 	var first_segment := path.get_slice(".", 0)
+	if not binding_scope.has(first_segment) and path not in document_rebuild_bindings:
+		document_rebuild_bindings.append(path)
 	var context: Variant = binding_scope if binding_scope.has(first_segment) else binding_context
 	var result := BindingResolver.resolve(context, path)
 	if not result["found"]:

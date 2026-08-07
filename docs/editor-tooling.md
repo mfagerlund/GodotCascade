@@ -23,7 +23,7 @@ The lower tree is the style/layout debugger. Each row shows:
 
 Hover the binding column for exact property paths, dependency modes, invalidated paths, and matched properties. Conditional dependencies remain visible on the document root when their branch is absent. Class bindings explain selector-rematch reconciliation, and `Repeat` items are identified as collection dependencies.
 
-The debugger retains only the latest invalidation, not an unbounded event log. `CascadeDocument.last_binding_trace()` exposes the same document-level record to runtime tooling, and `binding_trace_changed(trace)` fires after manual, observable, context-change, and native write-back refreshes. A trace reports its sequence, trigger, paths, `targeted`/`reconcile` strategy, reason, affected control IDs/keys, matched dependency count, success, and reconciliation statistics when applicable.
+The debugger retains only the latest invalidation, not an unbounded event log. `CascadeDocument.last_binding_trace()` exposes the same document-level record to runtime tooling, and `binding_trace_changed(trace)` fires after manual, observable, item-model, virtual-scroll, context-change, and native write-back refreshes. A trace reports its sequence, trigger, paths, `targeted`/`reconcile`/`collection_patch`/`virtual_window` strategy, reason, affected control IDs/keys, matched dependency count, success, and reconciliation statistics when applicable. Repeat rows also expose model type, total and realized counts, virtual range, and overscan.
 
 Double-clicking a row selects its source file in the FileSystem dock and opens the **Cascade Source** panel at the exact authored line/column. This provides real source navigation without pretending `.gxml` is a GDScript resource.
 

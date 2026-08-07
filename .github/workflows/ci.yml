@@ -12,8 +12,8 @@ permissions:
   contents: read
 
 env:
-  GODOT_VERSION: "4.7"
-  GODOT_RELEASE: "4.7-stable"
+  GODOT_VERSION: "4.7.1"
+  GODOT_RELEASE: "4.7.1-stable"
 
 jobs:
   verify:
@@ -71,6 +71,9 @@ jobs:
           godot --headless --path . --script res://tests/showcase_app_test.gd
           godot --headless --path . --script res://tests/language_service_test.gd
           godot --headless --path . --script res://tests/editor_tooling_smoke_test.gd
+          godot --headless --path . --script res://tests/item_model_test.gd
+          godot --headless --path . --script res://tests/collection_scaling_test.gd
+          godot --headless --path . --script res://tests/virtualization_test.gd
 
       - name: Compile generated C# binding example
         run: dotnet build tests/codegen_compile/CodegenCompile.csproj --configuration Release
@@ -80,7 +83,10 @@ jobs:
         run: npm run check
 
       - name: Run performance gate
-        run: godot --headless --path . --script res://benchmarks/pipeline_benchmark.gd
+        shell: bash
+        run: |
+          godot --headless --path . --script res://benchmarks/pipeline_benchmark.gd
+          godot --headless --path . --script res://benchmarks/workload_benchmark.gd
 
       - name: Package addon
         run: python tools/release/package_addon.py
@@ -97,9 +103,94 @@ jobs:
             dist/*.sha256
           if-no-files-found: error
 
+  platform-smoke:
+    name: ${{ matrix.name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Godot 4.7 minimum · Linux
+            os: ubuntu-24.04
+            release: 4.7-stable
+            platform: linux
+          - name: Godot 4.7.1 · Windows
+            os: windows-2025
+            release: 4.7.1-stable
+            platform: windows
+          - name: Godot 4.7.1 · macOS
+            os: macos-15
+            release: 4.7.1-stable
+            platform: macos
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+
+      - name: Install Godot on Linux
+        if: matrix.platform == 'linux'
+        shell: bash
+        env:
+          RELEASE: ${{ matrix.release }}
+        run: |
+          archive="Godot_v${RELEASE}_linux.x86_64.zip"
+          base="https://github.com/godotengine/godot-builds/releases/download/${RELEASE}"
+          curl --fail --location --retry 3 "${base}/${archive}" --output "${archive}"
+          curl --fail --location --retry 3 "${base}/SHA512-SUMS.txt" --output SHA512-SUMS.txt
+          grep "  ${archive}$" SHA512-SUMS.txt | sha512sum --check
+          unzip -q "${archive}"
+          chmod +x "Godot_v${RELEASE}_linux.x86_64"
+          mv "Godot_v${RELEASE}_linux.x86_64" "${RUNNER_TEMP}/godot"
+          echo "${RUNNER_TEMP}" >> "${GITHUB_PATH}"
+
+      - name: Install Godot on Windows
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        env:
+          RELEASE: ${{ matrix.release }}
+        run: |
+          $archive = "Godot_v$env:RELEASE`_win64.exe.zip"
+          $base = "https://github.com/godotengine/godot-builds/releases/download/$env:RELEASE"
+          Invoke-WebRequest -Uri "$base/$archive" -OutFile $archive
+          Invoke-WebRequest -Uri "$base/SHA512-SUMS.txt" -OutFile SHA512-SUMS.txt
+          $expected = ((Get-Content SHA512-SUMS.txt | Where-Object { $_ -match "  $([regex]::Escape($archive))$" }) -split '\s+')[0]
+          $actual = (Get-FileHash -Algorithm SHA512 $archive).Hash.ToLowerInvariant()
+          if (-not $expected -or $actual -ne $expected.ToLowerInvariant()) { throw "SHA-512 mismatch for $archive" }
+          Expand-Archive -LiteralPath $archive -DestinationPath godot-dist
+          Move-Item -LiteralPath "godot-dist/Godot_v$env:RELEASE`_win64_console.exe" -Destination "$env:RUNNER_TEMP/godot.exe"
+          Add-Content -LiteralPath $env:GITHUB_PATH -Value $env:RUNNER_TEMP
+
+      - name: Install Godot on macOS
+        if: matrix.platform == 'macos'
+        shell: bash
+        env:
+          RELEASE: ${{ matrix.release }}
+        run: |
+          archive="Godot_v${RELEASE}_macos.universal.zip"
+          base="https://github.com/godotengine/godot-builds/releases/download/${RELEASE}"
+          curl --fail --location --retry 3 "${base}/${archive}" --output "${archive}"
+          curl --fail --location --retry 3 "${base}/SHA512-SUMS.txt" --output SHA512-SUMS.txt
+          grep "  ${archive}$" SHA512-SUMS.txt | shasum -a 512 --check
+          unzip -q "${archive}" -d "${RUNNER_TEMP}"
+          chmod +x "${RUNNER_TEMP}/Godot.app/Contents/MacOS/Godot"
+          ln -s "${RUNNER_TEMP}/Godot.app/Contents/MacOS/Godot" "${RUNNER_TEMP}/godot"
+          echo "${RUNNER_TEMP}" >> "${GITHUB_PATH}"
+
+      - name: Run cross-platform runtime smoke
+        shell: bash
+        run: |
+          godot --version
+          godot --headless --path . --import
+          godot --headless --path . --script res://tests/source_pipeline_test.gd
+          godot --headless --path . --script res://tests/item_model_test.gd
+          godot --headless --path . --script res://tests/collection_scaling_test.gd
+          godot --headless --path . --script res://tests/virtualization_test.gd
+          godot --headless --path . --script res://tests/editor_tooling_smoke_test.gd
+
   release:
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: verify
+    needs: [verify, platform-smoke]
     runs-on: ubuntu-24.04
     permissions:
       contents: write

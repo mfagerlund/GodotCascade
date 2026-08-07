@@ -1,0 +1,62 @@
+<Page class="app" accessible-label="Deployment queue operations screen">
+    <Row class="topbar">
+        <Column class="heading">
+            <Label class="title">Deployment queue</Label>
+            <Label class="subtitle">Operate staged service releases</Label>
+        </Column>
+        <Label id="summary" class="summary" text="{summary}" />
+    </Row>
+
+    <Row class="controls">
+        <Column class="field operator-field">
+            <Label class="field-label">Operator</Label>
+            <TextInput id="operator" bind-text="{operator_name}" placeholder="Required name" required="true" pattern="^.{2,24}$" error-message="Enter a 2–24 character operator name." accessible-label="Operator name" />
+        </Column>
+        <Column class="field environment-field">
+            <Label class="field-label">Environment</Label>
+            <Select id="environment" bind-selected="{environment}" accessible-label="Deployment environment">
+                <Option value="Staging">Staging</Option>
+                <Option value="Production">Production</Option>
+            </Select>
+        </Column>
+        <Column class="field concurrency-field">
+            <Label class="field-label" text="{concurrency_label}" />
+            <Slider id="concurrency" min="1" max="8" step="1" bind-value="{concurrency}" accessible-label="Deployment concurrency" />
+        </Column>
+        <Checkbox id="include-paused" class="paused-check" bind-checked="{include_paused}">Include paused</Checkbox>
+    </Row>
+
+    <Row class="actions">
+        <Button id="queue" class="primary" on-pressed="_on_queue_job">Queue deployment</Button>
+        <Button id="remove" on-pressed="_on_remove_selected">Remove selected</Button>
+        <Button id="sort" on-pressed="_on_sort_priority">Sort priority</Button>
+        <Label id="status" class="status" text="{status_message}" />
+    </Row>
+
+    <Panel class="error" if="{has_error}"><Label class="error-text" text="{error_message}" /></Panel>
+
+    <Scroll id="job-scroll" class="job-scroll">
+        <Table id="job-table" accessible-label="Queued deployments">
+            <TableHeader>
+                <TableRow>
+                    <TableHeaderCell>Select</TableHeaderCell>
+                    <TableHeaderCell>Service</TableHeaderCell>
+                    <TableHeaderCell>Reference</TableHeaderCell>
+                    <TableHeaderCell>State</TableHeaderCell>
+                    <TableHeaderCell>Owner</TableHeaderCell>
+                </TableRow>
+            </TableHeader>
+            <TableBody>
+                <Repeat id="jobs" items="{visible_jobs}" key="id">
+                    <TableRow class="job-row">
+                        <TableCell class="select-cell"><Checkbox bind-checked="{item.selected}" accessible-label="Select deployment" /></TableCell>
+                        <TableCell text="{item.service}" />
+                        <TableCell text="{item.ref}" />
+                        <TableCell text="{item.status}" />
+                        <TableCell text="{item.owner}" />
+                    </TableRow>
+                </Repeat>
+            </TableBody>
+        </Table>
+    </Scroll>
+</Page>

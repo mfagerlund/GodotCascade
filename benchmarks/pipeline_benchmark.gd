@@ -71,19 +71,23 @@ func _run() -> void:
 		failures.append("equivalent rebuild exceeded zero-allocation reconciliation budget: %s" % reconciled["stats"])
 
 	print(JSON.stringify({
-		"items": ITEM_COUNT,
-		"native_nodes": node_count,
-		"parse_build_ms": parse_build_ms,
-		"expression_build_ms": expression_build_ms,
-		"expression_overhead_ms": expression_build_ms - parse_build_ms,
-		"layout_ms": layout_ms,
-		"reconcile_ms": reconcile_ms,
+		"schema": "godot-cascade-pipeline-benchmark/v2",
+		"workload": {"authored_items": ITEM_COUNT, "native_controls": node_count},
+		"timing_semantics": "Every millisecond value is the total elapsed time for the named complete operation; no value is a per-frame or per-control time.",
+		"measurements_ms": {
+			"total_literal_parse_and_native_build": parse_build_ms,
+			"total_expression_parse_and_native_build": expression_build_ms,
+			"total_expression_build_overhead": expression_build_ms - parse_build_ms,
+			"total_two_process_layout_frames": layout_ms,
+			"total_equivalent_native_tree_reconciliation": reconcile_ms,
+		},
+		"operation_counts": {"parse_builds": 2, "layout_frames": 2, "reconciled_native_controls": ITEM_COUNT + 1},
 		"reconcile": reconciled["stats"],
 		"budgets_ms": {
-			"parse_build": PARSE_BUILD_BUDGET_MS,
-			"layout": LAYOUT_BUDGET_MS,
-			"reconcile": RECONCILE_BUDGET_MS,
-			"expression_build": EXPRESSION_BUILD_BUDGET_MS,
+			"total_literal_parse_and_native_build": PARSE_BUILD_BUDGET_MS,
+			"total_two_process_layout_frames": LAYOUT_BUDGET_MS,
+			"total_equivalent_native_tree_reconciliation": RECONCILE_BUDGET_MS,
+			"total_expression_parse_and_native_build": EXPRESSION_BUILD_BUDGET_MS,
 		},
 	}))
 	if failures.is_empty():

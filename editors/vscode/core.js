@@ -178,9 +178,18 @@ function parseGxml(text) {
     if (tag.name === 'Repeat') {
       const items = attribute(tag, 'items');
       if (!items || !/^\{[A-Za-z_][\w]*(?:\.[A-Za-z_][\w]*|\.\d+)*\}$/.test(items.value)) {
-        diagnostics.push(diagnostic(items ? items.valueStart : tag.nameStart, items ? items.valueEnd : tag.nameEnd, "Repeat 'items' must be an exact binding such as '{inventory.items}'.", 'error', 'gxml.repeat-items'));
+        diagnostics.push(diagnostic(items ? items.valueStart : tag.nameStart, items ? items.valueEnd : tag.nameEnd, "Repeat 'items' must be an exact Array or CascadeItemModel binding such as '{inventory.items}'.", 'error', 'gxml.repeat-items'));
       }
       if (node.children.length !== 1) diagnostics.push(diagnostic(tag.nameStart, tag.nameEnd, 'Repeat requires exactly one child template.', 'error', 'gxml.repeat-child'));
+	  const virtual = attribute(tag, 'virtual');
+	  if (virtual && ['true', '1', 'yes', 'on', 'virtual'].includes(virtual.value.toLowerCase())) {
+		const key = attribute(tag, 'key');
+		const height = attribute(tag, 'item-height');
+		const overscan = attribute(tag, 'overscan');
+		if (!key || !key.value.trim()) diagnostics.push(diagnostic(tag.nameStart, tag.nameEnd, 'Virtual Repeat requires an explicit stable key.', 'error', 'gxml.virtual-key'));
+		if (!height || !/^\d+(?:\.\d+)?(?:px)?$/.test(height.value) || parseFloat(height.value) <= 0) diagnostics.push(diagnostic(height ? height.valueStart : tag.nameStart, height ? height.valueEnd : tag.nameEnd, "Virtual Repeat 'item-height' requires a positive pixel length.", 'error', 'gxml.virtual-height'));
+		if (overscan && (!/^\d+$/.test(overscan.value) || Number(overscan.value) < 0)) diagnostics.push(diagnostic(overscan.valueStart, overscan.valueEnd, "Virtual Repeat 'overscan' requires a non-negative integer.", 'error', 'gxml.virtual-overscan'));
+	  }
     }
     if (tag.name === 'Select') {
       for (const child of node.children) if (child.tag.name !== 'Option') diagnostics.push(diagnostic(child.tag.nameStart, child.tag.nameEnd, 'Select only accepts <Option> children.', 'error', 'gxml.select-child'));

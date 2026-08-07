@@ -8,6 +8,11 @@ All notable changes to GodotCascade are documented here. Versions follow semanti
 - Certified project-local SVG sources through Godot's native texture importer, including intrinsic sizing, binding refresh, and documented non-DOM boundaries.
 - Added source-diagnosed `tab-index`, `autofocus`, and modal `focus-trap` contracts with visibility/disabled recomputation, focus-escape redirection, hot-reload stability, and prior-focus restoration.
 - Added a headless-testable GXML/GCSS language service, a Godot `CodeEdit` source panel, and a packageable VS Code extension covering completion, hover, formatting, definition, safe rename, and diagnostics.
+- Added retained collection-only reconciliation with zero full-document candidates, automatic typed `CascadeItemModel` changes, atomic key validation, and a repeat-template class-isolation fix.
+- Added event-driven fixed-height virtualization for 10,000-item lists and semantic tables, including native scroll extents, overscan, overlapping identity, focus pinning, keyed scroll anchoring, debugger statistics, and validated typed-delta key indexes that avoid full scans outside reset.
+- Added a five-sample representative workload gate for the real settings, dashboard, leaderboard, and 10,000-item inventory scenes, with hand-authored native baselines, a native `ItemList` comparison, visible collection-update verification, and documented Godot 4.7/4.7.1 results.
+- Added a pinned, reproducible non-showcase deployment-queue comparison with GTML, including native captures, identical functional assertions, source metrics, diagnostics, and candid cold/update/reorder measurements.
+- Hardened collection transactions against invalid model transitions, malformed deltas, multi-Repeat partial commits, stale scroll caches, dynamic fixed-height contract violations, radio-group candidate side effects, and lost accessibility diagnostics.
 
 ## [0.6.0] — 2026-08-07
 

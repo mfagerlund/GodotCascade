@@ -144,9 +144,13 @@ func _update_debug_tree() -> void:
 		var rendered_trace := ""
 		if not trace.is_empty():
 			rendered_trace = "  • #%s %s" % [trace.get("sequence", 0), trace.get("strategy", "targeted")]
-		item.set_text(4, "%s%s" % ["; ".join(rendered_dependencies), rendered_trace])
-		if not dependencies.is_empty() or not trace.is_empty():
-			item.set_tooltip_text(4, _binding_tooltip(dependencies, trace))
+		var collection: Dictionary = entry.get("collection", {})
+		var rendered_collection := ""
+		if not collection.is_empty():
+			rendered_collection = "  • %s %s/%s" % [collection["model"], collection["realized"], collection["count"]]
+		item.set_text(4, "%s%s%s" % ["; ".join(rendered_dependencies), rendered_trace, rendered_collection])
+		if not dependencies.is_empty() or not trace.is_empty() or not collection.is_empty():
+			item.set_tooltip_text(4, _binding_tooltip(dependencies, trace, collection))
 		item.set_metadata(0, {"path": entry["source_path"], "line": entry["source_line"], "column": entry["source_column"]})
 		if parents.size() == depth + 1:
 			parents.append(item)
@@ -154,7 +158,7 @@ func _update_debug_tree() -> void:
 			parents[depth + 1] = item
 
 
-func _binding_tooltip(dependencies: Array, trace: Dictionary) -> String:
+func _binding_tooltip(dependencies: Array, trace: Dictionary, collection: Dictionary = {}) -> String:
 	var lines := PackedStringArray()
 	for dependency in dependencies:
 		lines.append("%s: %s (%s)" % [dependency["property"], dependency["path"], dependency["mode"]])
@@ -162,6 +166,10 @@ func _binding_tooltip(dependencies: Array, trace: Dictionary) -> String:
 		lines.append("Last invalidation #%s: %s via %s" % [trace.get("sequence", 0), ", ".join(trace.get("paths", PackedStringArray())), trace.get("trigger", "manual")])
 		for match in trace.get("matches", []):
 			lines.append("matched %s: %s" % [match["property"], match["path"]])
+	if not collection.is_empty():
+		lines.append("Model: %s, %s items" % [collection["model"], collection["count"]])
+		if collection["virtual"]:
+			lines.append("Realized [%s, %s), %s controls, overscan %s" % [collection["first"], collection["end"], collection["realized"], collection["overscan"]])
 	return "\n".join(lines)
 
 

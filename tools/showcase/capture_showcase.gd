@@ -41,9 +41,11 @@ func _capture_demo(demo: Dictionary) -> Error:
 	root.add_child(capture_viewport)
 	var instance := packed_scene.instantiate()
 	capture_viewport.add_child(instance)
-	await process_frame
-	await process_frame
-	await process_frame
+	# Virtual windows may reconcile after ScrollContainer performs its first
+	# native layout, followed by a deferred table layout. Six frames keeps
+	# captures deterministic without adding a wall-clock delay.
+	for _frame in 6:
+		await process_frame
 	if not instance.has_method("generated_root") or instance.call("generated_root") == null:
 		push_error("Showcase scene did not produce a CascadeDocument root: %s" % scene_path)
 		capture_viewport.queue_free()

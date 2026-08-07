@@ -2,7 +2,7 @@
 
 This is the copy-ready announcement for the first GodotCascade community feedback round. Post it with the native live-reload GIF or link directly to the public demo.
 
-The public live-reload URL below becomes valid only after the maintainer approves and pushes the prepared artifact. This document is not authorization to post it anywhere.
+The public live-reload artifact is already available at the URL below. This draft is still not authorization to post an announcement, message, or reply through any community account.
 
 ## Suggested title
 
@@ -32,7 +32,7 @@ This is an experimental preview, not a production-ready replacement for Godot sc
 - Which missing controls or style primitives block a real interface?
 - What runtime, accessibility, or platform evidence would you need before considering it?
 
-The repository includes a reproducible addon ZIP, five native test suites, a clean-install smoke test, benchmark ceilings, explicit support boundaries, and The Unlicense. Honest failure reports and comparisons are more useful than general encouragement.
+The repository includes a reproducible addon ZIP, the complete native CI suite, a clean-install smoke test, documented benchmark ceilings, explicit support boundaries, and The Unlicense. Honest failure reports and comparisons are more useful than general encouragement.
 
 ## Links to attach
 

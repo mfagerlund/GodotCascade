@@ -16,7 +16,7 @@ Open a particular manifest page with its ID:
 python tools/showcase/run_showcase.py --godot "C:\path\to\godot.exe" --page settings-menu
 ```
 
-Available IDs are `layout-foundation`, `system-status`, `settings-menu`, and `leaderboard`. Previous, Next, and the page picker change pages. Reload rebuilds the current GXML/GCSS document. The right side of the toolbar reports build errors and warnings for the mounted page.
+Available IDs are `layout-foundation`, `system-status`, `settings-menu`, `leaderboard`, and `collection-scale`. Previous, Next, and the page picker change pages. Reload rebuilds the current GXML/GCSS document. The right side of the toolbar reports build errors and warnings for the mounted page.
 
 GXML and GCSS edits can hot-reload in the running app. Restart Godot after changing native component or builder GDScript—an existing process cannot safely introduce a newly preloaded element class through the document watcher alone.
 
@@ -33,6 +33,7 @@ GXML and GCSS edits can hot-reload in the running app. Restart Godot after chang
 | Flight leaderboard | Select a row's **Remove** control | That keyed row disappears and the remaining rows are reranked. |
 | Flight leaderboard | Select **Sort by rating** | Rows reorder from highest to lowest rating and ranks update. |
 | Flight leaderboard | Drag a row's **↕** handle onto another row | The captured pointer reliably moves the keyed row before the drop target and ranks update. Focused handles also accept Up/Down. |
+| Virtual inventory | Jump to the middle/end, insert, and remove records | The native scrollbar spans 10,000 items while only a bounded row window exists; the status explains each localized patch. |
 | Any page | Select **Reload** | The document rebuilds and the toolbar returns to a **Connected** status when no errors exist. |
 
 The automated equivalent visits all manifest pages and verifies their authored event and binding paths:

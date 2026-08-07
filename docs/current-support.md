@@ -23,7 +23,7 @@ This page documents the executable subset on `main`. GodotCascade borrows produc
 | `TextInput` / `Input` | `CascadeTextInput` or `CascadeTextArea` | Adapted native `LineEdit`; `multiline="true"` selects `TextEdit` |
 | `Progress` | `CascadeProgress` | Owned horizontal track, fill, range, and box model |
 | `Image` | `CascadeImage` | Texture resource rendering with contain, cover, fill, or intrinsic crop geometry |
-| `Repeat` | `CascadeBox` plus expanded template | One child template repeated from an array binding with optional item key |
+| `Repeat` | `CascadeBox`/table group plus expanded template | One child template from an Array or `CascadeItemModel`; localized keyed updates and optional fixed-height virtualization |
 | `Scroll` | `CascadeScroll` | Adapted native `ScrollContainer` with automatic vertical overflow |
 | `Table` | `CascadeTable` | Shared column measurement across semantic header and body rows |
 | `TableHeader` / `TableBody` | `CascadeTablePart` | Non-focusable semantic row groups |
@@ -68,7 +68,7 @@ Other unknown elements are build errors unless their native factory is registere
 
 Cells accept direct text, `text`, one-way text bindings, accessibility attributes, and authored child controls. Authored children fill the cell content box and retain their own keyboard behavior. Table structure and cells are not focusable themselves, so interactive cell contents remain in ordinary document focus order. Header/cell semantic roles are retained as `cascade_table_role` metadata; native accessibility names and descriptions remain available through the normal attributes. Style the table and cells for exact padding, background, border, size, color, and font behavior. Header/body/row structural nodes support background and border painting but do not introduce padding or independent sizing.
 
-This is a semantic display table, not a data-grid widget. Wrap it in `Scroll` when repeated rows may exceed the available height. Sorting and row reordering remain application-level operations, as demonstrated by the leaderboard showcase; row/cell selection, column resizing/reordering, sticky headers, pagination, and virtualization remain application-level or future component work.
+This is a semantic display table, not a data-grid widget. Wrap it in `Scroll` when repeated rows may exceed the available height. Sorting and row reordering remain application-level operations, as demonstrated by the leaderboard showcase; row/cell selection, column resizing/reordering, sticky headers, and pagination remain application-level. Fixed-height repeated-row virtualization is supported when the table declares stable non-content columns; see [collections and virtualization](collections.md).
 
 ## Bindings
 
@@ -94,11 +94,11 @@ State booleans are not string-coerced. A bound class change rematches selectors 
 
 Non-root elements accept `if="{boolean.path}"`. False conditions omit the native branch; true conditions build it. The grammar is an exact path only—there are no comparisons, negation, truthy coercion, method calls, general expressions, or implicit `else`. Conditional path changes rebuild a candidate and reconcile stable siblings. Removed branch controls are freed and newly created if the condition later becomes true.
 
-`BindingResolver` traverses typed Godot object properties, Arrays using numeric path segments, and Dictionaries. Typed `RefCounted` or `Resource` models are recommended for application state; Dictionaries remain useful for JSON-shaped data and prototypes. The resolver does not execute expressions or call methods. Assigning a new `CascadeDocument.binding_context` refreshes automatically. After nested mutations, call `refresh_bindings()` or wrap the model in `ObservableBindingContext` and call `invalidate("named.path")`; exact, parent, and child dependencies are refreshed without polling. Repeated documents still reconcile when a named path is invalidated because collection topology may have changed.
+`BindingResolver` traverses typed Godot object properties, Arrays using numeric path segments, and Dictionaries. Typed `RefCounted` or `Resource` models are recommended for application state; Dictionaries remain useful for JSON-shaped data and prototypes. The resolver does not execute expressions or call methods. Assigning a new `CascadeDocument.binding_context` refreshes automatically. After nested mutations, call `refresh_bindings()` or wrap the model in `ObservableBindingContext` and call `invalidate("named.path")`; exact, parent, and child dependencies are refreshed without polling. Collection paths rebuild only their retained Repeat subtrees.
 
 The layout debugger exposes declared property/path dependencies and the latest matching invalidation. `CascadeDocument.last_binding_trace()` and `binding_trace_changed` provide the same bounded trace to runtime tooling, including trigger, strategy, reason, affected controls/bindings, success, and reconcile statistics. This is observability metadata, not automatic model watching or an expression runtime.
 
-`Repeat` accepts an array path through `items="{path}"`; its template can bind through local `item` and `index` scopes while retaining access to root paths. A `key` path relative to each item enables identity-preserving reorder/add/remove reconciliation.
+`Repeat` accepts an Array or `CascadeItemModel` through `items="{path}"`; its template can bind through local `item` and `index` scopes while retaining access to root paths. A `key` path relative to each item enables identity-preserving reorder/add/remove reconciliation. Item-model changes update automatically. `virtual="true"`, positive `item-height`, and optional non-negative `overscan` enable fixed-height vertical list/table windowing below `Scroll`. Virtual rows must fit their declared height after bound values are applied; virtual Repeat padding/borders, nested virtual Repeat, item-root `if`, Repeat-template autofocus/focus traps, and virtual-table row gaps are rejected. See [collections and virtualization](collections.md).
 
 Form write-back is explicit and reuses the same exact path grammar:
 

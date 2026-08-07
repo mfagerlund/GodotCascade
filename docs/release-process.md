@@ -4,7 +4,7 @@ GodotCascade releases are built from the exact tagged tree and are never assembl
 
 ## Local release gate
 
-Run the five headless suites and benchmark documented in the project README, then run:
+Run every headless suite and both performance gates listed in `.github/workflows/ci.yml`, then run:
 
 ```powershell
 python tools/ci/verify_repo.py
@@ -27,6 +27,8 @@ Before creating `vX.Y.Z`:
 3. Commit a clean tree and push it to `main`.
 4. Create and push the annotated version tag.
 5. Confirm the tag workflow passes. It packages the addon again, verifies its checksum, and creates the GitHub release with the matching notes, ZIP, and checksum.
+
+The tag job waits for the full Linux release gate plus the minimum-version Linux and current Windows/macOS runtime smoke matrix. Manual IME, touch, virtual-keyboard, clipboard, and screen-reader certification is recorded separately and must never be inferred from a green headless job.
 
 ## Godot Asset Library
 

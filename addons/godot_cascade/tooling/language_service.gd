@@ -62,7 +62,7 @@ const ELEMENT_ATTRIBUTES := {
 	"Select": ["selected", "bind-selected", "on-selection-changed"],
 	"Option": ["value", "disabled"], "Slider": ["min", "max", "value", "step", "bind-value"],
 	"Progress": ["min", "max", "value"], "TextInput": ["text", "bind-text", "placeholder", "multiline", "read-only", "secret", "required", "pattern", "error-message", "max-length"],
-	"Image": ["src"], "Repeat": ["items", "key"],
+	"Image": ["src"], "Repeat": ["items", "key", "virtual", "item-height", "overscan"],
 	"Component": ["name"], "Param": ["name", "type", "required", "default"], "Slot": ["name"],
 	"Bindings": ["class", "namespace", "document", "output"], "Binding": ["name", "type", "get", "set", "format", "parse"],
 	"Formatter": ["name", "input", "output"], "Parser": ["name", "input", "output"], "Using": ["namespace"],

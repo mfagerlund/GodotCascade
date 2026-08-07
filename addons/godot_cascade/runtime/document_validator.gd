@@ -14,6 +14,8 @@ static func _validate_element(element, first_occurrences: Dictionary, diagnostic
 	_validate_unique_id(element, first_occurrences, diagnostics)
 	_validate_table_relation(element, diagnostics)
 	_validate_scroll_relation(element, diagnostics)
+	_validate_repeat_focus_contract(element, diagnostics)
+	_validate_virtual_repeat_nesting(element, diagnostics)
 	for child in element.children:
 		_validate_element(child, first_occurrences, diagnostics)
 
@@ -73,6 +75,51 @@ static func _validate_scroll_relation(element, diagnostics: Array[Dictionary]) -
 	var content_children: Array = element.children.filter(func(child): return child.tag_name.to_lower() != "bindings")
 	if content_children.size() != 1:
 		_append_error(diagnostics, "<Scroll> requires exactly one content child.")
+
+
+static func _validate_repeat_focus_contract(element, diagnostics: Array[Dictionary]) -> void:
+	if element.tag_name.to_lower() != "repeat" or element.children.is_empty():
+		return
+	var offenders: Array = []
+	_collect_repeat_focus_offenders(element.children[0], offenders)
+	for offender in offenders:
+		diagnostics.append({
+			"severity": "error",
+			"line": offender.source_line,
+			"column": offender.source_column,
+			"message": "Repeat templates cannot author autofocus or focus-trap; focus one stable control outside the collection and manage row focus from application code.",
+		})
+
+
+static func _collect_repeat_focus_offenders(element, result: Array) -> void:
+	for attribute_name in ["autofocus", "focus-trap"]:
+		if _attribute_is_true(element, attribute_name):
+			result.append(element)
+			break
+	for child in element.children:
+		_collect_repeat_focus_offenders(child, result)
+
+
+static func _validate_virtual_repeat_nesting(element, diagnostics: Array[Dictionary]) -> void:
+	if element.tag_name.to_lower() != "repeat" or not _attribute_is_true(element, "virtual"):
+		return
+	var ancestor = element.parent_element()
+	while ancestor != null:
+		if ancestor.tag_name.to_lower() == "repeat":
+			diagnostics.append({
+				"severity": "error",
+				"line": element.source_line,
+				"column": element.source_column,
+				"message": "Virtual Repeat cannot be nested inside another Repeat.",
+			})
+			return
+		ancestor = ancestor.parent_element()
+
+
+static func _attribute_is_true(element, attribute_name: String) -> bool:
+	if not element.attributes.has(attribute_name):
+		return false
+	return str(element.attributes[attribute_name]).strip_edges().to_lower() in ["true", "1", "yes", "on", attribute_name]
 
 
 static func _append_error(diagnostics: Array[Dictionary], message: String) -> void:

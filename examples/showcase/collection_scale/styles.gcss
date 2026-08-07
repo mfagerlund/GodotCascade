@@ -1,0 +1,46 @@
+.screen {
+    width: 960px;
+    height: 540px;
+    padding: 28px 34px;
+    gap: 14px;
+    background: linear-gradient(125deg, #0b1220, #111c30);
+}
+
+.heading-row { align-items: center; justify-content: space-between; }
+.heading-copy { gap: 3px; width: 680px; }
+.eyebrow { color: #63d6b4; font-size: 12px; }
+.title { color: #f5f8ff; font-size: 30px; }
+.subtitle { color: #9fb0cb; font-size: 14px; }
+.count-pill {
+    width: 160px;
+    padding: 8px 13px;
+    border: 1px solid #2b876e;
+    border-radius: 14px;
+    background: #102d2a;
+    color: #7ff0cf;
+    font-size: 12px;
+}
+
+.toolbar { gap: 8px; }
+.toolbar > Button {
+    padding: 7px 12px;
+    border: 1px solid #3c5277;
+    border-radius: 7px;
+    background: #16243a;
+    color: #dce8ff;
+}
+.toolbar > Button:hover { background: #223654; }
+.toolbar > Button:pressed { background: #0e192a; }
+.status { color: #8fc4ff; font-size: 13px; }
+
+.inventory-scroll {
+    width: 892px;
+    height: 356px;
+    border: 1px solid #2c3e5d;
+    border-radius: 10px;
+    background: #0a101c;
+}
+#inventory { grid-template-columns: 1fr 180px 150px; gap: 0px; width: 870px; }
+.table-header { background: #15233a; }
+TableHeaderCell { height: 36px; padding: 8px 12px; background: #15233a; color: #8fa4c4; font-size: 12px; }
+TableCell { height: 36px; padding: 8px 12px; color: #dfe8f8; font-size: 13px; }

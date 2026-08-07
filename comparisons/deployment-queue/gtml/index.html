@@ -1,0 +1,33 @@
+<div class="app">
+	<header class="topbar">
+		<div class="heading">
+			<h1>Deployment queue</h1>
+			<p class="subtitle">Operate staged service releases</p>
+		</div>
+		<span class="summary">{{ summary }}</span>
+	</header>
+
+	<div class="controls">
+		<label class="field operator-field">Operator<input id="operator" v-model="operator_name" placeholder="Required name"></label>
+		<label class="field environment-field">Environment<select id="environment" v-model="environment"><option>Staging</option><option>Production</option></select></label>
+		<div class="field concurrency-field"><span>{{ concurrency_label }}</span><input id="concurrency" type="range" min="1" max="8" v-model="concurrency"></div>
+		<label class="paused-check"><input id="include-paused" type="checkbox" v-model="include_paused">Include paused</label>
+	</div>
+
+	<div class="actions">
+		<button class="primary" @click="queue_job">Queue deployment</button>
+		<button @click="remove_selected">Remove selected</button>
+		<button @click="sort_priority">Sort priority</button>
+		<span id="status" class="status">{{ status_message }}</span>
+	</div>
+
+	<div v-if="has_error" class="error">{{ error_message }}</div>
+
+	<div class="job-scroll">
+		<div class="row table-heading"><span></span><span>Service</span><span>Reference</span><span>State</span><span>Owner</span></div>
+		<div v-for="job in visible_jobs" :key="job.id" :class="{ selected: job.id == selected_id }" class="row job-row">
+			<button class="select-button" @click="select_job(job.id)">Select</button>
+			<span>{{ job.service }}</span><span>{{ job.ref }}</span><span>{{ job.status }}</span><span>{{ job.owner }}</span>
+		</div>
+	</div>
+</div>

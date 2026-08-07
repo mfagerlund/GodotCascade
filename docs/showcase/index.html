@@ -1646,6 +1646,227 @@ func _find_by_class(node: Node, selector_class: String) -&gt; Array[Control]:
 </code></pre>
       </details>
       </section>
+    </article>
+    <article class="demo" id="collection-scale">
+      <header class="demo-heading">
+        <div>
+          <p class="eyebrow">Current demo</p>
+          <h2>Virtual inventory</h2>
+          <p>A 10,000-item typed model rendered through a bounded fixed-height native table window with insert, remove, and jump controls.</p>
+        </div>
+        <dl>
+          <div><dt>Viewport</dt><dd>960 × 540</dd></div>
+          <div><dt>Godot scene</dt><dd><code>examples/collection_scale_showcase.tscn</code></dd></div>
+        </dl>
+      </header>
+
+      <div class="comparison">
+        <section class="render-column">
+          <div class="render-label"><span>HTML reference</span><small><a href="references/collection-scale-a4894331a2d1.html" target="_blank" rel="noreferrer">Open reference</a></small></div>
+          <div class="render-frame" data-viewport-width="960" data-viewport-height="540" style="--viewport-width:960px; --viewport-height:540px; aspect-ratio:960/540">
+            <iframe width="960" height="540" title="HTML rendering of Virtual inventory" src="references/collection-scale-a4894331a2d1.html"></iframe>
+          </div>
+        </section>
+        <section class="render-column">
+          <div class="render-label"><span>GodotCascade</span><small>Captured from the native Godot scene</small></div>
+          <div class="render-frame godot-render" data-viewport-width="960" data-viewport-height="540" style="--viewport-width:960px; --viewport-height:540px; aspect-ratio:960/540"><img src="assets/collection-scale-godot.png" alt="GodotCascade render of Virtual inventory"></div>
+        </section>
+      </div>
+
+      <section class="mapping">
+        <div>
+          <p class="eyebrow">Translation contract</p>
+          <h3>Same intent, native target</h3>
+          <p>The mapping is semantic rather than a promise of browser compatibility. Each supported declaration resolves into a typed CascadeStyle or layout value.</p>
+        </div>
+        <table>
+          <thead><tr><th>HTML/CSS</th><th>GodotCascade source</th><th>Runtime</th></tr></thead>
+          <tbody><tr><td><code>10,000-item Array</code></td><td><code>CascadeArrayItemModel</code></td><td><code>Event-driven typed item model</code></td></tr><tr><td><code>scroll listener</code></td><td><code>Scroll + virtual Repeat</code></td><td><code>Native ScrollContainer window events</code></td></tr><tr><td><code>DOM spacer rows</code></td><td><code>synthetic native spacer rows</code></td><td><code>Full scrollbar extent with bounded realized controls</code></td></tr><tr><td><code>slice(first, last)</code></td><td><code>item_at(index)</code></td><td><code>Visible range plus overscan only</code></td></tr><tr><td><code>stable record id</code></td><td><code>key=&quot;id&quot;</code></td><td><code>Overlapping native identity reconciliation</code></td></tr><tr><td><code>36px fixed row</code></td><td><code>item-height=&quot;36&quot;</code></td><td><code>Deterministic fixed-extent window math</code></td></tr><tr><td><code>table-layout: fixed</code></td><td><code>explicit grid-template-columns</code></td><td><code>Columns independent of unseen rows</code></td></tr><tr><td><code>insert / remove</code></td><td><code>CascadeArrayItemModel mutations</code></td><td><code>Automatic collection-only patch</code></td></tr></tbody>
+        </table>
+      </section>
+
+      <section class="sources">
+
+      <details class="source-panel">
+        <summary><span>HTML reference</span><code>examples/showcase/collection_scale/reference.html</code></summary>
+        <pre><code class="language-html">&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width,initial-scale=1&quot;&gt;
+&lt;title&gt;Virtual inventory&lt;/title&gt;
+&lt;style&gt;
+*{box-sizing:border-box}body{margin:0;width:960px;height:540px;overflow:hidden;background:linear-gradient(125deg,#0b1220,#111c30);color:#e8efff;font-family:Inter,system-ui,sans-serif}.screen{height:100%;padding:28px 34px;display:flex;flex-direction:column;gap:14px}.heading{display:flex;justify-content:space-between;align-items:center}.eyebrow{margin:0;color:#63d6b4;font-size:12px}.title{margin:3px 0;font-size:30px}.subtitle{margin:0;color:#9fb0cb;font-size:14px}.count-pill{padding:8px 13px;border:1px solid #2b876e;border-radius:14px;background:#102d2a;color:#7ff0cf;font-size:12px}.toolbar{display:flex;gap:8px}.toolbar button{padding:7px 12px;border:1px solid #3c5277;border-radius:7px;background:#16243a;color:#dce8ff}.toolbar button:hover{background:#223654}.status{margin:0;color:#8fc4ff;font-size:13px}.viewport{height:356px;overflow:auto;border:1px solid #2c3e5d;border-radius:10px;background:#0a101c}.table{width:100%;border-collapse:collapse;table-layout:fixed}.table th,.table td{height:36px;padding:8px 12px;border-bottom:1px solid #1e2c43;text-align:left;font-size:13px}.table th{position:sticky;top:0;z-index:2;background:#15233a;color:#8fa4c4;font-size:12px}.table th:nth-child(2){width:180px}.table th:nth-child(3){width:150px}.table tr.data:hover{background:#12243a}.spacer td{padding:0;border:0}
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;&lt;main class=&quot;screen&quot;&gt;
+&lt;header class=&quot;heading&quot;&gt;&lt;div&gt;&lt;p class=&quot;eyebrow&quot;&gt;SCALE LAB · FIXED EXTENT&lt;/p&gt;&lt;h1 class=&quot;title&quot;&gt;Virtual inventory&lt;/h1&gt;&lt;p class=&quot;subtitle&quot;&gt;A 10,000-item model backed by a bounded native Control window.&lt;/p&gt;&lt;/div&gt;&lt;span class=&quot;count-pill&quot; id=&quot;count&quot;&gt;10,000 MODEL ITEMS&lt;/span&gt;&lt;/header&gt;
+&lt;nav class=&quot;toolbar&quot;&gt;&lt;button data-jump=&quot;0&quot;&gt;Jump to top&lt;/button&gt;&lt;button data-jump=&quot;180000&quot;&gt;Jump to 5,000&lt;/button&gt;&lt;button data-jump=&quot;end&quot;&gt;Jump to end&lt;/button&gt;&lt;button id=&quot;insert&quot;&gt;Insert record&lt;/button&gt;&lt;button id=&quot;remove&quot;&gt;Remove first&lt;/button&gt;&lt;/nav&gt;
+&lt;p class=&quot;status&quot; id=&quot;status&quot;&gt;10,000 records · bounded native virtual window&lt;/p&gt;
+&lt;div class=&quot;viewport&quot; id=&quot;viewport&quot;&gt;&lt;table class=&quot;table&quot; aria-label=&quot;Virtual inventory table&quot;&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Record&lt;/th&gt;&lt;th&gt;Category&lt;/th&gt;&lt;th&gt;Value&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;&lt;tbody id=&quot;rows&quot;&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/div&gt;
+&lt;/main&gt;&lt;script&gt;
+const categories=[&#x27;Navigation&#x27;,&#x27;Reactor&#x27;,&#x27;Medical&#x27;,&#x27;Survey&#x27;];let items=Array.from({length:10000},(_,i)=&gt;({id:`record-${String(i).padStart(5,&#x27;0&#x27;)}`,name:`Cargo record ${String(i).padStart(5,&#x27;0&#x27;)}`,category:categories[i%4],value:`${1200+(i*73)%88000} cr`}));const viewport=document.querySelector(&#x27;#viewport&#x27;),rows=document.querySelector(&#x27;#rows&#x27;),status=document.querySelector(&#x27;#status&#x27;),count=document.querySelector(&#x27;#count&#x27;),height=36,overscan=4;function render(){const first=Math.max(0,Math.floor(viewport.scrollTop/height)-overscan),last=Math.min(items.length,Math.ceil((viewport.scrollTop+viewport.clientHeight)/height)+overscan);rows.innerHTML=`&lt;tr class=&quot;spacer&quot;&gt;&lt;td colspan=&quot;3&quot; style=&quot;height:${first*height}px&quot;&gt;&lt;/td&gt;&lt;/tr&gt;`+items.slice(first,last).map(item=&gt;`&lt;tr class=&quot;data&quot;&gt;&lt;td&gt;${item.name}&lt;/td&gt;&lt;td&gt;${item.category}&lt;/td&gt;&lt;td&gt;${item.value}&lt;/td&gt;&lt;/tr&gt;`).join(&#x27;&#x27;)+`&lt;tr class=&quot;spacer&quot;&gt;&lt;td colspan=&quot;3&quot; style=&quot;height:${(items.length-last)*height}px&quot;&gt;&lt;/td&gt;&lt;/tr&gt;`}viewport.addEventListener(&#x27;scroll&#x27;,render);document.querySelectorAll(&#x27;[data-jump]&#x27;).forEach(button=&gt;button.addEventListener(&#x27;click&#x27;,()=&gt;{viewport.scrollTop=button.dataset.jump===&#x27;end&#x27;?viewport.scrollHeight:Number(button.dataset.jump);status.textContent=button.textContent+&#x27; · only the visible window is materialized&#x27;;render()}));document.querySelector(&#x27;#insert&#x27;).addEventListener(&#x27;click&#x27;,()=&gt;{items.unshift({id:`inserted-${Date.now()}`,name:&#x27;Priority cargo&#x27;,category:&#x27;Inserted&#x27;,value:&#x27;99,000 cr&#x27;});count.textContent=`${items.length.toLocaleString()} MODEL ITEMS`;status.textContent=&#x27;Inserted one keyed record · visible anchor preserved&#x27;;render()});document.querySelector(&#x27;#remove&#x27;).addEventListener(&#x27;click&#x27;,()=&gt;{items.shift();count.textContent=`${items.length.toLocaleString()} MODEL ITEMS`;status.textContent=&#x27;Removed the first record · visible anchor preserved&#x27;;render()});render();
+&lt;/script&gt;&lt;/body&gt;&lt;/html&gt;
+</code></pre>
+      </details>
+
+      <details class="source-panel">
+        <summary><span>GodotCascade markup</span><code>examples/showcase/collection_scale/interface.gxml</code></summary>
+        <pre><code class="language-xml">&lt;Page class=&quot;screen&quot;&gt;
+    &lt;Row class=&quot;heading-row&quot;&gt;
+        &lt;Column class=&quot;heading-copy&quot;&gt;
+            &lt;Label class=&quot;eyebrow&quot;&gt;SCALE LAB · FIXED EXTENT&lt;/Label&gt;
+            &lt;Label class=&quot;title&quot;&gt;Virtual inventory&lt;/Label&gt;
+            &lt;Label class=&quot;subtitle&quot;&gt;A 10,000-item model backed by a bounded native Control window.&lt;/Label&gt;
+        &lt;/Column&gt;
+        &lt;Label class=&quot;count-pill&quot; text=&quot;{count_label}&quot; /&gt;
+    &lt;/Row&gt;
+    &lt;Row class=&quot;toolbar&quot;&gt;
+        &lt;Button on-pressed=&quot;_on_jump_top&quot;&gt;Jump to top&lt;/Button&gt;
+        &lt;Button on-pressed=&quot;_on_jump_middle&quot;&gt;Jump to 5,000&lt;/Button&gt;
+        &lt;Button on-pressed=&quot;_on_jump_end&quot;&gt;Jump to end&lt;/Button&gt;
+        &lt;Button on-pressed=&quot;_on_insert_record&quot;&gt;Insert record&lt;/Button&gt;
+        &lt;Button on-pressed=&quot;_on_remove_record&quot;&gt;Remove first&lt;/Button&gt;
+    &lt;/Row&gt;
+    &lt;Label class=&quot;status&quot; text=&quot;{status}&quot; /&gt;
+    &lt;Scroll id=&quot;inventory-scroll&quot; class=&quot;inventory-scroll&quot; accessible-label=&quot;Virtual inventory records&quot;&gt;
+        &lt;Table id=&quot;inventory&quot; accessible-label=&quot;Virtual inventory table&quot;&gt;
+            &lt;TableHeader&gt;
+                &lt;TableRow class=&quot;table-header&quot;&gt;
+                    &lt;TableHeaderCell&gt;Record&lt;/TableHeaderCell&gt;
+                    &lt;TableHeaderCell&gt;Category&lt;/TableHeaderCell&gt;
+                    &lt;TableHeaderCell&gt;Value&lt;/TableHeaderCell&gt;
+                &lt;/TableRow&gt;
+            &lt;/TableHeader&gt;
+            &lt;TableBody&gt;
+                &lt;Repeat id=&quot;inventory-rows&quot; items=&quot;{items}&quot; key=&quot;id&quot; virtual=&quot;true&quot; item-height=&quot;36&quot; overscan=&quot;4&quot;&gt;
+                    &lt;TableRow class=&quot;inventory-row&quot;&gt;
+                        &lt;TableCell text=&quot;{item.name}&quot; /&gt;
+                        &lt;TableCell text=&quot;{item.category}&quot; /&gt;
+                        &lt;TableCell text=&quot;{item.value}&quot; /&gt;
+                    &lt;/TableRow&gt;
+                &lt;/Repeat&gt;
+            &lt;/TableBody&gt;
+        &lt;/Table&gt;
+    &lt;/Scroll&gt;
+&lt;/Page&gt;
+</code></pre>
+      </details>
+
+      <details class="source-panel">
+        <summary><span>GodotCascade stylesheet</span><code>examples/showcase/collection_scale/styles.gcss</code></summary>
+        <pre><code class="language-css">.screen {
+    width: 960px;
+    height: 540px;
+    padding: 28px 34px;
+    gap: 14px;
+    background: linear-gradient(125deg, #0b1220, #111c30);
+}
+
+.heading-row { align-items: center; justify-content: space-between; }
+.heading-copy { gap: 3px; width: 680px; }
+.eyebrow { color: #63d6b4; font-size: 12px; }
+.title { color: #f5f8ff; font-size: 30px; }
+.subtitle { color: #9fb0cb; font-size: 14px; }
+.count-pill {
+    width: 160px;
+    padding: 8px 13px;
+    border: 1px solid #2b876e;
+    border-radius: 14px;
+    background: #102d2a;
+    color: #7ff0cf;
+    font-size: 12px;
+}
+
+.toolbar { gap: 8px; }
+.toolbar &gt; Button {
+    padding: 7px 12px;
+    border: 1px solid #3c5277;
+    border-radius: 7px;
+    background: #16243a;
+    color: #dce8ff;
+}
+.toolbar &gt; Button:hover { background: #223654; }
+.toolbar &gt; Button:pressed { background: #0e192a; }
+.status { color: #8fc4ff; font-size: 13px; }
+
+.inventory-scroll {
+    width: 892px;
+    height: 356px;
+    border: 1px solid #2c3e5d;
+    border-radius: 10px;
+    background: #0a101c;
+}
+#inventory { grid-template-columns: 1fr 180px 150px; gap: 0px; width: 870px; }
+.table-header { background: #15233a; }
+TableHeaderCell { height: 36px; padding: 8px 12px; background: #15233a; color: #8fa4c4; font-size: 12px; }
+TableCell { height: 36px; padding: 8px 12px; color: #dfe8f8; font-size: 13px; }
+</code></pre>
+      </details>
+
+      <details class="source-panel">
+        <summary><span>Godot interaction script</span><code>examples/showcase/collection_scale/collection_scale_document.gd</code></summary>
+        <pre><code class="language-gdscript">extends &quot;res://addons/godot_cascade/runtime/cascade_document.gd&quot;
+
+const ScaleState := preload(&quot;res://examples/showcase/collection_scale/scale_state.gd&quot;)
+
+var model := ScaleState.new()
+
+
+func _ready() -&gt; void:
+	binding_context = model
+	event_context = self
+	super()
+
+
+func _on_jump_top() -&gt; void:
+	_set_scroll(0)
+	model.status = &quot;Top window · only visible records are native controls&quot;
+	_refresh_status()
+
+
+func _on_jump_middle() -&gt; void:
+	_set_scroll(180_000)
+	model.status = &quot;Middle window near record 5,000 · overlapping row identity retained&quot;
+	_refresh_status()
+
+
+func _on_jump_end() -&gt; void:
+	var scroll := get_element_by_id(&quot;inventory-scroll&quot;) as ScrollContainer
+	if scroll != null:
+		scroll.set_v_scroll(int(scroll.get_v_scroll_bar().max_value))
+	model.status = &quot;End window · native scrollbar covers the full item model&quot;
+	_refresh_status()
+
+
+func _on_insert_record() -&gt; void:
+	var next_id := &quot;inserted-%s&quot; % Time.get_ticks_msec()
+	model.items.insert(0, {&quot;id&quot;: next_id, &quot;name&quot;: &quot;Priority cargo&quot;, &quot;category&quot;: &quot;Inserted&quot;, &quot;value&quot;: &quot;99,000 cr&quot;})
+	model.refresh_count()
+	model.status = &quot;Inserted one keyed record · collection patch built no document candidate&quot;
+	_refresh_status()
+
+
+func _on_remove_record() -&gt; void:
+	if model.items.item_count() &lt;= 0:
+		return
+	model.items.remove_at(0)
+	model.refresh_count()
+	model.status = &quot;Removed the first record · visible keyed anchor preserved&quot;
+	_refresh_status()
+
+
+func _set_scroll(value: int) -&gt; void:
+	var scroll := get_element_by_id(&quot;inventory-scroll&quot;) as ScrollContainer
+	if scroll != null:
+		scroll.set_v_scroll(value)
+
+
+func _refresh_status() -&gt; void:
+	refresh_binding_paths(PackedStringArray([&quot;status&quot;, &quot;count_label&quot;]))
+</code></pre>
+      </details>
+      </section>
     </article></main>
   <footer class="site-footer">Generated from <code>examples/showcase/manifest.json</code>. Do not edit this file directly.</footer>
   <script>

@@ -8,6 +8,7 @@ signal binding_value_changed(path: String, value: Variant, control: Control)
 signal binding_trace_changed(trace: Dictionary)
 signal validation_changed(valid: bool, diagnostics: Array[Dictionary])
 signal document_reloaded(root: Control)
+signal collection_updated(repeats: Array[Control], stats: Dictionary)
 
 const GxmlParser := preload("res://addons/godot_cascade/markup/gxml_parser.gd")
 const GcssParser := preload("res://addons/godot_cascade/style/gcss_parser.gd")
@@ -19,6 +20,10 @@ const ComponentRegistry := preload("res://addons/godot_cascade/runtime/component
 const AccessibilityAudit := preload("res://addons/godot_cascade/runtime/accessibility_audit.gd")
 const FocusManager := preload("res://addons/godot_cascade/runtime/focus_manager.gd")
 const BindingTrace := preload("res://addons/godot_cascade/runtime/binding_trace.gd")
+const CascadeItemModel := preload("res://addons/godot_cascade/runtime/cascade_item_model.gd")
+const CascadeCollectionChange := preload("res://addons/godot_cascade/runtime/collection_change.gd")
+const CascadeVirtualWindow := preload("res://addons/godot_cascade/runtime/virtual_window.gd")
+const CascadeTable := preload("res://addons/godot_cascade/components/cascade_table.gd")
 
 @export_file("*.gxml") var markup_path := "":
 	set(value):
@@ -41,6 +46,7 @@ const BindingTrace := preload("res://addons/godot_cascade/runtime/binding_trace.
 
 var diagnostics: Array[Dictionary] = []
 var last_reconcile_stats := {"reused": 0, "created": 0, "replaced": 0, "removed": 0}
+var last_collection_stats: Dictionary = {}
 var binding_context: Variant:
 	set(value):
 		_disconnect_binding_observable()
@@ -66,6 +72,10 @@ var _active_focus_trap: Control
 var _focus_before_trap: WeakRef
 var _focus_redirecting := false
 var _suppress_focus_contract_refresh := false
+var _item_model_connections: Array[Dictionary] = []
+var _pending_item_models: Array[CascadeItemModel] = []
+var _collection_transaction_blocked := false
+var _virtual_scroll_connections: Array[Dictionary] = []
 
 
 func _ready() -> void:
@@ -80,6 +90,8 @@ func _ready() -> void:
 
 
 func _exit_tree() -> void:
+	_disconnect_virtual_scrolls()
+	_disconnect_item_models()
 	if _generated_root != null:
 		ComponentRegistry.unmount_tree(_generated_root)
 
@@ -127,6 +139,14 @@ func reload_document() -> bool:
 		return false
 
 	var desired_root: Control = build_result["root"]
+	_apply_bindings(desired_root)
+	for diagnostic in _validate_virtual_contracts(desired_root):
+		diagnostic["path"] = markup_path
+		diagnostics.append(diagnostic)
+	if _has_errors():
+		desired_root.free()
+		_publish_diagnostics()
+		return false
 	var initial_mount := _generated_root == null
 	_stamp_source_path(desired_root)
 	var was_applying_bindings := _applying_bindings
@@ -154,6 +174,10 @@ func reload_document() -> bool:
 	_applying_bindings = was_applying_bindings
 	_refresh_writable_bindings(false)
 	_refresh_events(false)
+	_refresh_item_model_connections(true)
+	_pending_item_models.clear()
+	_collection_transaction_blocked = false
+	_refresh_virtual_scroll_connections.call_deferred()
 	_suppress_focus_contract_refresh = false
 	_refresh_focus_contracts(initial_mount)
 	if audit_accessibility:
@@ -185,6 +209,10 @@ func generated_root() -> Control:
 ## Only the most recent trace is retained.
 func last_binding_trace() -> Dictionary:
 	return _last_binding_trace.duplicate(true)
+
+
+func collection_stats() -> Dictionary:
+	return last_collection_stats.duplicate(true)
 
 
 ## Returns the uniquely matching authored id, or null when it is absent or
@@ -229,9 +257,8 @@ func _refresh_focus_contracts(initial_mount: bool) -> void:
 
 
 func _on_viewport_focus_changed(control: Control) -> void:
-	if _focus_redirecting or _active_focus_trap == null or control == null:
-		return
-	if not FocusManager.contains(_active_focus_trap, control):
+	_refresh_released_virtual_focus_pins.call_deferred()
+	if not _focus_redirecting and _active_focus_trap != null and control != null and not FocusManager.contains(_active_focus_trap, control):
 		_redirect_focus_to_trap.call_deferred()
 
 
@@ -275,10 +302,14 @@ func _refresh_all_bindings(trigger: String, publish: bool = true) -> bool:
 	var strategy := "targeted"
 	var reason := "property"
 	var success: bool
-	if _generated_root != null and (_contains_element(_generated_root, "repeat") or _tree_has_rebuild_binding(_generated_root)):
+	if _generated_root != null and _tree_has_rebuild_binding_outside_repeat(_generated_root):
 		strategy = "reconcile"
-		reason = "collection" if _contains_element(_generated_root, "repeat") else "rebuild_dependency"
+		reason = "rebuild_dependency"
 		success = reload_document()
+	elif _generated_root != null and _contains_element(_generated_root, "repeat"):
+		strategy = "collection_patch"
+		reason = "collection"
+		success = _refresh_collections(publish)
 	else:
 		success = _refresh_bindings(publish)
 	_record_binding_trace(PackedStringArray(["*"]), trigger, strategy, reason, success)
@@ -294,14 +325,188 @@ func _refresh_named_bindings(paths: PackedStringArray, trigger: String, publish:
 	var strategy := "targeted"
 	var reason := "property"
 	var success: bool
-	if _generated_root != null and ((reconcile_collections and _contains_element(_generated_root, "repeat")) or _tree_has_matching_rebuild_binding(_generated_root, normalized)):
+	if _generated_root != null and _tree_has_matching_rebuild_binding_outside_repeat(_generated_root, normalized):
 		strategy = "reconcile"
-		reason = "collection" if reconcile_collections and _contains_element(_generated_root, "repeat") else "rebuild_dependency"
+		reason = "rebuild_dependency"
 		success = reload_document()
+	elif _generated_root != null and reconcile_collections and (_tree_has_matching_collection_binding(_generated_root, normalized) or _tree_has_matching_repeat_rebuild_binding(_generated_root, normalized) or _tree_has_matching_virtual_binding(_generated_root, normalized)):
+		strategy = "collection_patch"
+		reason = "collection"
+		var matching_repeats: Array[Control] = []
+		_collect_matching_outer_repeats(_generated_root, normalized, matching_repeats)
+		success = _refresh_collections(publish, matching_repeats)
 	else:
 		success = _refresh_binding_paths(normalized, publish)
 	_record_binding_trace(normalized, trigger, strategy, reason, success)
 	return success
+
+
+func _refresh_collections(publish: bool, requested_repeats: Array[Control] = [], preserve_anchor: bool = true) -> bool:
+	if not preserve_anchor and _collection_transaction_blocked:
+		last_reconcile_stats = _failed_collection_delta_stats(requested_repeats, 0)
+		last_collection_stats = last_reconcile_stats.duplicate(true)
+		if publish:
+			_publish_diagnostics()
+		return false
+	diagnostics = diagnostics.filter(func(diagnostic): return diagnostic.get("path", "") != "collection")
+	var repeats: Array[Control] = requested_repeats.duplicate()
+	if preserve_anchor and _collection_transaction_blocked:
+		repeats.clear()
+		_collect_outer_repeats(_generated_root, repeats)
+	if repeats.is_empty():
+		_collect_outer_repeats(_generated_root, repeats)
+	if repeats.is_empty():
+		return _refresh_bindings(publish)
+	var candidates: Array[Dictionary] = []
+	var anchors := {}
+	var candidate_button_groups: Dictionary = {}
+	for repeat in repeats:
+		_prepare_virtual_focus_pin(repeat)
+		if preserve_anchor and bool(repeat.get_meta("cascade_virtual", false)):
+			anchors[repeat.get_instance_id()] = _capture_virtual_anchor(repeat)
+		var key_cache := _validated_virtual_model_key_cache(repeat)
+		if (
+			not key_cache is Array
+			and not preserve_anchor
+			and bool(repeat.get_meta("cascade_virtual", false))
+			and bool(repeat.get_meta("cascade_collection_is_array", false))
+			and bool(repeat.get_meta("cascade_array_key_cache_valid", false))
+		):
+			# A scroll-only rebuild does not represent a collection invalidation.
+			# Reuse the already validated full key list for Array-backed virtual
+			# repeats instead of rereading every item on every window shift.
+			key_cache = Array(repeat.get_meta("cascade_repeat_keys", PackedStringArray()))
+		var build := CascadeBuilder.rebuild_repeat(
+			repeat,
+			_binding_root_context(),
+			size,
+			key_cache,
+			int(repeat.get_meta("cascade_item_model_delta_keys_scanned", 0)) if key_cache is Array else -1,
+			candidate_button_groups
+		)
+		_append_collection_diagnostics(build["diagnostics"])
+		if build["root"] != null:
+			var desired: Control = build["root"]
+			var repeat_keys_scanned := int(desired.get_meta("cascade_repeat_keys_scanned", 0))
+			var anchor: Dictionary = anchors.get(repeat.get_instance_id(), {})
+			if not anchor.is_empty():
+				var desired_keys: PackedStringArray = desired.get_meta("cascade_repeat_keys", PackedStringArray())
+				var anchor_index := desired_keys.find(str(anchor["key"]))
+				if anchor_index >= 0:
+					var anchored_offset := float(anchor_index) * float(repeat.get_meta("cascade_virtual_item_extent", 1.0)) + float(anchor["pixel_offset"])
+					if not is_equal_approx(anchored_offset, float(repeat.get_meta("cascade_virtual_scroll_offset", 0.0))):
+						desired.free()
+						repeat.set_meta("cascade_virtual_scroll_offset", anchored_offset)
+						build = CascadeBuilder.rebuild_repeat(
+							repeat,
+							_binding_root_context(),
+							size,
+							key_cache,
+							int(repeat.get_meta("cascade_item_model_delta_keys_scanned", 0)) if key_cache is Array else -1,
+							candidate_button_groups
+						)
+						_append_collection_diagnostics(build["diagnostics"])
+						desired = build["root"]
+						if desired == null:
+							continue
+						if not key_cache is Array:
+							repeat_keys_scanned += int(desired.get_meta("cascade_repeat_keys_scanned", 0))
+			_apply_bindings(desired)
+			_append_collection_diagnostics(_validate_virtual_repeat_candidate(desired))
+			_stamp_source_path(desired)
+			candidates.append({"existing": repeat, "desired": desired, "anchor": anchor, "keys_scanned": repeat_keys_scanned})
+	var collection_has_errors := diagnostics.any(func(diagnostic): return diagnostic.get("path", "") == "collection" and diagnostic.get("severity", "error") == "error")
+	if collection_has_errors or candidates.size() != repeats.size():
+		_collection_transaction_blocked = true
+		_pending_item_models = _resolved_item_models_for_repeats(repeats)
+		for candidate in candidates:
+			_collect_item_models(candidate["desired"], _pending_item_models)
+		var all_repeats: Array[Control] = []
+		_collect_outer_repeats(_generated_root, all_repeats)
+		for blocked_repeat in all_repeats:
+			blocked_repeat.set_meta("cascade_collection_transaction_valid", false)
+			if bool(blocked_repeat.get_meta("cascade_collection_is_array", false)):
+				blocked_repeat.set_meta("cascade_array_key_cache_valid", false)
+		var failed_keys_scanned := 0
+		var failed_candidate_controls := 0
+		for candidate in candidates:
+			failed_keys_scanned += int(candidate.get("keys_scanned", 0))
+			failed_candidate_controls += _count_controls(candidate["desired"])
+			candidate["desired"].free()
+		var failed_stats := _failed_collection_delta_stats(repeats, failed_keys_scanned)
+		failed_stats["repeat_candidates"] = candidates.size()
+		failed_stats["candidate_native_controls"] = failed_candidate_controls
+		last_reconcile_stats = failed_stats
+		last_collection_stats = failed_stats.duplicate(true)
+		for repeat in repeats:
+			var anchor: Dictionary = anchors.get(repeat.get_instance_id(), {})
+			if anchor.has("original_scroll_offset"):
+				repeat.set_meta("cascade_virtual_scroll_offset", anchor["original_scroll_offset"])
+		_refresh_item_model_connections()
+		if publish:
+			_publish_diagnostics()
+		return false
+
+	var candidate_native_controls := 0
+	for candidate in candidates:
+		candidate_native_controls += _count_controls(candidate["desired"])
+	var live_button_groups := CascadeBuilder.collect_button_groups(_generated_root)
+	for candidate in candidates:
+		CascadeBuilder.remap_button_groups(candidate["desired"], live_button_groups)
+	var combined := {"reused": 0, "created": 0, "replaced": 0, "removed": 0, "repeat_candidates": candidates.size(), "candidate_native_controls": candidate_native_controls, "full_document_candidates": 0, "keys_scanned": 0}
+	var patched: Array[Control] = []
+	var was_applying_bindings := _applying_bindings
+	_applying_bindings = true
+	for candidate in candidates:
+		var existing: Control = candidate["existing"]
+		combined["keys_scanned"] = int(combined["keys_scanned"]) + int(candidate.get("keys_scanned", 0))
+		_copy_full_scan_item_model_cache(candidate["desired"], existing)
+		if not candidate["desired"].has_meta("cascade_collection_model"):
+			_clear_item_model_key_cache(existing)
+		var result := CascadeReconciler.reconcile(existing, candidate["desired"])
+		for name in ["reused", "created", "replaced", "removed"]:
+			combined[name] = int(combined[name]) + int(result["stats"].get(name, 0))
+		patched.append(result["root"])
+	var virtual_ranges: Array[Dictionary] = []
+	var model_count := 0
+	var realized_count := 0
+	var pinned_count := 0
+	for repeat in patched:
+		repeat.set_meta("cascade_collection_transaction_valid", true)
+		repeat.set_meta("cascade_item_model_delta_keys_scanned", 0)
+		if not bool(repeat.get_meta("cascade_virtual", false)):
+			continue
+		model_count += int(repeat.get_meta("cascade_virtual_model_count", 0))
+		realized_count += int(repeat.get_meta("cascade_virtual_realized_count", 0))
+		if int(repeat.get_meta("cascade_virtual_pinned_index", -1)) >= 0:
+			pinned_count += 1
+		virtual_ranges.append({"first": int(repeat.get_meta("cascade_virtual_first_index", 0)), "end": int(repeat.get_meta("cascade_virtual_end_index", 0))})
+	combined["model_count"] = model_count
+	combined["realized_count"] = realized_count
+	combined["pinned_focus_count"] = pinned_count
+	combined["virtual_ranges"] = virtual_ranges
+	last_reconcile_stats = combined
+	last_collection_stats = combined.duplicate(true)
+	_suppress_focus_contract_refresh = true
+	_refresh_bindings(false)
+	_applying_bindings = was_applying_bindings
+	_refresh_writable_bindings(false)
+	_refresh_events(false)
+	if audit_accessibility:
+		for repeat in patched:
+			_append_collection_diagnostics(AccessibilityAudit.audit(repeat))
+	_pending_item_models.clear()
+	_collection_transaction_blocked = false
+	_refresh_item_model_connections()
+	_refresh_virtual_scroll_connections.call_deferred()
+	_suppress_focus_contract_refresh = false
+	_refresh_focus_contracts(false)
+	for candidate in candidates:
+		_restore_virtual_anchor(candidate["existing"], candidate.get("anchor", {}))
+	collection_updated.emit(patched, combined.duplicate(true))
+	if publish:
+		_publish_diagnostics()
+	return not collection_has_errors
 
 
 ## Reconnects authored on-* signal bindings without disturbing user connections.
@@ -387,6 +592,7 @@ func _refresh_bindings(publish: bool) -> bool:
 	_applying_bindings = was_applying_bindings
 	if not _suppress_focus_contract_refresh:
 		_refresh_focus_contracts(false)
+	_schedule_virtual_scroll_sync()
 	if publish:
 		_publish_diagnostics()
 	return not _has_errors()
@@ -406,6 +612,7 @@ func _refresh_binding_paths(paths: PackedStringArray, publish: bool) -> bool:
 	_applying_bindings = was_applying_bindings
 	if not _suppress_focus_contract_refresh:
 		_refresh_focus_contracts(false)
+	_schedule_virtual_scroll_sync()
 	if publish:
 		_publish_diagnostics()
 	return not _has_errors()
@@ -466,6 +673,8 @@ func _apply_binding(control: Control, property_name: String, path: String) -> vo
 		var rendered := str(value)
 		if str(control.get(property_name)) != rendered:
 			control.set(property_name, rendered)
+		if not bool(control.get_meta("cascade_explicit_accessible_label", false)) and _has_control_property(control, "accessibility_name"):
+			control.set("accessibility_name", rendered)
 		if control.has_method("validate"):
 			control.call("validate")
 		return
@@ -548,7 +757,7 @@ func _write_binding(control: Control, property_name: String, path: String, value
 		return
 	binding_value_changed.emit(path, value, control)
 	var changed_paths := PackedStringArray([path])
-	_refresh_named_bindings(changed_paths, "write_back", false, false)
+	_refresh_named_bindings(changed_paths, "write_back", false, true)
 	_publish_diagnostics()
 
 
@@ -607,7 +816,7 @@ func _on_binding_paths_invalidated(paths: PackedStringArray) -> void:
 
 func _record_binding_trace(paths: PackedStringArray, trigger: String, strategy: String, reason: String, success: bool) -> void:
 	_binding_trace_sequence += 1
-	var stats := last_reconcile_stats if strategy == "reconcile" else {}
+	var stats := last_reconcile_stats if strategy in ["reconcile", "collection_patch", "virtual_window"] else {}
 	_last_binding_trace = BindingTrace.record(
 		_generated_root,
 		paths,
@@ -658,6 +867,22 @@ func _tree_has_rebuild_binding(node: Node) -> bool:
 	return false
 
 
+func _tree_has_rebuild_binding_outside_repeat(node: Node, inside_repeat: bool = false) -> bool:
+	var next_inside := inside_repeat
+	if node is Control:
+		var control := node as Control
+		next_inside = inside_repeat or str(control.get_meta("cascade_element_type", "")).to_lower() == "repeat"
+		if not next_inside:
+			if not control.get_meta("cascade_rebuild_bindings", PackedStringArray()).is_empty():
+				return true
+			if not control.get_meta("cascade_document_rebuild_bindings", PackedStringArray()).is_empty():
+				return true
+	for child in node.get_children():
+		if _tree_has_rebuild_binding_outside_repeat(child, next_inside):
+			return true
+	return false
+
+
 func _tree_has_matching_rebuild_binding(node: Node, paths: PackedStringArray) -> bool:
 	if node is Control:
 		var control := node as Control
@@ -670,6 +895,722 @@ func _tree_has_matching_rebuild_binding(node: Node, paths: PackedStringArray) ->
 		if _tree_has_matching_rebuild_binding(child, paths):
 			return true
 	return false
+
+
+func _tree_has_matching_rebuild_binding_outside_repeat(node: Node, paths: PackedStringArray, inside_repeat: bool = false) -> bool:
+	var next_inside := inside_repeat
+	if node is Control:
+		var control := node as Control
+		next_inside = inside_repeat or str(control.get_meta("cascade_element_type", "")).to_lower() == "repeat"
+		if not next_inside:
+			var rebuild_paths: PackedStringArray = control.get_meta("cascade_rebuild_bindings", PackedStringArray()).duplicate()
+			rebuild_paths.append_array(control.get_meta("cascade_document_rebuild_bindings", PackedStringArray()))
+			for binding_path in rebuild_paths:
+				if _binding_path_matches(str(binding_path), paths):
+					return true
+	for child in node.get_children():
+		if _tree_has_matching_rebuild_binding_outside_repeat(child, paths, next_inside):
+			return true
+	return false
+
+
+func _tree_has_matching_collection_binding(node: Node, paths: PackedStringArray) -> bool:
+	if node is Control:
+		var collection_path := str(node.get_meta("cascade_collection_binding", ""))
+		if not collection_path.is_empty() and _binding_path_matches(collection_path, paths):
+			return true
+	for child in node.get_children():
+		if _tree_has_matching_collection_binding(child, paths):
+			return true
+	return false
+
+
+func _tree_has_matching_repeat_rebuild_binding(node: Node, paths: PackedStringArray, inside_repeat: bool = false) -> bool:
+	var next_inside := inside_repeat
+	if node is Control:
+		var control := node as Control
+		next_inside = inside_repeat or str(control.get_meta("cascade_element_type", "")).to_lower() == "repeat"
+		if next_inside:
+			var rebuild_paths: PackedStringArray = control.get_meta("cascade_rebuild_bindings", PackedStringArray())
+			for binding_path in rebuild_paths:
+				if _binding_path_matches(str(binding_path), paths):
+					return true
+	for child in node.get_children():
+		if _tree_has_matching_repeat_rebuild_binding(child, paths, next_inside):
+			return true
+	return false
+
+
+func _tree_has_matching_virtual_binding(node: Node, paths: PackedStringArray, inside_virtual_repeat: bool = false) -> bool:
+	var next_inside := inside_virtual_repeat
+	if node is Control:
+		var control := node as Control
+		if str(control.get_meta("cascade_element_type", "")).to_lower() == "repeat" and bool(control.get_meta("cascade_virtual", false)):
+			next_inside = true
+		if next_inside:
+			var bindings: Dictionary = control.get_meta("cascade_bindings", {})
+			for property_name in bindings:
+				if _binding_path_matches(str(bindings[property_name]), paths):
+					return true
+	for child in node.get_children():
+		if _tree_has_matching_virtual_binding(child, paths, next_inside):
+			return true
+	return false
+
+
+func _collect_outer_repeats(node: Node, result: Array[Control]) -> void:
+	if node is Control and str(node.get_meta("cascade_element_type", "")).to_lower() == "repeat":
+		result.append(node)
+		return
+	for child in node.get_children():
+		_collect_outer_repeats(child, result)
+
+
+func _collect_all_repeats(node: Node, result: Array[Control]) -> void:
+	if node == null:
+		return
+	if node is Control and str(node.get_meta("cascade_element_type", "")).to_lower() == "repeat":
+		result.append(node)
+	for child in node.get_children():
+		_collect_all_repeats(child, result)
+
+
+func _collect_matching_outer_repeats(node: Node, paths: PackedStringArray, result: Array[Control]) -> void:
+	if node is Control and str(node.get_meta("cascade_element_type", "")).to_lower() == "repeat":
+		if _tree_has_matching_collection_binding(node, paths) or _tree_has_matching_rebuild_binding(node, paths) or _tree_has_matching_virtual_binding(node, paths):
+			result.append(node)
+		return
+	for child in node.get_children():
+		_collect_matching_outer_repeats(child, paths, result)
+
+
+func _collect_outer_repeats_for_model(node: Node, model: CascadeItemModel, result: Array[Control]) -> void:
+	if node is Control and str(node.get_meta("cascade_element_type", "")).to_lower() == "repeat":
+		if _tree_uses_item_model(node, model):
+			result.append(node)
+		return
+	for child in node.get_children():
+		_collect_outer_repeats_for_model(child, model, result)
+
+
+func _collect_outer_repeats_for_resolved_model(node: Node, model: CascadeItemModel, result: Array[Control]) -> void:
+	if node is Control and str(node.get_meta("cascade_element_type", "")).to_lower() == "repeat":
+		if _tree_uses_resolved_item_model(node, model):
+			result.append(node)
+		return
+	for child in node.get_children():
+		_collect_outer_repeats_for_resolved_model(child, model, result)
+
+
+func _tree_uses_resolved_item_model(node: Node, model: CascadeItemModel) -> bool:
+	if node is Control and str(node.get_meta("cascade_element_type", "")).to_lower() == "repeat":
+		var control := node as Control
+		var path := str(control.get_meta("cascade_collection_binding", ""))
+		var resolved := BindingResolver.resolve(_binding_context_for(control, path), path) if not path.is_empty() else {}
+		var value: Variant = resolved.get("value") if resolved.get("found", false) else null
+		if value is CascadeItemModel and value.get_instance_id() == model.get_instance_id():
+			return true
+	for child in node.get_children():
+		if _tree_uses_resolved_item_model(child, model):
+			return true
+	return false
+
+
+func _tree_uses_item_model(node: Node, model: CascadeItemModel) -> bool:
+	if node is Control and node.has_meta("cascade_collection_model") and node.get_meta("cascade_collection_model") == model:
+		return true
+	for child in node.get_children():
+		if _tree_uses_item_model(child, model):
+			return true
+	return false
+
+
+func _count_controls(node: Node) -> int:
+	var result := 1 if node is Control else 0
+	for child in node.get_children():
+		result += _count_controls(child)
+	return result
+
+
+func _refresh_item_model_connections(force_cache_refresh: bool = false) -> void:
+	_disconnect_item_models()
+	_initialize_virtual_model_key_caches(force_cache_refresh)
+	var models: Array[CascadeItemModel] = []
+	_collect_item_models(_generated_root, models)
+	for pending_model in _pending_item_models:
+		if is_instance_valid(pending_model) and pending_model not in models:
+			models.append(pending_model)
+	for model in models:
+		var callback := _on_item_model_changed.bind(model)
+		model.changed.connect(callback)
+		_item_model_connections.append({"model": model, "callback": callback})
+
+
+func _disconnect_item_models() -> void:
+	for connection in _item_model_connections:
+		var model: CascadeItemModel = connection["model"]
+		var callback: Callable = connection["callback"]
+		if is_instance_valid(model) and model.changed.is_connected(callback):
+			model.changed.disconnect(callback)
+	_item_model_connections.clear()
+
+
+func _collect_item_models(node: Node, result: Array[CascadeItemModel]) -> void:
+	if node == null:
+		return
+	if node is Control:
+		var model: Variant = node.get_meta("cascade_collection_model") if node.has_meta("cascade_collection_model") else null
+		if model is CascadeItemModel and model not in result:
+			result.append(model)
+	for child in node.get_children():
+		_collect_item_models(child, result)
+
+
+func _on_item_model_changed(change: CascadeCollectionChange, model: CascadeItemModel) -> void:
+	var matching_repeats: Array[Control] = []
+	_collect_outer_repeats_for_model(_generated_root, model, matching_repeats)
+	if matching_repeats.is_empty() and _collection_transaction_blocked:
+		_collect_outer_repeats_for_resolved_model(_generated_root, model, matching_repeats)
+	if matching_repeats.is_empty() and _collection_transaction_blocked and model in _pending_item_models:
+		_collect_outer_repeats(_generated_root, matching_repeats)
+	if _collection_transaction_blocked:
+		var recovery_success := false
+		if not matching_repeats.is_empty():
+			recovery_success = _refresh_collections(true, matching_repeats)
+		_record_binding_trace(PackedStringArray(["*"]), "item_model", "collection_patch", "collection", recovery_success)
+		return
+	var delta_diagnostics: Array[Dictionary] = []
+	var keys_scanned := 0
+	var delta_valid := true
+	for repeat in matching_repeats:
+		if not bool(repeat.get_meta("cascade_virtual", false)):
+			continue
+		if change.kind == CascadeCollectionChange.Kind.RESET:
+			_clear_item_model_key_cache(repeat)
+			continue
+		var prepared := _apply_item_model_key_delta(repeat, model, change)
+		keys_scanned += int(prepared["keys_scanned"])
+		if not bool(prepared["valid"]):
+			delta_valid = false
+			repeat.set_meta("cascade_item_model_cache_valid", false)
+			delta_diagnostics.append_array(prepared["diagnostics"])
+	if not delta_valid:
+		_collection_transaction_blocked = true
+		var all_repeats: Array[Control] = []
+		_collect_outer_repeats(_generated_root, all_repeats)
+		for blocked_repeat in all_repeats:
+			blocked_repeat.set_meta("cascade_collection_transaction_valid", false)
+		diagnostics = diagnostics.filter(func(diagnostic): return diagnostic.get("path", "") != "collection")
+		for diagnostic in delta_diagnostics:
+			var stamped: Dictionary = diagnostic.duplicate()
+			stamped["path"] = "collection"
+			diagnostics.append(stamped)
+		var failed_stats := _failed_collection_delta_stats(matching_repeats, keys_scanned)
+		last_reconcile_stats = failed_stats
+		last_collection_stats = failed_stats.duplicate(true)
+		_publish_diagnostics()
+		_record_binding_trace(PackedStringArray(["*"]), "item_model", "collection_patch", "collection", false)
+		return
+	var success := false
+	if not matching_repeats.is_empty():
+		success = _refresh_collections(true, matching_repeats)
+	_record_binding_trace(PackedStringArray(["*"]), "item_model", "collection_patch", "collection", success)
+
+
+func _initialize_virtual_model_key_caches(force: bool) -> void:
+	var repeats: Array[Control] = []
+	_collect_all_repeats(_generated_root, repeats)
+	for repeat in repeats:
+		if not bool(repeat.get_meta("cascade_virtual", false)):
+			continue
+		var model: Variant = repeat.get_meta("cascade_collection_model") if repeat.has_meta("cascade_collection_model") else null
+		if not model is CascadeItemModel:
+			continue
+		var key_property := _repeat_key_property(repeat)
+		var cached: Variant = repeat.get_meta("cascade_item_model_key_cache") if repeat.has_meta("cascade_item_model_key_cache") else null
+		var cache_matches: bool = (
+			cached is Array
+			and cached.size() == model.item_count()
+			and int(repeat.get_meta("cascade_item_model_cache_model_id", -1)) == model.get_instance_id()
+			and str(repeat.get_meta("cascade_item_model_cache_key_property", "")) == key_property
+		)
+		if cache_matches and not force:
+			continue
+		var keys: PackedStringArray = repeat.get_meta("cascade_repeat_keys", PackedStringArray())
+		if keys.size() != model.item_count():
+			_clear_item_model_key_cache(repeat)
+			continue
+		var entries: Array = []
+		var counts: Dictionary = {}
+		for key in keys:
+			var rendered_key := str(key)
+			entries.append(rendered_key)
+			counts[rendered_key] = int(counts.get(rendered_key, 0)) + 1
+		repeat.set_meta("cascade_item_model_key_cache", entries)
+		repeat.set_meta("cascade_item_model_key_counts", counts)
+		repeat.set_meta("cascade_item_model_duplicate_keys", {})
+		repeat.set_meta("cascade_item_model_missing_key_count", 0)
+		repeat.set_meta("cascade_item_model_cache_valid", true)
+		repeat.set_meta("cascade_item_model_cache_model_id", model.get_instance_id())
+		repeat.set_meta("cascade_item_model_cache_key_property", key_property)
+		repeat.set_meta("cascade_item_model_delta_keys_scanned", 0)
+
+
+func _apply_item_model_key_delta(repeat: Control, model: CascadeItemModel, change: CascadeCollectionChange) -> Dictionary:
+	var result := {"valid": false, "keys_scanned": 0, "diagnostics": []}
+	var key_property := _repeat_key_property(repeat)
+	var entries_value: Variant = repeat.get_meta("cascade_item_model_key_cache") if repeat.has_meta("cascade_item_model_key_cache") else null
+	if (
+		not entries_value is Array
+		or int(repeat.get_meta("cascade_item_model_cache_model_id", -1)) != model.get_instance_id()
+		or str(repeat.get_meta("cascade_item_model_cache_key_property", "")) != key_property
+	):
+		result["diagnostics"].append(_collection_key_diagnostic(repeat, "Retained Repeat key cache is unavailable or stale; emit RESET to resynchronize it."))
+		return result
+	var entries: Array = entries_value.duplicate()
+	var counts: Dictionary = repeat.get_meta("cascade_item_model_key_counts", {}).duplicate()
+	var duplicates: Dictionary = repeat.get_meta("cascade_item_model_duplicate_keys", {}).duplicate()
+	var missing_count := int(repeat.get_meta("cascade_item_model_missing_key_count", 0))
+	var new_count := model.item_count()
+	var change_count := change.count
+	var old_count := entries.size()
+	if change_count <= 0:
+		result["diagnostics"].append(_collection_key_diagnostic(repeat, "Item-model delta count must be positive; emit RESET to resynchronize it."))
+		return result
+	match change.kind:
+		CascadeCollectionChange.Kind.INSERT:
+			if new_count != old_count + change_count or change.index < 0 or change.index > old_count:
+				result["diagnostics"].append(_collection_key_diagnostic(repeat, "Item-model INSERT does not match the retained key count; emit RESET to resynchronize it."))
+				return result
+			for offset in change_count:
+				var key_result := _model_key_at(model, change.index + offset, key_property)
+				result["keys_scanned"] = int(result["keys_scanned"]) + 1
+				var entry: Variant = key_result["key"] if key_result["found"] else null
+				entries.insert(change.index + offset, entry)
+				if entry == null:
+					missing_count += 1
+				else:
+					_increment_cached_key(counts, duplicates, str(entry))
+		CascadeCollectionChange.Kind.REMOVE:
+			if new_count != old_count - change_count or change.index < 0 or change.index + change_count > old_count:
+				result["diagnostics"].append(_collection_key_diagnostic(repeat, "Item-model REMOVE does not match the retained key count; emit RESET to resynchronize it."))
+				return result
+			for _offset in change_count:
+				var removed: Variant = entries[change.index]
+				entries.remove_at(change.index)
+				if removed == null:
+					missing_count -= 1
+				else:
+					_decrement_cached_key(counts, duplicates, str(removed))
+		CascadeCollectionChange.Kind.MOVE:
+			var remaining_count := old_count - change_count
+			if new_count != old_count or change.index < 0 or change.index + change_count > old_count or change.to_index < 0 or change.to_index > remaining_count:
+				result["diagnostics"].append(_collection_key_diagnostic(repeat, "Item-model MOVE does not match the retained key count; emit RESET to resynchronize it."))
+				return result
+			var moved: Array = entries.slice(change.index, change.index + change_count)
+			for _offset in change_count:
+				entries.remove_at(change.index)
+			for offset in moved.size():
+				entries.insert(change.to_index + offset, moved[offset])
+		CascadeCollectionChange.Kind.UPDATE:
+			if new_count != old_count or change.index < 0 or change.index + change_count > old_count:
+				result["diagnostics"].append(_collection_key_diagnostic(repeat, "Item-model UPDATE does not match the retained key count; emit RESET to resynchronize it."))
+				return result
+			for offset in change_count:
+				var item_index := change.index + offset
+				var previous: Variant = entries[item_index]
+				if previous == null:
+					missing_count -= 1
+				else:
+					_decrement_cached_key(counts, duplicates, str(previous))
+				var key_result := _model_key_at(model, item_index, key_property)
+				result["keys_scanned"] = int(result["keys_scanned"]) + 1
+				var entry: Variant = key_result["key"] if key_result["found"] else null
+				entries[item_index] = entry
+				if entry == null:
+					missing_count += 1
+				else:
+					_increment_cached_key(counts, duplicates, str(entry))
+		_:
+			result["diagnostics"].append(_collection_key_diagnostic(repeat, "Unsupported item-model delta; emit RESET to resynchronize it."))
+			return result
+	repeat.set_meta("cascade_item_model_key_cache", entries)
+	repeat.set_meta("cascade_item_model_key_counts", counts)
+	repeat.set_meta("cascade_item_model_duplicate_keys", duplicates)
+	repeat.set_meta("cascade_item_model_missing_key_count", missing_count)
+	repeat.set_meta("cascade_item_model_cache_valid", missing_count == 0 and duplicates.is_empty())
+	repeat.set_meta("cascade_item_model_delta_keys_scanned", result["keys_scanned"])
+	if missing_count > 0:
+		result["diagnostics"].append(_collection_key_diagnostic(repeat, "Repeat key '%s' could not be resolved for the changed item-model state." % key_property))
+	if not duplicates.is_empty():
+		result["diagnostics"].append(_collection_key_diagnostic(repeat, "Repeat key '%s' is duplicated." % str(duplicates.keys()[0])))
+	result["valid"] = missing_count == 0 and duplicates.is_empty()
+	return result
+
+
+func _model_key_at(model: CascadeItemModel, index: int, key_property: String) -> Dictionary:
+	var item := model.item_at(index)
+	var resolved := BindingResolver.resolve(item, key_property)
+	if not resolved["found"]:
+		return {"found": false, "key": ""}
+	return {"found": true, "key": str(resolved["value"])}
+
+
+func _increment_cached_key(counts: Dictionary, duplicates: Dictionary, key: String) -> void:
+	var next_count := int(counts.get(key, 0)) + 1
+	counts[key] = next_count
+	if next_count > 1:
+		duplicates[key] = next_count
+
+
+func _decrement_cached_key(counts: Dictionary, duplicates: Dictionary, key: String) -> void:
+	var next_count := int(counts.get(key, 0)) - 1
+	if next_count <= 0:
+		counts.erase(key)
+		duplicates.erase(key)
+		return
+	counts[key] = next_count
+	if next_count > 1:
+		duplicates[key] = next_count
+	else:
+		duplicates.erase(key)
+
+
+func _validated_virtual_model_key_cache(repeat: Control) -> Variant:
+	if not bool(repeat.get_meta("cascade_virtual", false)) or not bool(repeat.get_meta("cascade_item_model_cache_valid", false)) or not bool(repeat.get_meta("cascade_collection_transaction_valid", true)):
+		return null
+	var model: Variant = repeat.get_meta("cascade_collection_model") if repeat.has_meta("cascade_collection_model") else null
+	var entries: Variant = repeat.get_meta("cascade_item_model_key_cache") if repeat.has_meta("cascade_item_model_key_cache") else null
+	var collection_path := str(repeat.get_meta("cascade_collection_binding", ""))
+	var current_collection := BindingResolver.resolve(_binding_root_context(), collection_path)
+	if not model is CascadeItemModel or not entries is Array or not current_collection.get("found", false):
+		return null
+	var current_value: Variant = current_collection.get("value")
+	if not current_value is CascadeItemModel or current_value.get_instance_id() != model.get_instance_id():
+		return null
+	if (
+		entries.size() != model.item_count()
+		or int(repeat.get_meta("cascade_item_model_cache_model_id", -1)) != model.get_instance_id()
+		or str(repeat.get_meta("cascade_item_model_cache_key_property", "")) != _repeat_key_property(repeat)
+	):
+		return null
+	return entries
+
+
+func _repeat_key_property(repeat: Control) -> String:
+	var element: Variant = repeat.get_meta("cascade_repeat_element") if repeat.has_meta("cascade_repeat_element") else null
+	return str(element.attributes.get("key", "")).strip_edges() if element != null else ""
+
+
+func _clear_item_model_key_cache(repeat: Control) -> void:
+	for metadata_name in [
+		"cascade_item_model_key_cache", "cascade_item_model_key_counts", "cascade_item_model_duplicate_keys",
+		"cascade_item_model_missing_key_count", "cascade_item_model_cache_valid", "cascade_item_model_cache_model_id",
+		"cascade_item_model_cache_key_property",
+	]:
+		if repeat.has_meta(metadata_name):
+			repeat.remove_meta(metadata_name)
+	repeat.set_meta("cascade_item_model_delta_keys_scanned", 0)
+
+
+func _copy_full_scan_item_model_cache(source: Control, target: Control) -> void:
+	if not bool(source.get_meta("cascade_item_model_cache_from_full_scan", false)):
+		return
+	for metadata_name in [
+		"cascade_item_model_key_cache", "cascade_item_model_key_counts", "cascade_item_model_duplicate_keys",
+		"cascade_item_model_missing_key_count", "cascade_item_model_cache_valid", "cascade_item_model_cache_model_id",
+		"cascade_item_model_cache_key_property",
+	]:
+		if source.has_meta(metadata_name):
+			target.set_meta(metadata_name, source.get_meta(metadata_name).duplicate(true) if source.get_meta(metadata_name) is Array or source.get_meta(metadata_name) is Dictionary else source.get_meta(metadata_name))
+	target.set_meta("cascade_item_model_delta_keys_scanned", 0)
+
+
+func _failed_collection_delta_stats(repeats: Array[Control], keys_scanned: int) -> Dictionary:
+	var model_count := 0
+	var realized_count := 0
+	var virtual_ranges: Array[Dictionary] = []
+	for repeat in repeats:
+		if bool(repeat.get_meta("cascade_virtual", false)):
+			var model: Variant = repeat.get_meta("cascade_collection_model") if repeat.has_meta("cascade_collection_model") else null
+			model_count += model.item_count() if model is CascadeItemModel else int(repeat.get_meta("cascade_virtual_model_count", 0))
+			realized_count += int(repeat.get_meta("cascade_virtual_realized_count", 0))
+			virtual_ranges.append({"first": int(repeat.get_meta("cascade_virtual_first_index", 0)), "end": int(repeat.get_meta("cascade_virtual_end_index", 0))})
+	return {
+		"reused": 0, "created": 0, "replaced": 0, "removed": 0,
+		"repeat_candidates": 0, "candidate_native_controls": 0, "full_document_candidates": 0,
+		"attempted_repeats": repeats.size(),
+		"model_count": model_count, "realized_count": realized_count, "pinned_focus_count": 0,
+		"keys_scanned": keys_scanned, "virtual_ranges": virtual_ranges,
+	}
+
+
+func _collection_key_diagnostic(repeat: Control, message: String) -> Dictionary:
+	return {
+		"severity": "error",
+		"message": message,
+		"line": int(repeat.get_meta("cascade_source_line", 1)),
+		"column": int(repeat.get_meta("cascade_source_column", 1)),
+	}
+
+
+func _refresh_virtual_scroll_connections() -> void:
+	_disconnect_virtual_scrolls()
+	if _generated_root == null or not is_inside_tree():
+		return
+	var repeats: Array[Control] = []
+	_collect_virtual_repeats(_generated_root, repeats)
+	for repeat in repeats:
+		var scroll := _find_scroll_ancestor(repeat)
+		if scroll == null:
+			continue
+		var bar := scroll.get_v_scroll_bar()
+		var value_callback := _on_virtual_scroll_changed.bind(repeat, scroll)
+		var resize_callback := _on_virtual_scroll_resized.bind(repeat, scroll)
+		if not bar.value_changed.is_connected(value_callback):
+			bar.value_changed.connect(value_callback)
+		if not scroll.resized.is_connected(resize_callback):
+			scroll.resized.connect(resize_callback)
+		_virtual_scroll_connections.append({"bar": bar, "value_callback": value_callback, "scroll": scroll, "resize_callback": resize_callback})
+		_sync_virtual_repeat.call_deferred(repeat, scroll, false)
+
+
+func _disconnect_virtual_scrolls() -> void:
+	for connection in _virtual_scroll_connections:
+		var bar: Range = connection["bar"]
+		var value_callback: Callable = connection["value_callback"]
+		var scroll: ScrollContainer = connection["scroll"]
+		var resize_callback: Callable = connection["resize_callback"]
+		if is_instance_valid(bar) and bar.value_changed.is_connected(value_callback):
+			bar.value_changed.disconnect(value_callback)
+		if is_instance_valid(scroll) and scroll.resized.is_connected(resize_callback):
+			scroll.resized.disconnect(resize_callback)
+	_virtual_scroll_connections.clear()
+
+
+func _collect_virtual_repeats(node: Node, result: Array[Control]) -> void:
+	if node is Control and bool(node.get_meta("cascade_virtual", false)):
+		result.append(node)
+	for child in node.get_children():
+		_collect_virtual_repeats(child, result)
+
+
+func _find_scroll_ancestor(control: Control) -> ScrollContainer:
+	var ancestor := control.get_parent()
+	while ancestor != null:
+		if ancestor is ScrollContainer:
+			return ancestor
+		ancestor = ancestor.get_parent()
+	return null
+
+
+func _on_virtual_scroll_changed(_value: float, repeat: Control, scroll: ScrollContainer) -> void:
+	_sync_virtual_repeat(repeat, scroll, true)
+
+
+func _on_virtual_scroll_resized(repeat: Control, scroll: ScrollContainer) -> void:
+	_sync_virtual_repeat.call_deferred(repeat, scroll, true)
+
+
+func _sync_virtual_repeat(repeat: Control, scroll: ScrollContainer, publish_trace: bool) -> void:
+	if not is_instance_valid(repeat) or not is_instance_valid(scroll) or not repeat.is_inside_tree():
+		return
+	var bar := scroll.get_v_scroll_bar()
+	var viewport_extent := maxf(bar.page if bar.page > 0.0 else scroll.size.y, 1.0)
+	var origin := _virtual_repeat_content_origin(repeat, scroll)
+	repeat.set_meta("cascade_virtual_scroll_origin", origin)
+	var local_offset := maxf(0.0, bar.value - origin)
+	var window := CascadeVirtualWindow.new(
+		int(repeat.get_meta("cascade_virtual_model_count", 0)),
+		float(repeat.get_meta("cascade_virtual_item_extent", 1.0)),
+		viewport_extent,
+		int(repeat.get_meta("cascade_virtual_overscan", 3))
+	)
+	window.set_scroll_offset(local_offset)
+	var range_changed := window.first_index != int(repeat.get_meta("cascade_virtual_first_index", -1)) or window.end_index != int(repeat.get_meta("cascade_virtual_end_index", -1))
+	var viewport_changed := not is_equal_approx(viewport_extent, float(repeat.get_meta("cascade_virtual_viewport_extent", 0.0)))
+	repeat.set_meta("cascade_virtual_scroll_offset", window.scroll_offset)
+	repeat.set_meta("cascade_virtual_viewport_extent", viewport_extent)
+	if not range_changed and not viewport_changed:
+		return
+	_prepare_virtual_focus_pin(repeat)
+	var success := _refresh_collections(true, [repeat], false)
+	if publish_trace:
+		_record_binding_trace(PackedStringArray([str(repeat.get_meta("cascade_collection_binding", "*"))]), "scroll", "virtual_window", "viewport", success)
+
+
+func _prepare_virtual_focus_pin(repeat: Control) -> void:
+	if not bool(repeat.get_meta("cascade_virtual", false)) or not is_inside_tree():
+		return
+	var focus_owner := get_viewport().gui_get_focus_owner()
+	var pinned_index := -1
+	var pinned_key := ""
+	if focus_owner is Control and (focus_owner == repeat or repeat.is_ancestor_of(focus_owner)):
+		var cursor: Control = focus_owner
+		while cursor != null and cursor != repeat:
+			if cursor.has_meta("cascade_repeat_index"):
+				pinned_index = int(cursor.get_meta("cascade_repeat_index"))
+				var keys: PackedStringArray = repeat.get_meta("cascade_repeat_keys", PackedStringArray())
+				if pinned_index >= 0 and pinned_index < keys.size():
+					pinned_key = keys[pinned_index]
+				break
+			cursor = cursor.get_parent() as Control
+	repeat.set_meta("cascade_virtual_pinned_index", pinned_index)
+	repeat.set_meta("cascade_virtual_pinned_key", pinned_key)
+
+
+func _refresh_released_virtual_focus_pins() -> void:
+	if _generated_root == null or _applying_bindings:
+		return
+	var repeats: Array[Control] = []
+	_collect_virtual_repeats(_generated_root, repeats)
+	for repeat in repeats:
+		if str(repeat.get_meta("cascade_virtual_pinned_key", "")).is_empty():
+			continue
+		var previous_key := str(repeat.get_meta("cascade_virtual_pinned_key", ""))
+		_prepare_virtual_focus_pin(repeat)
+		if str(repeat.get_meta("cascade_virtual_pinned_key", "")) != previous_key:
+			var success := _refresh_collections(true, [repeat], false)
+			_record_binding_trace(PackedStringArray([str(repeat.get_meta("cascade_collection_binding", "*"))]), "focus", "virtual_window", "focus_pin", success)
+
+
+func _capture_virtual_anchor(repeat: Control) -> Dictionary:
+	var keys: PackedStringArray = repeat.get_meta("cascade_repeat_keys", PackedStringArray())
+	var extent := float(repeat.get_meta("cascade_virtual_item_extent", 1.0))
+	var offset := float(repeat.get_meta("cascade_virtual_scroll_offset", 0.0))
+	if keys.is_empty() or extent <= 0.0:
+		return {}
+	var index := clampi(int(floor(offset / extent)), 0, keys.size() - 1)
+	return {"key": keys[index], "pixel_offset": offset - float(index) * extent, "original_scroll_offset": offset}
+
+
+func _append_collection_diagnostics(source_diagnostics: Array) -> void:
+	for source_diagnostic in source_diagnostics:
+		var diagnostic: Dictionary = source_diagnostic.duplicate()
+		diagnostic["path"] = "collection"
+		diagnostics.append(diagnostic)
+
+
+func _restore_virtual_anchor(repeat: Control, anchor: Dictionary) -> void:
+	if anchor.is_empty() or not bool(repeat.get_meta("cascade_virtual", false)):
+		return
+	var scroll := _find_scroll_ancestor(repeat)
+	if scroll == null:
+		return
+	var bar := scroll.get_v_scroll_bar()
+	var origin := _virtual_repeat_content_origin(repeat, scroll)
+	repeat.set_meta("cascade_virtual_scroll_origin", origin)
+	var target := origin + float(repeat.get_meta("cascade_virtual_scroll_offset", 0.0))
+	if not is_equal_approx(bar.value, target):
+		bar.set_value.call_deferred(target)
+
+
+func _virtual_repeat_content_origin(repeat: Control, scroll: ScrollContainer) -> float:
+	var origin := 0.0
+	var cursor: Control = repeat
+	while cursor != null and cursor.get_parent() != scroll:
+		origin += cursor.position.y
+		cursor = cursor.get_parent() as Control
+	return maxf(origin, 0.0)
+
+
+func _schedule_virtual_scroll_sync() -> void:
+	if _generated_root != null and is_inside_tree():
+		_resync_virtual_scrolls.call_deferred()
+
+
+func _resync_virtual_scrolls() -> void:
+	if _generated_root == null or not is_inside_tree():
+		return
+	var repeats: Array[Control] = []
+	_collect_virtual_repeats(_generated_root, repeats)
+	for repeat in repeats:
+		var scroll := _find_scroll_ancestor(repeat)
+		if scroll != null:
+			_sync_virtual_repeat.call_deferred(repeat, scroll, false)
+
+
+func _validate_virtual_contracts(root: Control) -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	var repeats: Array[Control] = []
+	_collect_virtual_repeats(root, repeats)
+	for repeat in repeats:
+		if _find_scroll_ancestor(repeat) == null:
+			result.append(_virtual_diagnostic(repeat, "Virtual Repeat requires a Scroll ancestor."))
+		var repeat_ancestor := repeat.get_parent()
+		while repeat_ancestor is Control:
+			if str(repeat_ancestor.get_meta("cascade_element_type", "")).to_lower() == "repeat":
+				result.append(_virtual_diagnostic(repeat, "Virtual Repeat cannot be nested inside another Repeat."))
+				break
+			repeat_ancestor = repeat_ancestor.get_parent()
+		var repeat_style: CascadeStyle = repeat.get("cascade_style")
+		if repeat_style != null and (repeat_style.padding_top > 0.0 or repeat_style.padding_bottom > 0.0 or repeat_style.border_width > 0.0):
+			result.append(_virtual_diagnostic(repeat, "Virtual Repeat does not support vertical padding or borders; apply them to its Scroll ancestor."))
+		var item_height := float(repeat.get_meta("cascade_virtual_item_height", 0.0))
+		for child in repeat.get_children():
+			if child is Control and child.has_meta("cascade_repeat_index") and _fresh_control_minimum_height(child) > item_height + 0.01:
+				result.append(_virtual_diagnostic(child, "Virtual Repeat item minimum height exceeds item-height; increase item-height or reduce the row content."))
+				break
+		var ancestor := repeat.get_parent()
+		while ancestor != null and not ancestor is CascadeTable:
+			ancestor = ancestor.get_parent()
+		if ancestor is CascadeTable:
+			var tracks: Array[Dictionary] = ancestor.get("column_tracks")
+			if tracks.is_empty() or tracks.any(func(track: Dictionary): return _track_uses_content(track)):
+				result.append(_virtual_diagnostic(repeat, "Virtual table Repeat requires explicit non-content column tracks."))
+			if float(ancestor.get("row_gap")) > 0.0:
+				result.append(_virtual_diagnostic(repeat, "Virtual table Repeat requires row-gap: 0; include spacing in item-height or cell padding."))
+	return result
+
+
+func _validate_virtual_repeat_candidate(repeat: Control) -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	if not bool(repeat.get_meta("cascade_virtual", false)):
+		return result
+	var repeat_style: CascadeStyle = repeat.get("cascade_style")
+	if repeat_style != null and (repeat_style.padding_top > 0.0 or repeat_style.padding_bottom > 0.0 or repeat_style.border_width > 0.0):
+		result.append(_virtual_diagnostic(repeat, "Virtual Repeat does not support vertical padding or borders; apply them to its Scroll ancestor."))
+	var item_height := float(repeat.get_meta("cascade_virtual_item_height", 0.0))
+	for child in repeat.get_children():
+		if child is Control and child.has_meta("cascade_repeat_index") and _fresh_control_minimum_height(child) > item_height + 0.01:
+			result.append(_virtual_diagnostic(child, "Virtual Repeat item minimum height exceeds item-height after binding values were applied; increase item-height or reduce the row content."))
+	return result
+
+
+func _fresh_control_minimum_height(control: Control) -> float:
+	return maxf(control.get_minimum_size().y, control.custom_minimum_size.y)
+
+
+func _resolved_item_models_for_repeats(repeats: Array[Control]) -> Array[CascadeItemModel]:
+	var result: Array[CascadeItemModel] = []
+	for repeat in repeats:
+		_collect_resolved_item_models(repeat, result)
+	return result
+
+
+func _collect_resolved_item_models(node: Node, result: Array[CascadeItemModel]) -> void:
+	if node is Control and str(node.get_meta("cascade_element_type", "")).to_lower() == "repeat":
+		var control := node as Control
+		var path := str(control.get_meta("cascade_collection_binding", ""))
+		var resolved := BindingResolver.resolve(_binding_context_for(control, path), path) if not path.is_empty() else {}
+		var value: Variant = resolved.get("value") if resolved.get("found", false) else null
+		if value is CascadeItemModel and value not in result:
+			result.append(value)
+	for child in node.get_children():
+		_collect_resolved_item_models(child, result)
+
+
+func _track_uses_content(track: Dictionary) -> bool:
+	if str(track.get("kind", "content")) == "content":
+		return true
+	for name in ["minimum", "maximum", "min", "max"]:
+		if track.get(name) is Dictionary and _track_uses_content(track[name]):
+			return true
+	return false
+
+
+func _virtual_diagnostic(control: Control, message: String) -> Dictionary:
+	return {"severity": "error", "message": message, "line": int(control.get_meta("cascade_source_line", 1)), "column": int(control.get_meta("cascade_source_column", 1))}
 
 
 func _append_binding_warning(control: Control, property_name: String, binding_path: String, message: String) -> void:
@@ -731,6 +1672,13 @@ func _contains_element(node: Node, element_type: String) -> bool:
 		return true
 	for child in node.get_children():
 		if _contains_element(child, element_type):
+			return true
+	return false
+
+
+func _has_control_property(control: Control, property_name: StringName) -> bool:
+	for property in control.get_property_list():
+		if property.name == property_name:
 			return true
 	return false
 

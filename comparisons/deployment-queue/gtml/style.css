@@ -1,0 +1,28 @@
+.app { display: flex; flex-direction: column; gap: 14px; padding-top: 24px; padding-right: 30px; padding-bottom: 24px; padding-left: 30px; background-color: #0b1120; color: #e6edf7; }
+.topbar { display: flex; flex-direction: row; justify-content: space-between; align-items: center; padding-top: 14px; padding-right: 18px; padding-bottom: 14px; padding-left: 18px; background-color: #111a2e; border-width: 1px; border-color: #2a3853; border-radius: 10px; }
+.heading { display: flex; flex-direction: column; gap: 3px; }
+h1 { font-size: 27px; color: #e6edf7; }
+.subtitle { color: #98a6bb; font-size: 13px; }
+.summary { color: #67e8b4; font-size: 14px; }
+.controls { display: flex; flex-direction: row; align-items: center; gap: 13px; padding: 13px; background-color: #111a2e; border-width: 1px; border-color: #2a3853; border-radius: 10px; }
+.field { display: flex; flex-direction: column; gap: 5px; color: #98a6bb; font-size: 12px; }
+.operator-field { min-width: 210px; flex-grow: 1; }
+.environment-field { min-width: 150px; }
+.concurrency-field { min-width: 190px; }
+input, select, button { min-height: 38px; padding-top: 7px; padding-right: 9px; padding-bottom: 7px; padding-left: 9px; background-color: #18243b; color: #e6edf7; border-width: 1px; border-color: #3a4a68; border-radius: 7px; }
+input:focus, select:focus { border-color: #67e8b4; border-width: 2px; }
+.paused-check { display: flex; flex-direction: row; align-items: center; gap: 7px; color: #d8e1ee; }
+.actions { display: flex; flex-direction: row; align-items: center; gap: 9px; }
+button { min-width: 126px; }
+button:hover { background-color: #213552; }
+.primary { background-color: #176b57; border-color: #67e8b4; }
+.primary:hover { background-color: #218269; }
+.status { color: #98a6bb; font-size: 13px; }
+.error { padding-top: 9px; padding-right: 12px; padding-bottom: 9px; padding-left: 12px; background-color: #4b1e2a; color: #ffb4c1; border-width: 1px; border-color: #a4445e; border-radius: 7px; }
+.job-scroll { display: flex; flex-direction: column; gap: 1px; padding: 8px; min-height: 320px; background-color: #111a2e; border-width: 1px; border-color: #2a3853; border-radius: 10px; overflow-y: auto; }
+.row { display: flex; flex-direction: row; gap: 0px; padding-top: 7px; padding-right: 10px; padding-bottom: 7px; padding-left: 10px; background-color: #121d31; border-width: 1px; border-color: #22314b; }
+.row span { min-width: 150px; color: #e6edf7; font-size: 13px; }
+.table-heading { background-color: #18243b; }
+.table-heading span { color: #98a6bb; font-size: 11px; }
+.job-row.selected { background-color: #24423f; border-color: #67e8b4; }
+.select-button { min-width: 150px; min-height: 30px; padding-top: 4px; padding-right: 7px; padding-bottom: 4px; padding-left: 7px; }

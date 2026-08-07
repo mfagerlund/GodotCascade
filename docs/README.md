@@ -11,6 +11,8 @@ GodotCascade 0.6.0 is the current experimental preview. It includes reusable typ
 - [Architecture](architecture.md) — runtime boundaries, reconciliation, binding, layout, and invalidation
 - [Adapted text input plan](adapted-text-input-plan.md) — native editing boundary and required behavior matrix
 - [TextInput certification matrix](text-input-certification.md) — automated evidence and platform-dependent limits
+- [Platform support matrix](platform-support.md) — tested Godot/OS levels and mobile boundaries
+- [Manual platform certification](platform-certification.md) — clipboard, IME, touch, virtual-keyboard, and screen-reader protocol
 - [Native control compatibility tiers](compatibility-tiers.md) — exact, adapted, and layout-only classification and diagnostics
 - [Style system](style-system.md) — token spans, typed values, selectors, inheritance, computed caching, and theme adapters
 - [Custom properties / calc experiment](artifacts/custom-properties-calc-experiments-2026-08-07.md) — selected semantics, rejected approaches, regressions, performance, and verification evidence
@@ -21,7 +23,10 @@ GodotCascade 0.6.0 is the current experimental preview. It includes reusable typ
 - [Release process](release-process.md) — reproducible packaging, clean-install smoke testing, and tag publishing
 - [Asset Library submission](asset-library-submission.md) — copy-ready 0.6.0 metadata, direct assets, and verified preflight
 - [Changelog](../CHANGELOG.md) — versioned user-visible changes
-- [Performance budgets](performance.md) — executable 500-item baseline/expression benchmark and allocation ceilings
+- [Performance budgets](performance.md) — executable synthetic and representative workload gates, native comparisons, and regression ceilings
+- [Representative workload benchmark](artifacts/representative-workload-benchmark-2026-08-07.md) — verified Godot 4.7/4.7.1 settings, dashboard, leaderboard, and 10k-inventory totals and limitations
+- [GodotCascade versus GTML deployment queue](artifacts/godotcascade-vs-gtml-deployment-queue.md) — reproducible non-showcase workflow, native captures, diagnostics, source size, and candid runtime results
+- [Collections and virtualization](collections.md) — localized Repeat updates, typed item models, fixed-height list/table windows, and state boundaries
 - [Migration notes](migrations.md) — source/API compatibility and upgrade instructions
 - [Public preview stability policy](api-stability.md) — current guarantees, unstable surfaces, and change process
 - [Roadmap](../ROADMAP.md) — completed preview, typed-binding, semantic-table, and publication milestones plus ongoing platform certification

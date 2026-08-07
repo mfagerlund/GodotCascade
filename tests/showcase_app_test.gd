@@ -16,7 +16,7 @@ func _run() -> void:
 	await process_frame
 	await process_frame
 	await process_frame
-	_expect_true("showcase app discovers all manifest pages", app.call("page_count") == 4)
+	_expect_true("showcase app discovers all manifest pages", app.call("page_count") == 5)
 	_expect_true("showcase app starts on layout foundation", app.call("current_page_id") == "layout-foundation")
 	await _verify_layout_page(app)
 	await _verify_system_status_page(app)
@@ -27,6 +27,7 @@ func _run() -> void:
 	_expect_true("showcase app next navigation works", await app.call("next_page"))
 	_expect_true("showcase app reloads current document", await app.call("reload_current_page"))
 	_expect_true("showcase app reports connected page", str(app.call("current_status")).begins_with("Connected"))
+	await _verify_collection_scale_page(app)
 	app.queue_free()
 	await process_frame
 
@@ -188,6 +189,49 @@ func _verify_leaderboard_page(app: Control) -> void:
 	var ranks := _find_all_by_class(scene, "rank-cell")
 	_expect_true("leaderboard sort restores descending rating order", pilots.size() == 7 and pilots[0].get("text") == "Milo Vance")
 	_expect_true("leaderboard sort reranks rows", ranks.size() == 7 and ranks[0].get("text") == "1")
+
+
+func _verify_collection_scale_page(app: Control) -> void:
+	_expect_true("collection scale page loads", await app.call("show_page", 4))
+	var scene: Control = app.call("current_showcase_scene")
+	_expect_document_ready("collection scale", scene)
+	var repeat := _find_by_id(scene, "inventory-rows")
+	var scroll := _find_by_id(scene, "inventory-scroll") as ScrollContainer
+	var middle := _find_button_by_text(scene, "Jump to 5,000")
+	var insert := _find_button_by_text(scene, "Insert record")
+	_expect_true("scale page exposes virtual table controls", repeat != null and scroll != null and middle != null and insert != null)
+	if repeat == null or scroll == null or middle == null or insert == null:
+		return
+	_expect_true("showcase keeps 10k rows bounded", _find_realized_repeat_rows(repeat).size() <= 22 and int(repeat.get_meta("cascade_virtual_model_count", 0)) == 10_000)
+	_expect_true("showcase native scrollbar covers model", scroll.get_v_scroll_bar().max_value > 350_000.0)
+	middle.emit_signal("pressed")
+	await process_frame
+	await process_frame
+	await process_frame
+	_expect_true("showcase middle jump realizes the requested neighborhood", int(repeat.get_meta("cascade_virtual_first_index", 0)) in range(4990, 5010))
+	insert.emit_signal("pressed")
+	await process_frame
+	await process_frame
+	_expect_true("showcase typed insert updates model count", int(repeat.get_meta("cascade_virtual_model_count", 0)) == 10_001)
+	_expect_true("showcase insert remains a collection-only patch", int(scene.call("collection_stats").get("full_document_candidates", -1)) == 0)
+
+
+func _find_realized_repeat_rows(repeat: Control) -> Array[Control]:
+	var result: Array[Control] = []
+	for child in repeat.get_children():
+		if child is Control and child.has_meta("cascade_repeat_index"):
+			result.append(child)
+	return result
+
+
+func _find_button_by_text(node: Node, text: String) -> BaseButton:
+	if node is BaseButton and node.get("text") == text:
+		return node
+	for child in node.get_children():
+		var found := _find_button_by_text(child, text)
+		if found != null:
+			return found
+	return null
 
 
 func _expect_document_ready(label: String, scene: Control) -> void:

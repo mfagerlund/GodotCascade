@@ -1,0 +1,20 @@
+{
+  "operator_name": "Rhea",
+  "environment": "Staging",
+  "concurrency": 3,
+  "include_paused": false,
+  "jobs": [
+    {"id": "job-001", "service": "accounts", "ref": "a41ef2", "status": "Running", "owner": "Rhea", "priority": 2, "selected": false},
+    {"id": "job-002", "service": "catalog", "ref": "b18c70", "status": "Queued", "owner": "Miro", "priority": 7, "selected": false},
+    {"id": "job-003", "service": "payments", "ref": "f03da1", "status": "Paused", "owner": "Ada", "priority": 1, "selected": false},
+    {"id": "job-004", "service": "search", "ref": "c55ee8", "status": "Running", "owner": "Rhea", "priority": 5, "selected": false},
+    {"id": "job-005", "service": "identity", "ref": "93b20c", "status": "Queued", "owner": "Lin", "priority": 4, "selected": false},
+    {"id": "job-006", "service": "media", "ref": "e7704a", "status": "Running", "owner": "Miro", "priority": 8, "selected": false},
+    {"id": "job-007", "service": "checkout", "ref": "17aa34", "status": "Queued", "owner": "Ada", "priority": 3, "selected": false},
+    {"id": "job-008", "service": "notifications", "ref": "d02f91", "status": "Paused", "owner": "Lin", "priority": 9, "selected": false},
+    {"id": "job-009", "service": "recommendations", "ref": "aa801c", "status": "Running", "owner": "Rhea", "priority": 6, "selected": false},
+    {"id": "job-010", "service": "audit", "ref": "54ef18", "status": "Queued", "owner": "Miro", "priority": 11, "selected": false},
+    {"id": "job-011", "service": "warehouse", "ref": "720acd", "status": "Running", "owner": "Ada", "priority": 10, "selected": false},
+    {"id": "job-012", "service": "reporting", "ref": "0f4b77", "status": "Queued", "owner": "Lin", "priority": 12, "selected": false}
+  ]
+}

@@ -161,7 +161,8 @@ func _run() -> void:
 		telemetry["reserve"] = 41.0
 		telemetry["reserve_label"] = "41%"
 		_expect_true("manual binding refresh succeeds", system_document.refresh_bindings())
-		_expect_true("repeated document trace explains conservative reconciliation", system_document.last_binding_trace()["strategy"] == "reconcile" and system_document.last_binding_trace()["reason"] == "collection")
+		_expect_true("repeated document trace reports localized collection patch", system_document.last_binding_trace()["strategy"] == "collection_patch" and system_document.last_binding_trace()["reason"] == "collection")
+		_expect_int("collection patch builds no full document candidate", int(system_document.last_binding_trace()["reconcile_stats"].get("full_document_candidates", -1)), 0)
 		_expect_float("binding refresh updates progress", reserve.get("value"), 41.0)
 		_expect_true("binding refresh preserves progress identity", reserve.get_instance_id() == reserve_instance_id)
 		var reserve_labels := _find_by_id(system_root, "reserve-value")
@@ -1436,7 +1437,7 @@ func _test_markup_state_features() -> void:
 	_expect_int("repeat adds a keyed item", rows.get_child_count(), 3)
 	_expect_true("repeat preserves keyed item identity after reorder", rows.get_child(0).get_instance_id() == beta_instance)
 	_expect_true("repeat refreshes scoped binding", rows.get_child(0).get_child(0).get("text") == "Beta 2")
-	_expect_true("custom component receives update lifecycle", _custom_updates > 0)
+	_expect_int("collection patch does not update unrelated custom component", _custom_updates, 0)
 	(rows.get_child(0).get_child(1) as BaseButton).emit_signal("pressed")
 	_expect_int("event refresh avoids duplicate connection", _phase3_events, 2)
 

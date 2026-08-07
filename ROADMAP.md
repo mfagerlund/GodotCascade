@@ -52,7 +52,7 @@ Phases 10–13 below turn this sequence into falsifiable deliverables. Correctne
 - [x] Split the builder hotspot before substantially broadening the source language
 - [x] Correct non-ASCII diagnostic offsets and add a regression test
 - [x] Add reconciler property-copy parity coverage before expanding custom component properties
-- [ ] Validate the approach with a non-showcase UI and publish an honest comparison with GTML
+- [x] Validate the approach with a non-showcase UI and publish an [honest comparison with GTML](docs/artifacts/godotcascade-vs-gtml-deployment-queue.md)
 
 ## Phase 1 — Layout foundation
 
@@ -236,10 +236,10 @@ The first public preview should build a small settings menu from `.gxml` and a s
 - [ ] Submit the prepared 0.6.0 entry through the authenticated Godot Asset Library form
 - [x] Prepare a short, reproducible native-tree/live-reload demonstration
 - [x] Prepare a candid Godot community announcement and structured feedback questions
-- [ ] Publish the live-reload artifact after maintainer approval
+- [x] Publish the maintainer-approved live-reload artifact on the project site
 - [ ] Share the public demonstration through an authenticated Godot community account
 - [ ] Invite at least one external Godot developer to build a real interface and record where the authoring model helps or obstructs them
-- [ ] Build one non-showcase production-shaped UI in both GodotCascade and GTML and publish the comparison
+- [x] Build one non-showcase production-shaped UI in both GodotCascade and GTML and publish the [reproducible comparison](docs/artifacts/godotcascade-vs-gtml-deployment-queue.md)
 - [ ] Collect structured feedback on authoring speed, diagnostics, binding ergonomics, runtime cost, and missing controls
 
 ## Phase 11 — focused reactivity and composition
@@ -262,9 +262,9 @@ The first public preview should build a small settings menu from `.gxml` and a s
 
 ## Phase 13 — scale and platform confidence
 
-- [ ] Avoid rebuilding a complete off-tree candidate for collection-only updates
-- [ ] Add item-model adapters and virtualization for large lists and tables
-- [ ] Benchmark real settings, inventory, dashboard, and leaderboard workloads against native scenes and close alternatives
+- [x] Avoid rebuilding a complete off-tree candidate for collection-only updates
+- [x] Add item-model adapters and virtualization for large lists and tables
+- [x] Benchmark real settings, inventory, dashboard, and leaderboard workloads against native scenes and close alternatives ([verified report](docs/artifacts/representative-workload-benchmark-2026-08-07.md))
 - [ ] Add Windows and macOS CI coverage where the engine runner permits it
 - [ ] Complete manual IME, clipboard, touch-selection, virtual-keyboard, and screen-reader certification
 - [ ] Publish tested support levels per Godot version and desktop/mobile platform

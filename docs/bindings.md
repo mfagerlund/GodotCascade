@@ -114,7 +114,7 @@ func set_scale(value: float) -> void:
 
 `invalidate(path)` emits synchronously and a non-repeated `CascadeDocument` reapplies only bindings whose path overlaps the invalidated path. Parent and child paths overlap: invalidating `settings` refreshes `settings.profile`, while invalidating `settings.profile.name` also refreshes a control bound to `settings.profile`. Use `invalidate_many(PackedStringArray([...]))` to coalesce several paths, or `invalidate_all()` for the full boundary. `CascadeDocument.refresh_binding_paths()` exposes the same targeted operation without a wrapper.
 
-Paths use the existing identifier/numeric-segment grammar. Expressions, method calls, wildcards, and property interception are not introduced. The adapter does not watch mutations or automatically discover dependencies from executed code; application code remains responsible for naming what changed. A document containing `Repeat` conservatively rebuilds its candidate tree and performs keyed reconciliation after adapter invalidation because a collection change may alter native topology.
+Paths use the existing identifier/numeric-segment grammar. Expressions, method calls, wildcards, and property interception are not introduced. The adapter does not watch mutations or automatically discover dependencies from executed code; application code remains responsible for naming what changed. A collection invalidation builds and reconciles only retained Repeat candidates; it does not construct a complete off-tree document candidate.
 
 ### Dependency and invalidation traces
 
@@ -128,7 +128,7 @@ print(trace.trigger)           # observable
 print(trace.affected_controls) # authored IDs or reconciliation keys
 ```
 
-`binding_trace_changed(trace)` publishes the same record. `trigger` distinguishes `manual`, `observable`, `context_changed`, and `write_back`; `strategy` is `targeted` or `reconcile`; `reason` is `property`, `rebuild_dependency`, or `collection`. The trace also contains `paths`, `affected_bindings`, `success`, and `reconcile_stats`. Only the latest trace is retained, and recording it does not poll the model or alter invalidation decisions.
+`binding_trace_changed(trace)` publishes the same record. `trigger` distinguishes `manual`, `observable`, `context_changed`, `item_model`, `scroll`, and `write_back`; `strategy` is `targeted`, `reconcile`, `collection_patch`, or `virtual_window`; `reason` is `property`, `rebuild_dependency`, `collection`, or `viewport`. The trace also contains `paths`, `affected_bindings`, `success`, and reconciliation/collection statistics. Only the latest trace is retained, and recording it does not poll the model or alter invalidation decisions.
 
 ## Conditional rendering
 
@@ -250,7 +250,7 @@ Authored connections are re-established after reload without removing signal con
 
 `bind-checked="{item.enabled}"` writes to the backing item. A `key` preserves native identity when the collection reorders. `index` and bare `item` are read-only; replacing an entire collection item remains application logic.
 
-Because a repeated collection can change tree topology, `refresh_bindings()` rebuilds a candidate document and performs keyed reconciliation when `Repeat` is present.
+Because a repeated collection can change tree topology, `refresh_bindings()` builds only the retained outer Repeat candidates and performs keyed reconciliation. `CascadeItemModel` changes do this automatically. Fixed-height virtualization and the exact lifecycle/state boundary are documented in [collections and virtualization](collections.md).
 
 ## Validation
 

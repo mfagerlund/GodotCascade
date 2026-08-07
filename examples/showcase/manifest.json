@@ -183,6 +183,49 @@
         ["sort", "Array.sort()", "Array.sort_custom() + keyed reconciliation"],
         ["drag rows", "Captured pointer events", "Captured GUI input + stable item keys"]
       ]
+    },
+    {
+      "id": "collection-scale",
+      "title": "Virtual inventory",
+      "summary": "A 10,000-item typed model rendered through a bounded fixed-height native table window with insert, remove, and jump controls.",
+      "viewport": [960, 540],
+      "html": "examples/showcase/collection_scale/reference.html",
+      "gxml": "examples/showcase/collection_scale/interface.gxml",
+      "gcss": "examples/showcase/collection_scale/styles.gcss",
+      "script": "examples/showcase/collection_scale/collection_scale_document.gd",
+      "godot_scene": "examples/collection_scale_showcase.tscn",
+      "godot_screenshot": "docs/showcase/assets/collection-scale-godot.png",
+      "shared_copy": [
+        "SCALE LAB · FIXED EXTENT",
+        "Virtual inventory",
+        "A 10,000-item model backed by a bounded native Control window.",
+        "Jump to top",
+        "Jump to 5,000",
+        "Jump to end",
+        "Insert record",
+        "Remove first",
+        "Record",
+        "Category",
+        "Value"
+      ],
+      "source_parity": [
+        {"label": "10k model", "html": "length:10000", "gxml": "items=\"{items}\""},
+        {"label": "fixed item height", "html": "height=36", "gxml": "item-height=\"36\""},
+        {"label": "overscan", "html": "overscan=4", "gxml": "overscan=\"4\""},
+        {"label": "virtual window", "html": "function render()", "gxml": "virtual=\"true\""},
+        {"label": "native scroll", "html": "class=\"viewport\"", "gxml": "<Scroll id=\"inventory-scroll\""},
+        {"label": "stable columns", "html": "table-layout:fixed", "gxml": "<Table id=\"inventory\"", "gcss": "grid-template-columns: 1fr 180px 150px"}
+      ],
+      "mappings": [
+        ["10,000-item Array", "CascadeArrayItemModel", "Event-driven typed item model"],
+        ["scroll listener", "Scroll + virtual Repeat", "Native ScrollContainer window events"],
+        ["DOM spacer rows", "synthetic native spacer rows", "Full scrollbar extent with bounded realized controls"],
+        ["slice(first, last)", "item_at(index)", "Visible range plus overscan only"],
+        ["stable record id", "key=\"id\"", "Overlapping native identity reconciliation"],
+        ["36px fixed row", "item-height=\"36\"", "Deterministic fixed-extent window math"],
+        ["table-layout: fixed", "explicit grid-template-columns", "Columns independent of unseen rows"],
+        ["insert / remove", "CascadeArrayItemModel mutations", "Automatic collection-only patch"]
+      ]
     }
   ]
 }

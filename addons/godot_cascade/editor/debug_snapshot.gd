@@ -22,6 +22,18 @@ static func _capture_node(control: Control, depth: int, result: Array[Dictionary
 			"padding": style.padding(),
 			"margin": style.margins(),
 		}
+	var collection := {}
+	if str(control.get_meta("cascade_element_type", "")).to_lower() == "repeat":
+		var model: Variant = control.get_meta("cascade_collection_model") if control.has_meta("cascade_collection_model") else null
+		collection = {
+			"model": model.get_class() if model is Object else "Array",
+			"count": int(control.get_meta("cascade_virtual_model_count", control.get_meta("cascade_repeat_keys", PackedStringArray()).size())),
+			"virtual": bool(control.get_meta("cascade_virtual", false)),
+			"first": int(control.get_meta("cascade_virtual_first_index", 0)),
+			"end": int(control.get_meta("cascade_virtual_end_index", control.get_meta("cascade_repeat_keys", PackedStringArray()).size())),
+			"realized": int(control.get_meta("cascade_virtual_realized_count", control.get_meta("cascade_repeat_keys", PackedStringArray()).size())),
+			"overscan": int(control.get_meta("cascade_virtual_overscan", 0)),
+		}
 	result.append({
 		"depth": depth,
 		"element": str(control.get_meta("cascade_element_type", control.get_class())),
@@ -33,6 +45,7 @@ static func _capture_node(control: Control, depth: int, result: Array[Dictionary
 		"binding_dependencies": BindingTrace.dependencies(control),
 		"binding_trace": control.get_meta(BindingTrace.TRACE_META, {}).duplicate(true),
 		"document_binding_trace": control.get_meta(BindingTrace.DOCUMENT_TRACE_META, {}).duplicate(true),
+		"collection": collection,
 		"source_path": str(control.get_meta("cascade_source_path", "")),
 		"source_line": int(control.get_meta("cascade_source_line", 1)),
 		"source_column": int(control.get_meta("cascade_source_column", 1)),

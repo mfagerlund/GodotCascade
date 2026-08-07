@@ -1,0 +1,38 @@
+<Page class="screen">
+    <Row class="heading-row">
+        <Column class="heading-copy">
+            <Label class="eyebrow">SCALE LAB · FIXED EXTENT</Label>
+            <Label class="title">Virtual inventory</Label>
+            <Label class="subtitle">A 10,000-item model backed by a bounded native Control window.</Label>
+        </Column>
+        <Label class="count-pill" text="{count_label}" />
+    </Row>
+    <Row class="toolbar">
+        <Button on-pressed="_on_jump_top">Jump to top</Button>
+        <Button on-pressed="_on_jump_middle">Jump to 5,000</Button>
+        <Button on-pressed="_on_jump_end">Jump to end</Button>
+        <Button on-pressed="_on_insert_record">Insert record</Button>
+        <Button on-pressed="_on_remove_record">Remove first</Button>
+    </Row>
+    <Label class="status" text="{status}" />
+    <Scroll id="inventory-scroll" class="inventory-scroll" accessible-label="Virtual inventory records">
+        <Table id="inventory" accessible-label="Virtual inventory table">
+            <TableHeader>
+                <TableRow class="table-header">
+                    <TableHeaderCell>Record</TableHeaderCell>
+                    <TableHeaderCell>Category</TableHeaderCell>
+                    <TableHeaderCell>Value</TableHeaderCell>
+                </TableRow>
+            </TableHeader>
+            <TableBody>
+                <Repeat id="inventory-rows" items="{items}" key="id" virtual="true" item-height="36" overscan="4">
+                    <TableRow class="inventory-row">
+                        <TableCell text="{item.name}" />
+                        <TableCell text="{item.category}" />
+                        <TableCell text="{item.value}" />
+                    </TableRow>
+                </Repeat>
+            </TableBody>
+        </Table>
+    </Scroll>
+</Page>
