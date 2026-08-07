@@ -1,6 +1,6 @@
 # Public preview stability policy
 
-GodotCascade 0.4.0 is the prepared release candidate targeting Godot 4.7. The latest published preview remains 0.3.0 until a software license is selected. Source format version 1 and the documented runtime surface follow the preview guarantees below; broader API compatibility is not promised until a stable release.
+GodotCascade 0.4.0 is the prepared release candidate targeting Godot 4.7. The latest published preview remains 0.3.0 until the 0.4 release workflow completes. Source format version 1 and the documented runtime surface follow the preview guarantees below; broader API compatibility is not promised until a stable release.
 
 ## Preview guarantees
 

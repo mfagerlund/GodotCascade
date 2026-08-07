@@ -1,11 +1,28 @@
 # GodotCascade
 
+[![Verify](https://github.com/mfagerlund/GodotCascade/actions/workflows/ci.yml/badge.svg)](https://github.com/mfagerlund/GodotCascade/actions/workflows/ci.yml)
+![Godot 4.7](https://img.shields.io/badge/Godot-4.7-478CBF?logo=godot-engine&logoColor=white)
+[![License: Unlicense](https://img.shields.io/badge/license-Unlicense-5aa7ff.svg)](LICENSE)
+![Status: experimental preview](https://img.shields.io/badge/status-experimental_preview-65d6a7.svg)
+
 GodotCascade is an experimental retained-mode UI framework for Godot 4. It brings a declarative UI language, CSS-inspired styling, and a predictable box model to native Godot `Control` nodes.
 
 The goal is to make game UI faster to build and easier to maintain without embedding a browser or replacing Godot's renderer. A GodotCascade interface remains a tree of native controls, so it can continue to use Godot's signals, themes, input, rendering, and editor tooling.
 
 > [!IMPORTANT]
-> GodotCascade 0.4.0 is the prepared release candidate for Godot 4.7, adding typed C# binding generation, semantic tables, and automatic scroll viewports without becoming a browser engine. The latest published preview remains 0.3.0 until a software license is selected. APIs outside the documented preview references remain unstable.
+> GodotCascade 0.4.0 is the prepared release candidate for Godot 4.7, adding typed C# binding generation, semantic tables, and automatic scroll viewports without becoming a browser engine. The latest published preview remains 0.3.0 until the 0.4 release workflow completes. APIs outside the documented preview references remain unstable.
+
+## Native Godot renders
+
+These are automated captures of the actual source-generated Godot scenes—not browser mockups.
+
+| Settings, validation, and two-way binding | Dynamic semantic table |
+| --- | --- |
+| ![Godot-rendered graphics settings screen with text input, checkboxes, radio buttons, switch, slider, select, and bound values](docs/showcase/assets/settings-menu-godot.png) | ![Godot-rendered flight leaderboard with semantic columns and add, remove, sort, and reorder controls](docs/showcase/assets/leaderboard-godot.png) |
+| **Grid, stack, image, and box model** | **Bound telemetry and progress** |
+| ![Godot-rendered layout foundation with three responsive cards](docs/showcase/assets/layout-foundation-godot.png) | ![Godot-rendered telemetry dashboard with bound native progress controls](docs/showcase/assets/system-status-godot.png) |
+
+Run the same pages interactively with `python tools/showcase/run_showcase.py --godot "C:\path\to\godot.exe"`, or open the [HTML/native parity report](docs/showcase/index.html).
 
 ## Why GodotCascade?
 
@@ -65,6 +82,78 @@ Bindings connect the interface to game state:
 
 These formats deliberately borrow familiar ideas from HTML and CSS, but they are small, Godot-specific languages. GodotCascade is not a browser engine and does not aim for web standards compatibility.
 
+## Sixty-second runnable demo
+
+The complete [README quickstart scene](examples/readme_quickstart/readme_demo.tscn) is checked into the repository. Run it directly with:
+
+```shell
+godot --path . res://examples/readme_quickstart/readme_demo.tscn
+```
+
+Its [GXML](examples/readme_quickstart/interface.gxml) declares the native controls and bindings:
+
+```xml
+<Page class="demo">
+    <Label class="title" text="{player.name}" />
+    <Label text="{player.status}" />
+    <Progress value="{player.health}" max="100" />
+    <Row class="actions">
+        <Label text="{player.health}" />
+        <Button id="repair" on-pressed="_on_repair">Repair armor</Button>
+    </Row>
+</Page>
+```
+
+Its [GCSS](examples/readme_quickstart/styles.gcss) owns layout, box model, and interaction styling:
+
+```css
+.demo {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 40px;
+    background: #0b1220;
+}
+
+Label { color: #e8eefc; }
+
+Button {
+    padding: 10px 16px;
+    background: #246bce;
+    color: #ffffff;
+    border: 1px solid #5aa7ff;
+    border-radius: 8px;
+}
+
+Button:hover { background: #347ee5; }
+Button:pressed { background: #1d58ad; }
+```
+
+The [GDScript controller](examples/readme_quickstart/readme_demo.gd) supplies typed state and handles the authored event. Changing nested state is explicit: mutate it, then call `refresh_bindings()`.
+
+```gdscript
+extends "res://addons/godot_cascade/runtime/cascade_document.gd"
+
+class PlayerState extends RefCounted:
+    var name := "Rhea"
+    var status := "Armor reserve"
+    var health := 72.0
+
+var player := PlayerState.new()
+
+func _ready() -> void:
+    binding_context = {"player": player}
+    event_context = self
+    super()
+
+func _on_repair() -> void:
+    player.health = minf(player.health + 10.0, 100.0)
+    player.status = "Armor repaired"
+    refresh_bindings()
+```
+
+For larger examples, see the complete [settings state](examples/showcase/settings_menu/settings_menu_state.gd), [settings controller](examples/showcase/settings_menu/settings_menu_document.gd), [leaderboard state](examples/showcase/leaderboard/leaderboard_state.gd), and [add/remove/sort/drag controller](examples/showcase/leaderboard/leaderboard_document.gd).
+
 ## What works today
 
 The repository currently contains several working vertical slices:
@@ -94,12 +183,47 @@ The repository currently contains several working vertical slices:
 
 Version 0.2 adds native single-line text editing, validation, and explicit `bind-*` write-back while retaining the 0.1 source surface. Version 0.3 also adapts native `TextEdit` through `TextInput multiline="true"`, adds keyed repeated-item write-back, and supports hover backgrounds on owned layout containers. Browser-wide property coverage remains out of scope.
 
+## How it compares
+
+GodotCascade is not the only declarative UI project for Godot. The closest alternatives are excellent projects with different priorities:
+
+| | GodotCascade | [GTML](https://github.com/Niekvdm/godot-plugins-gtml) | [Reactive UI Toolkit](https://github.com/reactive-ui-toolkit/ruitk-godot) | [GUML](https://github.com/shitake2333/GUML) |
+| --- | --- | --- | --- | --- |
+| Primary model | Focused GXML + GCSS | HTML/CSS + Vue-style directives | Compiled JSX-like GDScript + hooks | QML/XAML-like Godot .NET markup |
+| Runtime output | Native `Control` tree | Native `Control` tree | Any instantiable Godot `Node` | Built-in Godot `Control` types |
+| State updates | Typed paths, explicit refresh, opt-in write-back | Automatic reactive store + expressions | Fiber rendering, hooks, signals, context | Generated one/two-way C# bindings |
+| Styling | Constrained cascade with deterministic box/flex/grid/table layout | Broad CSS-like surface with variables, calculations, transforms, gradients, SVG, and fonts | Godot properties, themes, state styleboxes | Godot properties through generated markup |
+| Reload model | Last-valid candidate + keyed native reconciliation | Live reactive reconciliation | Fast Refresh with hook-state preservation | Compile-time Roslyn generation |
+| Main trade-off | Small language and explicit unsupported diagnostics | Broader runtime and expression surface | React-scale framework and concepts | Requires Godot .NET |
+
+Choose GodotCascade when you want a reviewable source format, native controls, CSS-like cascade and layout, deterministic diagnostics, and no embedded expression runtime. Choose one of the alternatives when automatic reactivity, arbitrary expressions, every Godot node, React-style composition, or .NET-only compile-time generation matters more.
+
+### Capabilities the alternatives currently have that GodotCascade lacks
+
+- automatic dependency-tracked reactivity; nested mutations currently require `refresh_bindings()`;
+- general expressions, conditionals, dynamic class/visibility attributes, and Vue/JSX-style control flow;
+- reusable markup components with typed parameters rather than native factory registration;
+- an open vocabulary covering every built-in `Control` or arbitrary `Node`;
+- broad CSS features such as variables, `calc()`, opacity, transforms, gradients, custom fonts, and inline SVG;
+- `autofocus`, authored tab order, modal focus traps, and higher-level routing;
+- hooks, context, effects, Suspense, memoization, time-slicing, and declarative item-model adapters;
+- virtualized large collections;
+- VS Code/Visual Studio language tooling with completion, hover, rename, and go-to-definition.
+
+Those are roadmap inputs, not promises to reproduce a browser or React. New features must preserve the focused grammar, native behavior, and actionable failure model.
+
 ## Trying the preview
 
-1. Open this folder with Godot 4.7, the currently tested editor version.
-2. Enable **GodotCascade** under **Project → Project Settings → Plugins**.
-3. Run the project. The configured main scene is `examples/showcase_app.tscn`, a manifest-driven browser for every native showcase page.
-4. Add a **CascadeBox** from the Create New Node dialog to experiment in your own scene.
+Requirements: Godot 4.7. The addon runtime is GDScript-only; .NET is needed only if a Godot .NET project opts into generated C# bindings.
+
+To install in another project:
+
+1. Download the latest `godot-cascade-X.Y.Z.zip` from [Releases](https://github.com/mfagerlund/GodotCascade/releases).
+2. Extract it at the project root so `res://addons/godot_cascade/plugin.cfg` exists.
+3. Enable **GodotCascade** under **Project → Project Settings → Plugins**.
+4. Follow the [getting-started guide](docs/getting-started.md), or copy the [README quickstart](examples/readme_quickstart/) into the project.
+
+To work from this repository, open it with Godot 4.7 and run the project. The configured main scene is `examples/showcase_app.tscn`, a manifest-driven browser for every native showcase page. Add a **CascadeBox** from the Create New Node dialog to experiment in your own scene.
 
 No external runtime dependencies are required.
 
@@ -298,12 +422,16 @@ See [getting started](docs/getting-started.md), the [documentation index](docs/R
 
 ## Roadmap
 
-- **Phase 1 — Layout:** box model, flex flow, wrapping, constraints, and core controls.
-- **Phase 1.5 — Form controls:** generalized pseudo states, checkbox, radio button, switch, select, slider, and a settings-menu showcase.
-- **Phase 2 — Styling:** stylesheets, selectors, cascade, inheritance, and pseudo states.
-- **Phase 3 — Markup:** `.gxml`, components, bindings, and reconciliation.
-- **Phase 4 — Tooling:** editor integration, live preview, hot reload, and inspection.
-- **Phase 5 — Polish:** transitions, accessibility, responsive rules, optimization, and documentation.
+The first nine vertical slices—layout, styling, markup, tooling, form controls, scoped/multiline forms, typed C# bindings, semantic tables, and automatic scrolling—are complete for the experimental preview.
+
+The next pipeline is intentionally validation-first:
+
+1. **Public validation:** publish 0.4, submit a testing-level Asset Library entry, show native live reload, and compare one production-shaped UI directly with GTML.
+2. **Focused reactivity and composition:** observable path invalidation, more bound properties, explicit conditional rendering, and reusable typed GXML components—without adding a general expression runtime.
+3. **Language and editor depth:** the highest-value missing style primitives, focus traps/tab order, and real completion/hover/rename/go-to-definition tooling.
+4. **Scale and platform confidence:** collection-only updates, item models and virtualization, representative benchmarks, multi-platform CI, and manual IME/touch/screen-reader certification.
+
+The detailed acceptance criteria and remaining engineering findings live in the [roadmap](ROADMAP.md).
 
 ## Contributing
 
@@ -323,4 +451,4 @@ GodotCascade will not support arbitrary HTML, JavaScript, DOM APIs, full CSS com
 
 ## License
 
-A license has not been selected yet. Until one is added, the source is not offered under an open-source license.
+GodotCascade is released under [The Unlicense](LICENSE): use, modify, publish, sell, or redistribute it for any purpose, with no attribution condition. A copy is included inside `addons/godot_cascade/` so it remains with Asset Library installations.

@@ -1,0 +1,14 @@
+[remap]
+
+importer="godot_cascade.gcss"
+type="CascadeStylesheetResource"
+uid="uid://bf7nxvro415fn"
+path="res://.godot/imported/styles.gcss-7832059395fa11af3529578d6b5de653.res"
+
+[deps]
+
+source_file="res://examples/readme_quickstart/styles.gcss"
+dest_files=["res://.godot/imported/styles.gcss-7832059395fa11af3529578d6b5de653.res"]
+
+[params]
+

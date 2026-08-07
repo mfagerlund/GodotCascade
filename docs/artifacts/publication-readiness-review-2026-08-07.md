@@ -52,6 +52,8 @@ GTML deserves a direct, respectful comparison. GodotCascade's narrower grammar, 
 
 The repository has no software license. Downloading visible source does not grant permission to use, modify, or redistribute it. The official [Godot Asset Library submission requirements](https://docs.godotengine.org/en/stable/community/asset_library/submitting_to_assetlib.html) require `LICENSE` or `LICENSE.md` containing the license text and a copyright statement with holder and years.
 
+**Resolved after review:** the copyright holder selected The Unlicense. Matching copies with a 2026 Mattias Fagerlund copyright statement now live at the repository root and inside the packaged addon.
+
 Recommended sequence:
 
 1. The copyright holder selects a license and supplies the exact copyright name.

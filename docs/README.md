@@ -1,6 +1,6 @@
 # GodotCascade documentation
 
-GodotCascade 0.4.0 is the prepared release candidate, including typed C# binding generation, semantic tables, native scrolling, adapted multiline editing, and scoped repeated forms. The latest published preview remains 0.3.0 until a software license is selected. Documentation distinguishes the supported focused surface from intentionally unsupported browser features.
+GodotCascade 0.4.0 is the prepared release candidate, including typed C# binding generation, semantic tables, native scrolling, adapted multiline editing, and scoped repeated forms. The latest published preview remains 0.3.0 until the 0.4 release workflow completes. Documentation distinguishes the supported focused surface from intentionally unsupported browser features.
 
 ## Start here
 
@@ -23,6 +23,7 @@ GodotCascade 0.4.0 is the prepared release candidate, including typed C# binding
 - [Public preview stability policy](api-stability.md) — current guarantees, unstable surfaces, and change process
 - [Roadmap](../ROADMAP.md) — completed preview, typed-binding, and semantic-table milestones plus ongoing platform certification
 - [Publication-readiness review](artifacts/publication-readiness-review-2026-08-07.md) — independent structure, completeness, ecosystem, and release assessment
+- [Logo concepts](artifacts/logo-concepts/README.md) — three image-model directions awaiting selection and vector redraw
 - [Runnable showcase app](showcase-app.md) — launch and manually verify every manifest page and event connection
 - [HTML parity showcase](showcase/index.html) — live HTML references beside captured native Godot output
 

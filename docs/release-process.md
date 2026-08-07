@@ -23,8 +23,7 @@ The showcase generator keeps superseded content-hashed HTML references as redire
 Before creating `vX.Y.Z`:
 
 1. Match `addons/godot_cascade/plugin.cfg`, `CHANGELOG.md`, and `docs/releases/X.Y.Z.md`.
-2. Commit a clean tree and push it to `main`.
-3. Create and push the annotated version tag.
-4. Confirm the tag workflow passes. It packages the addon again and creates the GitHub release with the matching notes, ZIP, and checksum.
-
-The repository currently has no software license. A license must be selected explicitly by the copyright holder; release automation must not infer one.
+2. Confirm `LICENSE` and `addons/godot_cascade/LICENSE` contain the same current license and copyright statement.
+3. Commit a clean tree and push it to `main`.
+4. Create and push the annotated version tag.
+5. Confirm the tag workflow passes. It packages the addon again, verifies its checksum, and creates the GitHub release with the matching notes, ZIP, and checksum.

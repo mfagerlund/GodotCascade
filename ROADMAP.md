@@ -8,7 +8,7 @@ The executable foundation now covers flex/grid/stack layout, owned and adapted f
 
 All planned 0.1 milestones and every first-public-preview acceptance item are complete. The source-generated settings-menu slice includes shared interactive-state precedence, a native mouse/keyboard/controller test matrix, and owned checkbox, grouped radio-button, switch, select, and slider components. The layout foundation includes native grid tracks, automatic and explicit placement, stack overlays, absolute insets, media, responsive rules, and viewport values. The editor and performance release gates are executable.
 
-Versions 0.1.0 through 0.3.0 are tagged and published through the reproducible release gate. Version 0.4.0 is a prepared release candidate and remains unpublished until the copyright holder selects a software license. The 0.2 interactive-forms slice adds an adapted native single-line text input, explicit writable bindings, validation state, input-modality-aware focus styling, and a live settings workflow exercised in both native and HTML showcase views. Version 0.3 adds the corresponding native multiline adapter, repeated-item write-back, and owned-container hover backgrounds. The 0.4 candidate adds optional typed C# generation, semantic tables, native scrolling, and dynamic collection examples.
+Versions 0.1.0 through 0.3.0 are tagged and published through the reproducible release gate. Version 0.4.0 is a prepared release candidate awaiting the release workflow. The 0.2 interactive-forms slice adds an adapted native single-line text input, explicit writable bindings, validation state, input-modality-aware focus styling, and a live settings workflow exercised in both native and HTML showcase views. Version 0.3 adds the corresponding native multiline adapter, repeated-item write-back, and owned-container hover backgrounds. The 0.4 candidate adds optional typed C# generation, semantic tables, native scrolling, and dynamic collection examples.
 
 The reproduced findings in the [2026-08-05 code review](docs/artifacts/review.md) and the [2026-08-07 publication-readiness review](docs/artifacts/publication-readiness-review-2026-08-07.md) are part of this roadmap. Blocking correctness fixes take priority when they touch the same runtime layer as an active vertical slice.
 
@@ -37,7 +37,7 @@ The latest completed vertical slices add optional typed C# binding generation wi
 - [x] Reject duplicate document IDs before reconciliation and retain the last valid tree on reload
 - [x] Compile the generated C# example and its user-owned partial in CI
 - [x] Correct the 0.4 publication status and distinguish automated tests from manual platform certification
-- [ ] Select and add a software license before publishing 0.4 or submitting to the Godot Asset Library
+- [x] Select and add a software license before publishing 0.4 or submitting to the Godot Asset Library
 - [ ] Split the builder hotspot before substantially broadening the source language
 - [ ] Correct non-ASCII diagnostic offsets and add a regression test
 - [ ] Add reconciler property-copy parity coverage before expanding custom component properties
@@ -212,3 +212,42 @@ The first public preview should build a small settings menu from `.gxml` and a s
 - [x] Application-level add, remove, sort, and drag-reorder demo over keyed rows
 - [x] Native `Scroll` viewport with automatic vertical overflow for growing tables
 - [x] Document explicit boundaries for sorting, selection, resizing, and virtualization
+
+## Phase 10 — public validation pipeline
+
+- [x] Select a permissive software license and include it in both the repository and packaged addon
+- [x] Publish a visual README with runnable GXML, GCSS, and GDScript plus native Godot captures
+- [x] Document the direct comparison with GTML, Reactive UI Toolkit, GUML, and native Godot
+- [ ] Publish the 0.4 experimental-preview release
+- [ ] Make the repository public after verifying its release page and installation archive
+- [ ] Prepare the Godot Asset Library icon, metadata, and testing-support submission
+- [ ] Share a short native-tree/live-reload demonstration with the Godot community
+- [ ] Build one non-showcase production-shaped UI in both GodotCascade and GTML and publish the comparison
+- [ ] Collect structured feedback on authoring speed, diagnostics, binding ergonomics, runtime cost, and missing controls
+
+## Phase 11 — focused reactivity and composition
+
+- [ ] Add an observable adapter that can invalidate named paths without polling or a general expression runtime
+- [ ] Extend one-way targets to documented state such as visibility, disabled state, classes, image source, and selected values
+- [ ] Design explicit conditional rendering that remains diagnosable and does not evaluate arbitrary code
+- [ ] Add reusable GXML components with typed parameters, slots, scoped IDs, and source-aware diagnostics
+- [ ] Preserve keyed identity and native editing state across conditional/component boundaries
+- [ ] Add dependency and invalidation traces to the layout debugger
+
+## Phase 12 — language and editor depth
+
+- [ ] Evaluate GCSS custom properties and typed `calc()` without claiming browser compatibility
+- [ ] Add the highest-value missing layout/style primitives: flex shrink/basis, opacity, transforms, gradients, and custom fonts
+- [ ] Define SVG support through native Godot textures rather than a browser DOM
+- [ ] Add authored autofocus, tab order, and modal focus-trap contracts
+- [ ] Provide completion, hover, formatting, go-to-definition, rename, and diagnostics in the Godot editor and VS Code
+- [ ] Split `cascade_builder.gd` into construction, validation, binding, and declaration-application services first
+
+## Phase 13 — scale and platform confidence
+
+- [ ] Avoid rebuilding a complete off-tree candidate for collection-only updates
+- [ ] Add item-model adapters and virtualization for large lists and tables
+- [ ] Benchmark real settings, inventory, dashboard, and leaderboard workloads against native scenes and close alternatives
+- [ ] Add Windows and macOS CI coverage where the engine runner permits it
+- [ ] Complete manual IME, clipboard, touch-selection, virtual-keyboard, and screen-reader certification
+- [ ] Publish tested support levels per Godot version and desktop/mobile platform

@@ -31,6 +31,7 @@ TEXT_SUFFIXES = {
     ".yml",
 }
 MARKDOWN_LINK = re.compile(r"(?<!!)\[[^\]]+\]\(([^)]+)\)")
+MARKDOWN_IMAGE = re.compile(r"!\[[^\]]*\]\(([^)]+)\)")
 
 
 def tracked_files() -> list[Path]:
@@ -44,7 +45,7 @@ def check_text_format(files: list[Path], failures: list[str]) -> None:
     for path in files:
         if not path.is_file():
             continue
-        if path.suffix.lower() not in TEXT_SUFFIXES:
+        if path.suffix.lower() not in TEXT_SUFFIXES and path.name != "LICENSE":
             continue
         data = path.read_bytes()
         relative = path.relative_to(ROOT)
@@ -79,7 +80,8 @@ def check_markdown_links(files: list[Path], failures: list[str]) -> None:
         if path.suffix.lower() != ".md":
             continue
         text = path.read_text(encoding="utf-8")
-        for match in MARKDOWN_LINK.finditer(text):
+        matches = [*MARKDOWN_LINK.finditer(text), *MARKDOWN_IMAGE.finditer(text)]
+        for match in matches:
             raw_target = match.group(1).strip()
             if raw_target.startswith("<") and raw_target.endswith(">"):
                 raw_target = raw_target[1:-1]
@@ -94,12 +96,26 @@ def check_markdown_links(files: list[Path], failures: list[str]) -> None:
                 )
 
 
+def check_license_copies(failures: list[str]) -> None:
+    root_license = ROOT / "LICENSE"
+    addon_license = ROOT / "addons" / "godot_cascade" / "LICENSE"
+    if not root_license.is_file():
+        failures.append("LICENSE: required repository license is missing")
+        return
+    if not addon_license.is_file():
+        failures.append("addons/godot_cascade/LICENSE: packaged license is missing")
+        return
+    if root_license.read_bytes() != addon_license.read_bytes():
+        failures.append("LICENSE and addons/godot_cascade/LICENSE must match exactly")
+
+
 def main() -> int:
     files = tracked_files()
     failures: list[str] = []
     check_text_format(files, failures)
     check_json(files, failures)
     check_markdown_links(files, failures)
+    check_license_copies(failures)
 
     if failures:
         print("Repository verification failed:", file=sys.stderr)
@@ -108,7 +124,7 @@ def main() -> int:
         return 1
     print(
         f"Repository verification passed for {len(files)} repository files "
-        "(formatting, JSON, and relative links)."
+        "(formatting, JSON, relative links/images, and license copies)."
     )
     return 0
 

@@ -1,0 +1,40 @@
+.demo {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 40px;
+    background: #0b1220;
+}
+
+Label { color: #e8eefc; }
+
+.eyebrow {
+    color: #5aa7ff;
+    font-size: 12px;
+}
+
+.title {
+    font-size: 32px;
+}
+
+.status {
+    color: #a8b3cc;
+}
+
+.actions {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+}
+
+Button {
+    padding: 10px 16px;
+    background: #246bce;
+    color: #ffffff;
+    border: 1px solid #5aa7ff;
+    border-radius: 8px;
+}
+
+Button:hover { background: #347ee5; }
+Button:pressed { background: #1d58ad; }

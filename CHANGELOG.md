@@ -21,6 +21,9 @@ All notable changes to GodotCascade are documented here. Versions follow semanti
 - Rejected duplicate document IDs before keyed reconciliation and retained the last valid tree when a duplicate-ID edit is reloaded.
 - Added an automated .NET compile gate for the generated C# binding example and its user-owned partial.
 - Added an independent publication-readiness review covering structure, completeness, ecosystem overlap, licensing, and community positioning.
+- Released the project under The Unlicense, with matching license copies at the repository root and inside the packaged addon.
+- Reworked the README around native Godot captures, a checked-in GXML/GCSS/GDScript quickstart, honest competitor comparisons, and the post-0.4 validation pipeline.
+- Added three image-model logo directions for community and maintainer review.
 
 ## [0.3.0] — 2026-08-06
 
