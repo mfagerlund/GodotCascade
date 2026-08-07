@@ -36,7 +36,7 @@ static func draw_box(
 	background_color: Color,
 	border_color: Color,
 	border_width: float,
-	border_radius: float
+	border_radius: Variant
 ) -> void:
 	if background_color.a <= 0.0 and (border_color.a <= 0.0 or border_width <= 0.0):
 		return
@@ -45,5 +45,12 @@ static func draw_box(
 	style.bg_color = background_color
 	style.border_color = border_color
 	style.set_border_width_all(roundi(maxf(border_width, 0.0)))
-	style.set_corner_radius_all(roundi(maxf(border_radius, 0.0)))
+	if border_radius is Vector4:
+		var radii := border_radius as Vector4
+		style.corner_radius_top_left = roundi(maxf(radii.x, 0.0))
+		style.corner_radius_top_right = roundi(maxf(radii.y, 0.0))
+		style.corner_radius_bottom_right = roundi(maxf(radii.z, 0.0))
+		style.corner_radius_bottom_left = roundi(maxf(radii.w, 0.0))
+	else:
+		style.set_corner_radius_all(roundi(maxf(float(border_radius), 0.0)))
 	canvas_item.draw_style_box(style, box_rect)

@@ -12,7 +12,7 @@ Versions 0.1.0, 0.2.0, and 0.3.0 are tagged and published through the reproducib
 
 The reproduced findings in the [2026-08-05 code review](docs/artifacts/review.md) are part of this roadmap. Blocking correctness fixes take priority when they touch the same runtime layer as an active vertical slice.
 
-The latest completed vertical slices add optional typed C# binding generation without replacing the lightweight runtime path resolver, followed by semantic tables with shared-column layout and keyed repeated rows.
+The latest completed vertical slices add optional typed C# binding generation without replacing the lightweight runtime path resolver, followed by semantic tables with shared-column layout, keyed repeated rows, and an application-level add/remove/sort/drag showcase.
 
 ## Review follow-up
 
@@ -198,4 +198,5 @@ The first public preview should build a small settings menu from `.gxml` and a s
 - [x] Header/cell accessibility metadata and deterministic keyboard focus behavior
 - [x] Repeated row binding with stable keys
 - [x] HTML/native showcase parity page and component/layout regression matrix
+- [x] Application-level add, remove, sort, and drag-reorder demo over keyed rows
 - [x] Document explicit boundaries for sorting, selection, resizing, and virtualization

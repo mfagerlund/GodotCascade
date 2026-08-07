@@ -248,6 +248,7 @@ func _test_native_table_layout() -> void:
 	]
 	table.column_gap = 5.0
 	table.row_gap = 4.0
+	table.cascade_style.border_radius = 12.0
 	root.add_child(table)
 
 	var header := CascadeTablePart.new()
@@ -292,6 +293,9 @@ func _test_native_table_layout() -> void:
 		_expect_float("table row %s shares column width" % index, body_cells[index].size.x, header_cells[index].size.x)
 	_expect_float("table row gap", body.position.y, header_row.size.y + table.row_gap)
 	_expect_true("header cell keeps semantic metadata", header_cells[0].get_meta("cascade_table_role") == "columnheader")
+	var first_header_radii: Vector4 = header_cells[0].call("_resolved_corner_radii")
+	var last_header_radii: Vector4 = header_cells[-1].call("_resolved_corner_radii")
+	_expect_true("table header cells inherit only outer top corners", first_header_radii.x > 0.0 and first_header_radii.y == 0.0 and last_header_radii.x == 0.0 and last_header_radii.y > 0.0)
 	_expect_true("table cells remain outside keyboard focus order", body_cells[0].focus_mode == Control.FOCUS_NONE)
 	_expect_true("authored table cell controls retain keyboard focus", cell_action.focus_mode == Control.FOCUS_ALL and cell_action.size.x > 0.0)
 	_expect_true("table cell exposes native accessibility description", body_cells[0].accessibility_description == "Table cell")

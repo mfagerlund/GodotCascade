@@ -26,7 +26,10 @@ Available IDs are `layout-foundation`, `system-status`, `settings-menu`, and `le
 | System status | Select **Review route** | The sync status changes to **Route review requested**. |
 | Settings menu | Edit the profile and session notes; toggle controls; move UI scale; choose a quality | Bound labels and the footer change to **Unsaved changes**. |
 | Settings menu | Select **Apply settings** with a valid profile | The footer reports the selected quality and profile, for example **Applied ultra quality for Nova**. |
-| Flight leaderboard | Select **Record Rhea win** | Rhea's wins and rating update and the footer reports the recorded result. |
+| Flight leaderboard | Select **Add pilot** | A keyed pilot row appears and the footer identifies the new pilot. |
+| Flight leaderboard | Select a row's **Remove** control | That keyed row disappears and the remaining rows are reranked. |
+| Flight leaderboard | Select **Sort by rating** | Rows reorder from highest to lowest rating and ranks update. |
+| Flight leaderboard | Drag a row's **↕** handle onto another row | The dragged keyed row moves before the drop target and ranks update. |
 | Any page | Select **Reload** | The document rebuilds and the toolbar returns to a **Connected** status when no errors exist. |
 
 The automated equivalent visits all manifest pages and verifies their authored event and binding paths:

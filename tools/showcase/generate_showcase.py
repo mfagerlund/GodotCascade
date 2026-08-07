@@ -80,6 +80,11 @@ def render_demo(demo: dict[str, object]) -> str:
     html_source = read_text(str(demo["html"]))
     gxml_source = read_text(str(demo["gxml"]))
     gcss_source = read_text(str(demo["gcss"]))
+    script_panel = ""
+    if "script" in demo:
+        script_panel = code_panel(
+            "Godot interaction script", str(demo["script"]), "gdscript"
+        )
     validate_source_parity(demo, html_source, gxml_source, gcss_source)
     html_reference_relative = f"references/{reference_output_name(demo, html_source)}"
     screenshot_path = ROOT / str(demo["godot_screenshot"])
@@ -145,6 +150,7 @@ def render_demo(demo: dict[str, object]) -> str:
         {code_panel("HTML reference", str(demo["html"]), "html")}
         {code_panel("GodotCascade markup", str(demo["gxml"]), "xml")}
         {code_panel("GodotCascade stylesheet", str(demo["gcss"]), "css")}
+        {script_panel}
       </section>
     </article>"""
 

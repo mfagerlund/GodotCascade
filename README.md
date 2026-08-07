@@ -225,7 +225,7 @@ Add a **CascadeButton** from the Create New Node dialog after enabling the addon
 
 ## HTML parity showcase
 
-The generated [parity showcase](docs/showcase/index.html) presents each demo as a fixed-viewport HTML reference beside an actual capture of its source-generated GodotCascade scene. It includes the executable `.gxml` and `.gcss` translation and a semantic mapping table. The current demos cover flex/box, grid/stack overlays, a telemetry dashboard, native form controls, and a repeated semantic leaderboard table. The [runnable Godot app](docs/showcase-app.md) loads those same manifest entries for direct interaction testing.
+The generated [parity showcase](docs/showcase/index.html) presents each demo as a fixed-viewport HTML reference beside an actual capture of its source-generated GodotCascade scene. It includes the executable `.gxml` and `.gcss` translation and a semantic mapping table. The current demos cover flex/box, grid/stack overlays, a telemetry dashboard, native form controls, and a semantic leaderboard that adds, removes, sorts, and drag-reorders keyed rows. The [runnable Godot app](docs/showcase-app.md) loads those same manifest entries for direct interaction testing.
 
 Showcases are registered in `examples/showcase/manifest.json`. A demo keeps four artifacts together:
 

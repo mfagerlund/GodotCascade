@@ -131,18 +131,44 @@ func _verify_leaderboard_page(app: Control) -> void:
 	var scene: Control = app.call("current_showcase_scene")
 	_expect_document_ready("leaderboard", scene)
 	var table := _find_by_id(scene, "leaderboard")
-	var record_button := _find_by_id(scene, "record-result")
-	var wins := _find_by_class(scene, "wins-cell")
-	_expect_true("leaderboard native table and event control exist", table != null and record_button != null and wins != null)
-	if table == null or record_button == null or wins == null:
+	var add_button := _find_by_id(scene, "add-pilot")
+	var sort_button := _find_by_id(scene, "sort-rating")
+	var pilots := _find_all_by_class(scene, "pilot-cell")
+	_expect_true("leaderboard native table and collection controls exist", table != null and add_button != null and sort_button != null and pilots.size() == 5)
+	if table == null or add_button == null or sort_button == null or pilots.size() != 5:
 		return
-	_expect_true("leaderboard starts with bound first-row wins", wins.get("text") == "18")
-	record_button.emit_signal("pressed")
+	_expect_true("leaderboard starts with bound first pilot", pilots[0].get("text") == "Rhea Sol")
+	add_button.emit_signal("pressed")
+	await process_frame
 	await process_frame
 	var status := _find_by_id(scene, "leaderboard-status")
-	wins = _find_by_class(scene, "wins-cell")
-	_expect_true("leaderboard event refreshes repeated table cell", wins != null and wins.get("text") == "19")
-	_expect_true("leaderboard event refreshes bound status", status != null and status.get("text") == "Recorded a win for Rhea · rating 2492")
+	pilots = _find_all_by_class(scene, "pilot-cell")
+	_expect_true("leaderboard add event creates a keyed row", pilots.size() == 6 and pilots[-1].get("text") == "Nia Ward")
+	_expect_true("leaderboard add event refreshes bound status", status != null and str(status.get("text")).begins_with("Added Nia Ward"))
+
+	var remove_buttons := _find_all_by_class(scene, "remove-pilot")
+	_expect_true("leaderboard wires one remove action per row", remove_buttons.size() == 6)
+	if not remove_buttons.is_empty():
+		remove_buttons[0].emit_signal("pressed")
+		await process_frame
+		await process_frame
+		pilots = _find_all_by_class(scene, "pilot-cell")
+		_expect_true("leaderboard remove action deletes its keyed row", pilots.size() == 5 and pilots[0].get("text") == "Milo Vance")
+
+	scene.call("_drop_pilot", Vector2.ZERO, {"kind": "leaderboard-pilot", "id": "nia-1", "pilot": "Nia Ward"}, "milo")
+	await process_frame
+	await process_frame
+	pilots = _find_all_by_class(scene, "pilot-cell")
+	_expect_true("leaderboard drag drop reorders keyed rows", pilots.size() == 5 and pilots[0].get("text") == "Nia Ward")
+
+	sort_button = _find_by_id(scene, "sort-rating")
+	sort_button.emit_signal("pressed")
+	await process_frame
+	await process_frame
+	pilots = _find_all_by_class(scene, "pilot-cell")
+	var ranks := _find_all_by_class(scene, "rank-cell")
+	_expect_true("leaderboard sort restores descending rating order", pilots.size() == 5 and pilots[0].get("text") == "Milo Vance")
+	_expect_true("leaderboard sort reranks rows", ranks.size() == 5 and ranks[0].get("text") == "1")
 
 
 func _expect_document_ready(label: String, scene: Control) -> void:
@@ -172,6 +198,15 @@ func _find_by_class(node: Node, selector_class: String) -> Control:
 		if found != null:
 			return found
 	return null
+
+
+func _find_all_by_class(node: Node, selector_class: String) -> Array[Control]:
+	var matches: Array[Control] = []
+	if node is Control and selector_class in node.get_meta("cascade_classes", PackedStringArray()):
+		matches.append(node)
+	for child in node.get_children():
+		matches.append_array(_find_all_by_class(child, selector_class))
+	return matches
 
 
 func _expect_true(label: String, condition: bool) -> void:

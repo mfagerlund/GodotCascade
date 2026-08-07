@@ -6,27 +6,35 @@
             <Label class="title">Flight leaderboard</Label>
             <Panel class="live-pill"><Label class="live-text">LIVE STANDINGS</Label></Panel>
         </Row>
-        <Label class="subtitle">Shared column measurement across a semantic header and repeated native rows.</Label>
+        <Label class="subtitle">Add, remove, sort, or drag pilots while keyed rows reconcile in place.</Label>
     </Column>
 
     <Table id="leaderboard" accessible-label="Flight leaderboard">
         <TableHeader>
             <TableRow>
+                <TableHeaderCell></TableHeaderCell>
                 <TableHeaderCell>Rank</TableHeaderCell>
                 <TableHeaderCell>Pilot</TableHeaderCell>
                 <TableHeaderCell>Division</TableHeaderCell>
                 <TableHeaderCell>Wins</TableHeaderCell>
                 <TableHeaderCell>Rating</TableHeaderCell>
+                <TableHeaderCell>Action</TableHeaderCell>
             </TableRow>
         </TableHeader>
         <TableBody>
             <Repeat items="{entries}" key="id">
-                <TableRow>
-                    <TableCell text="{item.rank}" />
-                    <TableCell text="{item.pilot}" />
+                <TableRow class="pilot-row">
+                    <TableCell class="drag-cell">
+                        <Button class="drag-handle" accessible-label="Drag pilot to reorder">↕</Button>
+                    </TableCell>
+                    <TableCell class="rank-cell" text="{item.rank}" />
+                    <TableCell class="pilot-cell" text="{item.pilot}" />
                     <TableCell text="{item.division}" />
                     <TableCell class="wins-cell" text="{item.wins}" />
                     <TableCell class="rating-cell" text="{item.rating}" />
+                    <TableCell class="action-cell">
+                        <Button class="remove-pilot" accessible-label="Remove pilot">Remove</Button>
+                    </TableCell>
                 </TableRow>
             </Repeat>
         </TableBody>
@@ -34,6 +42,7 @@
 
     <Row class="leaderboard-footer">
         <Label id="leaderboard-status" class="status" text="{status}" />
-        <Button id="record-result" on-pressed="_on_record_result">Record Rhea win</Button>
+        <Button id="sort-rating" class="secondary-action" on-pressed="_on_sort_rating">Sort by rating</Button>
+        <Button id="add-pilot" on-pressed="_on_add_pilot">Add pilot</Button>
     </Row>
 </Page>

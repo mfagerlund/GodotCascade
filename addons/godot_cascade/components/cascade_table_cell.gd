@@ -92,7 +92,34 @@ func _draw() -> void:
 		cascade_style.background_color,
 		cascade_style.border_color,
 		cascade_style.border_width,
-		cascade_style.border_radius
+		_resolved_corner_radii()
+	)
+
+
+func _resolved_corner_radii() -> Variant:
+	if cascade_style.border_radius > 0.0 or not header:
+		return cascade_style.border_radius
+	var row := get_parent()
+	if row == null:
+		return 0.0
+	var header_cells: Array[Control] = []
+	for sibling in row.get_children():
+		if sibling is Control and str(sibling.get_meta("cascade_table_role", "")) == "columnheader":
+			header_cells.append(sibling)
+	if header_cells.is_empty():
+		return 0.0
+	var ancestor := row.get_parent()
+	while ancestor != null and str(ancestor.get_meta("cascade_table_role", "")) != "table":
+		ancestor = ancestor.get_parent()
+	if ancestor == null:
+		return 0.0
+	var table_style: CascadeStyle = ancestor.get("cascade_style")
+	var radius := maxf(table_style.border_radius - table_style.border_width, 0.0)
+	return Vector4(
+		radius if header_cells[0] == self else 0.0,
+		radius if header_cells[-1] == self else 0.0,
+		0.0,
+		0.0
 	)
 
 
