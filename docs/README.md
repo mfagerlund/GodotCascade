@@ -1,6 +1,6 @@
 # GodotCascade documentation
 
-GodotCascade 0.4.0 is the current experimental preview, including typed C# binding generation, semantic tables, native scrolling, adapted multiline editing, and scoped repeated forms. Documentation distinguishes the supported focused surface from intentionally unsupported browser features.
+GodotCascade 0.5.0 is the current experimental preview, including targeted binding invalidation, native state bindings, exact boolean conditions, typed C# generation, semantic tables, native scrolling, and scoped repeated forms. Documentation distinguishes the supported focused surface from intentionally unsupported browser features.
 
 ## Start here
 
@@ -17,7 +17,7 @@ GodotCascade 0.4.0 is the current experimental preview, including typed C# bindi
 - [Editor tooling](editor-tooling.md) — importers, live preview, generated-control Inspector, debugger, and source navigation
 - [Production readiness](production-readiness.md) — transitions, responsive rules, navigation, accessibility, and release gates
 - [Release process](release-process.md) — reproducible packaging, clean-install smoke testing, and tag publishing
-- [Asset Library submission](asset-library-submission.md) — copy-ready 0.4.0 metadata, direct assets, and verified preflight
+- [Asset Library submission](asset-library-submission.md) — copy-ready 0.5.0 metadata, direct assets, and verified preflight
 - [Changelog](../CHANGELOG.md) — versioned user-visible changes
 - [Performance budgets](performance.md) — executable 500-item benchmark and allocation ceilings
 - [Migration notes](migrations.md) — source/API compatibility and upgrade instructions

@@ -37,7 +37,7 @@ The repository includes a reproducible addon ZIP, five native test suites, a cle
 ## Links to attach
 
 - [Repository](https://github.com/mfagerlund/GodotCascade)
-- [0.4.0 release](https://github.com/mfagerlund/GodotCascade/releases/tag/v0.4.0)
+- [0.5.0 release](https://github.com/mfagerlund/GodotCascade/releases/tag/v0.5.0)
 - [Native live-reload recording](live-reload-demo.md)
 - [Public parity showcase](https://mfagerlund.github.io/GodotCascade/showcase/)
 - [Current support reference](current-support.md)

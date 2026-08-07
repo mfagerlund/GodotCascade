@@ -4,12 +4,16 @@ All notable changes to GodotCascade are documented here. Versions follow semanti
 
 ## [Unreleased]
 
+## [0.5.0] — 2026-08-07
+
 - Added an observable binding-context adapter with exact parent/child path invalidation, targeted native updates, writable-binding support, and no polling or expression runtime.
 - Extended one-way bindings to visibility, disabled and checked state, select values, image sources, and selector-rematched class lists.
 - Added exact boolean `if="{path}"` conditional rendering with omitted-branch dependency tracking and keyed reconciliation.
 - Split document validation, binding compilation, and declaration application out of the builder hotspot into focused runtime services.
 - Made release-archive entry ordering explicitly platform-independent after uppercase license files exposed Windows/Linux `Path` sorting differences.
 - Adopted the cascading-native-windows logo, with a deterministic SVG master and square PNG for project and Asset Library use.
+- Added a reproducible native live-reload demonstration that verifies instance preservation, plus parity guards for reconciled component properties.
+- Corrected non-ASCII GXML diagnostic offsets and added exhaustive structural validation coverage.
 
 ## [0.4.0] — 2026-08-07
 
@@ -63,7 +67,8 @@ The first public preview provides:
 
 See the [0.1.0 release notes](docs/releases/0.1.0.md) for installation and known boundaries.
 
-[Unreleased]: https://github.com/mfagerlund/GodotCascade/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/mfagerlund/GodotCascade/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/mfagerlund/GodotCascade/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/mfagerlund/GodotCascade/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/mfagerlund/GodotCascade/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/mfagerlund/GodotCascade/compare/v0.1.0...v0.2.0

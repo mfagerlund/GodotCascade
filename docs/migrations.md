@@ -1,5 +1,9 @@
 # Migration notes
 
+## 0.5.0 focused reactivity and conditions
+
+Version 0.5.0 is backward-compatible with the documented 0.4 source-format version 1 surface; no existing GXML or GCSS migration is required. `ObservableBindingContext`, broader one-way state targets, bound class rematching, and exact boolean `if="{path}"` conditions are additive. A false conditional genuinely removes its native subtree, so controls inside that branch are recreated if it later returns; stable siblings continue to reconcile in place.
+
 ## 0.4.0 typed bindings and semantic tables
 
 Version 0.4.0 is backward-compatible with the documented 0.3 source-format version 1 surface; no existing GXML or GCSS migration is required.
