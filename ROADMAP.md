@@ -51,7 +51,7 @@ Phases 10–13 below turn this sequence into falsifiable deliverables. Correctne
 - [x] Select and add a software license before publishing 0.4 or submitting to the Godot Asset Library
 - [ ] Split the builder hotspot before substantially broadening the source language
 - [x] Correct non-ASCII diagnostic offsets and add a regression test
-- [ ] Add reconciler property-copy parity coverage before expanding custom component properties
+- [x] Add reconciler property-copy parity coverage before expanding custom component properties
 - [ ] Validate the approach with a non-showcase UI and publish an honest comparison with GTML
 
 ## Phase 1 — Layout foundation
@@ -234,7 +234,10 @@ The first public preview should build a small settings menu from `.gxml` and a s
 - [x] Make the repository public after verifying its release page and installation archive
 - [x] Prepare and verify the remaining Godot Asset Library metadata for a testing-support submission
 - [ ] Submit the prepared 0.4.0 entry through the authenticated Godot Asset Library form
-- [ ] Share a short native-tree/live-reload demonstration with the Godot community
+- [x] Prepare a short, reproducible native-tree/live-reload demonstration
+- [x] Prepare a candid Godot community announcement and structured feedback questions
+- [ ] Publish the live-reload artifact after maintainer approval
+- [ ] Share the public demonstration through an authenticated Godot community account
 - [ ] Invite at least one external Godot developer to build a real interface and record where the authoring model helps or obstructs them
 - [ ] Build one non-showcase production-shaped UI in both GodotCascade and GTML and publish the comparison
 - [ ] Collect structured feedback on authoring speed, diagnostics, binding ergonomics, runtime cost, and missing controls

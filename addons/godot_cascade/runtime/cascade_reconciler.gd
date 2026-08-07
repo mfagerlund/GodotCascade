@@ -11,7 +11,7 @@ const COPIED_PROPERTIES: PackedStringArray = [
 	"column_tracks", "row_tracks", "column_gap", "row_gap",
 	"text", "font", "font_size", "text_color", "horizontal_alignment", "vertical_alignment",
 	"autowrap_mode", "text_overrun_behavior", "max_lines_visible", "text_alignment",
-	"hover_background_color", "pressed_background_color", "checked_background_color", "open_background_color", "disabled_background_color",
+	"hover_background_color", "hover_style_enabled", "pressed_background_color", "checked_background_color", "open_background_color", "disabled_background_color",
 	"checked_text_color", "disabled_text_color", "focus_ring_color", "focus_ring_width", "disabled", "toggle_mode",
 	"focus_visible_ring_color", "focus_visible_ring_width", "focus_visible_style_enabled",
 	"button_group", "action_mode", "accessibility_name", "accessibility_description", "indicator_size", "indicator_gap",
@@ -21,10 +21,10 @@ const COPIED_PROPERTIES: PackedStringArray = [
 	"placeholder", "options", "option_background_color", "option_hover_background_color",
 	"option_selected_background_color", "option_text_color", "option_selected_text_color", "option_height",
 	"min_value", "max_value", "value", "fill_color", "fill_border_radius",
-	"step", "track_height", "thumb_size", "thumb_color", "disabled_thumb_color", "hover_fill_color", "hover_thumb_color",
+	"step", "thumb_size", "disabled_thumb_color", "hover_fill_color", "hover_thumb_color",
 	"texture", "fit",
 	"header", "semantic_role",
-	"placeholder_text", "placeholder_color", "editable", "read_only", "secret", "max_length", "required", "validation_pattern", "validation_message",
+	"placeholder_text", "placeholder_color", "read_only", "secret", "max_length", "required", "validation_pattern", "validation_message",
 	"focused_background_color", "invalid_background_color", "invalid_text_color", "invalid_border_color",
 ]
 

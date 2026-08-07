@@ -28,6 +28,8 @@ These are automated captures of the actual source-generated Godot scenes—not b
 
 Run the same pages interactively with `python tools/showcase/run_showcase.py --godot "C:\path\to\godot.exe"`, or open the [public HTML/native parity report](https://mfagerlund.github.io/GodotCascade/showcase/).
 
+The short [native-tree live-reload recording](docs/live-reload-demo.md) shows actual GXML and GCSS edits changing a Godot-rendered card while the keyed `CascadePanel` keeps the same engine instance ID.
+
 ## Why GodotCascade?
 
 Godot's container system is capable, but non-trivial interfaces often require deeply nested scene trees. Spacing can be split between several containers, theme constants, and wrapper controls, making the visual intent difficult to see.

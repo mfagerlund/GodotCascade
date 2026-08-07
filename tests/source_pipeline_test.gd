@@ -6,6 +6,7 @@ const SETTINGS_MENU_SCENE := preload("res://examples/settings_menu_showcase.tscn
 const GxmlParser := preload("res://addons/godot_cascade/markup/gxml_parser.gd")
 const GcssParser := preload("res://addons/godot_cascade/style/gcss_parser.gd")
 const CascadeBuilder := preload("res://addons/godot_cascade/runtime/cascade_builder.gd")
+const CascadeReconciler := preload("res://addons/godot_cascade/runtime/cascade_reconciler.gd")
 const CascadeDocument := preload("res://addons/godot_cascade/runtime/cascade_document.gd")
 const BindingResolver := preload("res://addons/godot_cascade/runtime/binding_resolver.gd")
 const GcssTokenizer := preload("res://addons/godot_cascade/style/gcss_tokenizer.gd")
@@ -14,6 +15,20 @@ const ComputedStyleCache := preload("res://addons/godot_cascade/style/computed_s
 const ThemeAdapter := preload("res://addons/godot_cascade/style/theme_adapter.gd")
 const ComponentRegistry := preload("res://addons/godot_cascade/runtime/component_registry.gd")
 const CascadePanel := preload("res://addons/godot_cascade/components/cascade_panel.gd")
+const CascadeBox := preload("res://addons/godot_cascade/layout/cascade_box.gd")
+const CascadeGrid := preload("res://addons/godot_cascade/layout/cascade_grid.gd")
+const CascadeLabel := preload("res://addons/godot_cascade/components/cascade_label.gd")
+const CascadeButton := preload("res://addons/godot_cascade/components/cascade_button.gd")
+const CascadeCheckbox := preload("res://addons/godot_cascade/components/cascade_checkbox.gd")
+const CascadeSwitch := preload("res://addons/godot_cascade/components/cascade_switch.gd")
+const CascadeSelect := preload("res://addons/godot_cascade/components/cascade_select.gd")
+const CascadeProgress := preload("res://addons/godot_cascade/components/cascade_progress.gd")
+const CascadeSlider := preload("res://addons/godot_cascade/components/cascade_slider.gd")
+const CascadeImage := preload("res://addons/godot_cascade/components/cascade_image.gd")
+const CascadeTableCell := preload("res://addons/godot_cascade/components/cascade_table_cell.gd")
+const CascadeTablePart := preload("res://addons/godot_cascade/components/cascade_table_part.gd")
+const CascadeTextInput := preload("res://addons/godot_cascade/components/cascade_text_input.gd")
+const CascadeTextArea := preload("res://addons/godot_cascade/components/cascade_text_area.gd")
 const DebugSnapshot := preload("res://addons/godot_cascade/editor/debug_snapshot.gd")
 const CsharpBindingGenerator := preload("res://addons/godot_cascade/codegen/csharp_binding_generator.gd")
 
@@ -54,6 +69,7 @@ func _run() -> void:
 	_test_table_pipeline()
 	_test_scroll_pipeline()
 	_test_review_regressions()
+	_test_reconciler_property_copy_parity()
 	_test_parser_recovery()
 	_test_binding_resolver()
 	await _test_writable_binding_pipeline()
@@ -201,6 +217,109 @@ func _test_gxml_parser() -> void:
 		_expect_int("duplicate id diagnostic uses duplicate source line", int(duplicate_build["diagnostics"][0].get("line", 0)), 3)
 	if duplicate_build["root"] != null:
 		duplicate_build["root"].free()
+
+
+func _test_reconciler_property_copy_parity() -> void:
+	var prototypes: Array[Control] = [
+		CascadeBox.new(),
+		CascadeGrid.new(),
+		CascadeLabel.new(),
+		CascadeButton.new(),
+		CascadeCheckbox.new(),
+		CascadeSwitch.new(),
+		CascadeSelect.new(),
+		CascadeProgress.new(),
+		CascadeSlider.new(),
+		CascadeImage.new(),
+		CascadeTablePart.new(),
+		CascadeTableCell.new(),
+		CascadeTextInput.new(),
+		CascadeTextArea.new(),
+	]
+	var seen := {}
+	for property_name in CascadeReconciler.COPIED_PROPERTIES:
+		_expect_true("reconciler copy contract has no duplicate '%s'" % property_name, not seen.has(property_name))
+		seen[property_name] = true
+		var prototype := _prototype_with_property(prototypes, property_name)
+		_expect_true("reconciler copy property '%s' exists on a core control" % property_name, prototype != null)
+		if prototype == null:
+			continue
+		var existing: Control = prototype.get_script().new()
+		var desired: Control = prototype.get_script().new()
+		existing.name = "Existing"
+		desired.name = "Desired"
+		var initial: Variant = existing.get(property_name)
+		var alternate: Variant = _alternate_reconciler_value(property_name, initial)
+		desired.set(property_name, alternate)
+		var expected: Variant = desired.get(property_name)
+		_expect_true("reconciler parity fixture changes '%s'" % property_name, not _same_variant(initial, expected))
+		var result := CascadeReconciler.reconcile(existing, desired)
+		_expect_true("reconciler reuses '%s' fixture" % property_name, result["reused_root"])
+		_expect_true(
+			"reconciler copies '%s'" % property_name,
+			_same_variant(expected, existing.get(property_name))
+		)
+		existing.free()
+	for prototype in prototypes:
+		prototype.free()
+
+	var plain_markup := GxmlParser.parse("<Page id=\"surface\" />")
+	var hover_style := GcssParser.parse("Page:hover { background: #173b34; }")
+	var plain_build := CascadeBuilder.build(plain_markup["root"], [])
+	var hover_build := CascadeBuilder.build(plain_markup["root"], hover_style["rules"])
+	var surface: Control = plain_build["root"]
+	var enabled_result := CascadeReconciler.reconcile(surface, hover_build["root"])
+	_expect_true("hot reload enables newly authored container hover state", bool(surface.get("hover_style_enabled")))
+	var removed_hover_build := CascadeBuilder.build(plain_markup["root"], [])
+	CascadeReconciler.reconcile(enabled_result["root"], removed_hover_build["root"])
+	_expect_true("hot reload disables removed container hover state", not bool(surface.get("hover_style_enabled")))
+	surface.free()
+
+
+func _prototype_with_property(prototypes: Array[Control], property_name: String) -> Control:
+	for prototype in prototypes:
+		for property in prototype.get_property_list():
+			if str(property["name"]) == property_name:
+				return prototype
+	return null
+
+
+func _alternate_reconciler_value(property_name: String, current: Variant) -> Variant:
+	match property_name:
+		"font":
+			return FontFile.new()
+		"texture":
+			return GradientTexture2D.new()
+		"button_group":
+			return ButtonGroup.new()
+		"column_tracks", "row_tracks":
+			var tracks: Array[Dictionary] = [{"kind": "fixed", "value": 37.0}]
+			return tracks
+		"options":
+			var options: Array[Dictionary] = [{"label": "Sentinel", "value": "sentinel", "disabled": false}]
+			return options
+		"validation_pattern":
+			return "^sentinel$"
+	match typeof(current):
+		TYPE_BOOL:
+			return not current
+		TYPE_INT:
+			return 1 if current != 1 else 0
+		TYPE_FLOAT:
+			return current + 1.0
+		TYPE_STRING:
+			return str(current) + "sentinel"
+		TYPE_STRING_NAME:
+			return StringName(str(current) + "sentinel")
+		TYPE_COLOR:
+			return Color("2185d0e8") if current != Color("2185d0e8") else Color("65d6a7")
+	return current
+
+
+func _same_variant(left: Variant, right: Variant) -> bool:
+	if typeof(left) == TYPE_FLOAT and typeof(right) == TYPE_FLOAT:
+		return is_equal_approx(left, right)
+	return left == right
 
 
 func _test_csharp_binding_generator() -> void:
