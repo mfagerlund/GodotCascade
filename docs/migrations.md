@@ -1,5 +1,13 @@
 # Migration notes
 
+## 0.4.0 typed bindings and semantic tables
+
+Version 0.4.0 is backward-compatible with the documented 0.3 source-format version 1 surface; no existing GXML or GCSS migration is required.
+
+`Bindings` and `@Name` opt into generated typed C# partial bindings. Existing Godot object, Dictionary, and JSON-shaped runtime property paths remain supported and unchanged. `Table` and its semantic header/body/row/cell elements are additive. Growing tables can be wrapped in the new single-child `Scroll` element for native automatic vertical overflow.
+
+Table sorting, selection, and row reordering remain application-level behavior. The leaderboard showcase demonstrates typed add/remove/sort state changes and captured-pointer or keyboard row reordering over stable `Repeat` keys.
+
 ## 0.3.0 scoped and multiline forms
 
 `TextInput multiline="true"` now selects an adapted native `TextEdit`. It supports the existing text, placeholder, read-only, disabled, max-length, required, pattern, error-message, accessibility, state-style, and `bind-text` surface. `secret="true"` remains single-line-only and is an explicit error on the multiline adapter.

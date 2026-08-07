@@ -8,9 +8,9 @@ The executable foundation now covers flex/grid/stack layout, owned and adapted f
 
 All planned 0.1 milestones and every first-public-preview acceptance item are complete. The source-generated settings-menu slice includes shared interactive-state precedence, a native mouse/keyboard/controller test matrix, and owned checkbox, grouped radio-button, switch, select, and slider components. The layout foundation includes native grid tracks, automatic and explicit placement, stack overlays, absolute insets, media, responsive rules, and viewport values. The editor and performance release gates are executable.
 
-Versions 0.1.0, 0.2.0, and 0.3.0 are tagged and published through the reproducible release gate. The 0.2 interactive-forms slice adds an adapted native single-line text input, explicit writable bindings, validation state, input-modality-aware focus styling, and a live settings workflow exercised in both native and HTML showcase views. Version 0.3 adds the corresponding native multiline adapter, repeated-item write-back, and owned-container hover backgrounds.
+Versions 0.1.0 through 0.3.0 are tagged and published through the reproducible release gate. Version 0.4.0 is a prepared release candidate and remains unpublished until the copyright holder selects a software license. The 0.2 interactive-forms slice adds an adapted native single-line text input, explicit writable bindings, validation state, input-modality-aware focus styling, and a live settings workflow exercised in both native and HTML showcase views. Version 0.3 adds the corresponding native multiline adapter, repeated-item write-back, and owned-container hover backgrounds. The 0.4 candidate adds optional typed C# generation, semantic tables, native scrolling, and dynamic collection examples.
 
-The reproduced findings in the [2026-08-05 code review](docs/artifacts/review.md) are part of this roadmap. Blocking correctness fixes take priority when they touch the same runtime layer as an active vertical slice.
+The reproduced findings in the [2026-08-05 code review](docs/artifacts/review.md) and the [2026-08-07 publication-readiness review](docs/artifacts/publication-readiness-review-2026-08-07.md) are part of this roadmap. Blocking correctness fixes take priority when they touch the same runtime layer as an active vertical slice.
 
 The latest completed vertical slices add optional typed C# binding generation without replacing the lightweight runtime path resolver, followed by semantic tables with shared-column layout, keyed repeated rows, and an application-level add/remove/sort/drag showcase.
 
@@ -31,6 +31,17 @@ The latest completed vertical slices add optional typed C# binding generation wi
 - [x] [Make progress range updates atomic](docs/artifacts/review.md#13-cascadeprogress-range-setters-are-order-dependent)
 - [x] [Recover from unsupported pseudo states](docs/artifacts/review.md#14-an-unsupported-pseudo-state-discards-the-entire-rule)
 - [x] Add the review's reconciliation, focus-preservation, diagnostic-content, cascade, and state-matrix regression tests
+
+### 2026-08-07 publication review follow-up
+
+- [x] Reject duplicate document IDs before reconciliation and retain the last valid tree on reload
+- [x] Compile the generated C# example and its user-owned partial in CI
+- [x] Correct the 0.4 publication status and distinguish automated tests from manual platform certification
+- [ ] Select and add a software license before publishing 0.4 or submitting to the Godot Asset Library
+- [ ] Split the builder hotspot before substantially broadening the source language
+- [ ] Correct non-ASCII diagnostic offsets and add a regression test
+- [ ] Add reconciler property-copy parity coverage before expanding custom component properties
+- [ ] Validate the approach with a non-showcase UI and publish an honest comparison with GTML
 
 ## Phase 1 — Layout foundation
 
@@ -187,7 +198,7 @@ The first public preview should build a small settings menu from `.gxml` and a s
 - [x] Typed partial getter/setter declarations implemented in a permanent companion class
 - [x] Verbatim C# formatter and parser bodies with GXML `#line` compiler mappings
 - [x] Generated native signal wiring, refresh, feedback suppression, and document hot-reload reconnection
-- [x] Packaged headless generator command, deterministic example output, diagnostics, and compile verification
+- [x] Packaged headless generator command, deterministic example output, diagnostics, and automated .NET compile verification
 - [x] Preserve the existing typed Godot-object and Dictionary/JSON runtime binding paths
 
 ## Phase 9 — native tables — complete

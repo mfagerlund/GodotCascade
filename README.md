@@ -5,7 +5,7 @@ GodotCascade is an experimental retained-mode UI framework for Godot 4. It bring
 The goal is to make game UI faster to build and easier to maintain without embedding a browser or replacing Godot's renderer. A GodotCascade interface remains a tree of native controls, so it can continue to use Godot's signals, themes, input, rendering, and editor tooling.
 
 > [!IMPORTANT]
-> GodotCascade 0.3.0 is the current public preview for Godot 4.7, adding adapted multiline editing and scoped forms without becoming a browser engine. APIs outside the documented preview references remain unstable.
+> GodotCascade 0.4.0 is the prepared release candidate for Godot 4.7, adding typed C# binding generation, semantic tables, and automatic scroll viewports without becoming a browser engine. The latest published preview remains 0.3.0 until a software license is selected. APIs outside the documented preview references remain unstable.
 
 ## Why GodotCascade?
 
@@ -262,7 +262,7 @@ python tools/release/package_addon.py
 python tools/release/clean_install_smoke.py --godot path/to/godot
 ```
 
-See the [changelog](CHANGELOG.md), [0.3.0 release notes](docs/releases/0.3.0.md), [TextInput certification matrix](docs/text-input-certification.md), and [release process](docs/release-process.md). CI runs the same headless suites, benchmark, editor import scan, generated-showcase check, deterministic packaging step, and clean-project installation smoke test.
+See the [changelog](CHANGELOG.md), [0.4.0 release notes](docs/releases/0.4.0.md), [TextInput certification matrix](docs/text-input-certification.md), and [release process](docs/release-process.md). CI runs the same headless suites, benchmark, editor import scan, generated-showcase check, deterministic packaging step, and clean-project installation smoke test.
 
 ## Architecture
 

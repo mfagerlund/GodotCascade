@@ -184,6 +184,15 @@ func _test_gxml_parser() -> void:
 		_expect_int("GXML child count", result["root"].children.size(), 1)
 		_expect_true("GXML text normalization", result["root"].children[0].text == "Hello world")
 
+	var duplicate_ids := GxmlParser.parse("<Page>\n  <Label id=\"status\">One</Label>\n  <Panel><Label id=\"status\">Two</Label></Panel>\n</Page>")
+	var duplicate_build := CascadeBuilder.build(duplicate_ids["root"], [])
+	_expect_true("duplicate document ids are diagnosed", _has_error_diagnostics(duplicate_build["diagnostics"]))
+	if not duplicate_build["diagnostics"].is_empty():
+		_expect_true("duplicate id diagnostic identifies the id", str(duplicate_build["diagnostics"][0]["message"]).contains("status"))
+		_expect_int("duplicate id diagnostic uses duplicate source line", int(duplicate_build["diagnostics"][0].get("line", 0)), 3)
+	if duplicate_build["root"] != null:
+		duplicate_build["root"].free()
+
 
 func _test_csharp_binding_generator() -> void:
 	var source := """<Page>
@@ -979,6 +988,13 @@ func _test_identity_preserving_reload() -> void:
 	_expect_true("invalid edit retains native node identity", retained_control.get_meta("cascade_element_type") == "Label")
 	_expect_true("invalid edit retains last valid properties", retained_control.get("text") == "Replacement")
 	_expect_true("invalid edit publishes diagnostics", _has_error_diagnostics(document.diagnostics))
+
+	var duplicate_id_markup := "<Page><Label id=\"stable\">One</Label><Button id=\"stable\">Two</Button></Page>"
+	_expect_true("write duplicate-id reload markup", _write_text(markup_path, duplicate_id_markup))
+	_expect_true("source polling detects duplicate-id edit", document.poll_sources())
+	_expect_true("duplicate-id reload publishes diagnostics", _has_error_diagnostics(document.diagnostics))
+	_expect_true("duplicate-id reload retains last valid root", _find_by_id(document.generated_root(), "stable")[0].get_instance_id() == retained_control.get_instance_id())
+	_expect_int("duplicate-id reload does not add stale children", document.generated_root().get_child_count(), 2)
 
 	root.remove_child(document)
 	document.free()

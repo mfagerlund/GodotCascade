@@ -1,8 +1,8 @@
 # TextInput certification matrix
 
-GodotCascade 0.3.0 adapts Godot 4.7 `LineEdit` and `TextEdit` for single-line and multiline input. Neither replaces the native editing engine. The release gate verifies the adapter boundary while platform services remain Godot's responsibility.
+GodotCascade 0.4.0 adapts Godot 4.7 `LineEdit` and `TextEdit` for single-line and multiline input. Neither replaces the native editing engine. The release gate verifies the adapter boundary while platform services remain Godot's responsibility.
 
-| Behavior | Automated evidence | 0.3.0 status |
+| Behavior | Automated evidence | 0.4.0 status |
 | --- | --- | --- |
 | Text, placeholder, read-only, disabled, secret, and max length | Component and source-pipeline suites | Verified |
 | Required and regular-expression validation | Component and writable-binding pipeline suites | Verified |

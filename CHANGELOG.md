@@ -4,6 +4,8 @@ All notable changes to GodotCascade are documented here. Versions follow semanti
 
 ## [Unreleased]
 
+## [0.4.0] — 2026-08-07
+
 - Added optional typed C# binding generation from GXML, including partial getter/setter contracts, verbatim formatter/parser bodies, source-mapped compiler diagnostics, native signal wiring, and hot-reload reconnection.
 - Added semantic native tables with shared fixed/content/fraction/minmax columns, header/body/row/cell structure, keyed repeated rows, accessible cell metadata, and a runnable HTML/Godot leaderboard parity page.
 - Added an adapted native `Scroll` viewport with automatic vertical overflow, plus reliable captured-pointer and keyboard row reordering in the dynamic add/remove/sort leaderboard demo.
@@ -16,6 +18,9 @@ All notable changes to GodotCascade are documented here. Versions follow semanti
 - Kept settings-panel backgrounds stable while hovering form controls and moved container-hover coverage to the layout cards.
 - Extended the runnable showcase test to cover checkbox write-back and native radio grouping.
 - Made each repeated HUD channel a full-row checkbox target in both native and HTML showcases.
+- Rejected duplicate document IDs before keyed reconciliation and retained the last valid tree when a duplicate-ID edit is reloaded.
+- Added an automated .NET compile gate for the generated C# binding example and its user-owned partial.
+- Added an independent publication-readiness review covering structure, completeness, ecosystem overlap, licensing, and community positioning.
 
 ## [0.3.0] — 2026-08-06
 
@@ -48,7 +53,8 @@ The first public preview provides:
 
 See the [0.1.0 release notes](docs/releases/0.1.0.md) for installation and known boundaries.
 
-[Unreleased]: https://github.com/mfagerlund/GodotCascade/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/mfagerlund/GodotCascade/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/mfagerlund/GodotCascade/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/mfagerlund/GodotCascade/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/mfagerlund/GodotCascade/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/mfagerlund/GodotCascade/releases/tag/v0.1.0

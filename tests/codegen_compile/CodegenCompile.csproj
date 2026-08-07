@@ -1,0 +1,13 @@
+<Project Sdk="Godot.NET.Sdk/4.7.0">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="../../examples/codegen/SettingsBindings.g.cs.txt" Link="SettingsBindings.g.cs" />
+    <Compile Include="../../examples/codegen/SettingsBindings.cs.txt" Link="SettingsBindings.cs" />
+  </ItemGroup>
+</Project>

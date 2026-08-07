@@ -34,11 +34,42 @@ static var _active_viewport_size := Vector2.ZERO
 
 static func build(root_element, rules: Array, binding_context: Variant = null, viewport_size: Vector2 = Vector2.ZERO) -> Dictionary:
 	var diagnostics: Array[Dictionary] = []
+	_validate_unique_ids(root_element, diagnostics)
 	var button_groups: Dictionary = {}
 	_active_viewport_size = viewport_size
 	var rule_index := _index_rules(rules, viewport_size)
 	var root_control := _build_element(root_element, rule_index, diagnostics, "0", button_groups, binding_context)
 	return {"root": root_control, "diagnostics": diagnostics}
+
+
+static func _validate_unique_ids(root_element, diagnostics: Array[Dictionary]) -> void:
+	var first_occurrences: Dictionary = {}
+	_validate_unique_ids_in(root_element, first_occurrences, diagnostics)
+
+
+static func _validate_unique_ids_in(element, first_occurrences: Dictionary, diagnostics: Array[Dictionary]) -> void:
+	var element_id: String = element.element_id()
+	if not element_id.is_empty():
+		if first_occurrences.has(element_id):
+			var first: Dictionary = first_occurrences[element_id]
+			var diagnostic := _diagnostic(
+				"error",
+				"Duplicate id '%s'; first declared at line %s, column %s." % [
+					element_id,
+					first["line"],
+					first["column"],
+				]
+			)
+			diagnostic["line"] = element.source_line
+			diagnostic["column"] = element.source_column
+			diagnostics.append(diagnostic)
+		else:
+			first_occurrences[element_id] = {
+				"line": element.source_line,
+				"column": element.source_column,
+			}
+	for child in element.children:
+		_validate_unique_ids_in(child, first_occurrences, diagnostics)
 
 
 static func _build_element(

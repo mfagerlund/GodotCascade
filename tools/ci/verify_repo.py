@@ -13,6 +13,8 @@ from urllib.parse import unquote
 
 ROOT = Path(__file__).resolve().parents[2]
 TEXT_SUFFIXES = {
+    ".cs",
+    ".csproj",
     ".cfg",
     ".gcss",
     ".gd",

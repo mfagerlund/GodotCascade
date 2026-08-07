@@ -9,6 +9,7 @@ Run the five headless suites and benchmark documented in the project README, the
 ```powershell
 python tools/ci/verify_repo.py
 python tools/showcase/generate_showcase.py --check
+dotnet build tests/codegen_compile/CodegenCompile.csproj --configuration Release
 python tools/release/package_addon.py
 python tools/release/clean_install_smoke.py --godot path/to/godot
 ```

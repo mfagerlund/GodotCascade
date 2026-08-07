@@ -29,6 +29,11 @@ jobs:
         with:
           python-version: "3.13"
 
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: "8.0.x"
+
       - name: Install Godot
         shell: bash
         run: |
@@ -59,6 +64,9 @@ jobs:
           godot --headless --path . --script res://tests/component_test.gd
           godot --headless --path . --script res://tests/source_pipeline_test.gd
           godot --headless --path . --script res://tests/showcase_app_test.gd
+
+      - name: Compile generated C# binding example
+        run: dotnet build tests/codegen_compile/CodegenCompile.csproj --configuration Release
 
       - name: Run performance gate
         run: godot --headless --path . --script res://benchmarks/pipeline_benchmark.gd
@@ -94,6 +102,10 @@ jobs:
         with:
           name: godot-cascade-${{ github.sha }}
           path: dist
+
+      - name: Verify release checksum
+        shell: bash
+        run: cd dist && sha256sum --check *.sha256
 
       - name: Publish tagged release
         env:

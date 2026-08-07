@@ -19,7 +19,7 @@ binding context ──→ BindingResolver ────────────�
                                              FlexLayoutEngine
 ```
 
-The source formats are tentatively named `.gxml` and `.gcss`. The stylesheet extension should be confirmed before the public API stabilizes.
+The preview source formats are named `.gxml` and `.gcss`. A future rename would follow the documented preview deprecation and migration policy.
 
 ## Subsystems
 
@@ -112,4 +112,4 @@ Godot scene-tree mutation remains on the main thread. Tokenization, parsing, sel
 
 ## Compatibility policy
 
-The 0.1.0, 0.2.0, and 0.3.0 previews target Godot 4.7 and source format version 1. Documented runtime APIs receive a one-preview-minor deprecation window; source imports are derived caches regenerated after addon upgrades. Breaking changes require migration notes and replacement tests.
+The 0.1.0 through 0.3.0 previews and the 0.4.0 release candidate target Godot 4.7 and source format version 1. Documented runtime APIs receive a one-preview-minor deprecation window; source imports are derived caches regenerated after addon upgrades. Breaking changes require migration notes and replacement tests.
