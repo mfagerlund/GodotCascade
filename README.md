@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="icon.svg" width="144" height="144" alt="GodotCascade logo: three native windows cascading into a C">
+</p>
+
 # GodotCascade
 
 [![Verify](https://github.com/mfagerlund/GodotCascade/actions/workflows/ci.yml/badge.svg)](https://github.com/mfagerlund/GodotCascade/actions/workflows/ci.yml)

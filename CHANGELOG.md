@@ -5,6 +5,7 @@ All notable changes to GodotCascade are documented here. Versions follow semanti
 ## [Unreleased]
 
 - Made release-archive entry ordering explicitly platform-independent after uppercase license files exposed Windows/Linux `Path` sorting differences.
+- Adopted the cascading-native-windows logo, with a deterministic SVG master and square PNG for project and Asset Library use.
 
 ## [0.4.0] — 2026-08-07
 

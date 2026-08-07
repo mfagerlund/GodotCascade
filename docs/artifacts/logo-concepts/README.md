@@ -1,8 +1,8 @@
 # GodotCascade logo concepts
 
-These are image-model explorations, not final production logos. The strongest direction should be redrawn as a small, mathematically clean SVG and tested at 16, 32, 64, 128, and 512 pixels before adoption.
+These began as image-model explorations. The cascading-native-windows direction was selected, redrawn as deterministic SVG geometry, tested at 16, 32, 64, 128, and 512 pixels, and adopted as the project mark.
 
-## 1. Cascading native windows
+## 1. Cascading native windows — selected
 
 ![Three nested native UI windows forming a C-shaped GodotCascade mark](concept-1-cascade-c.png)
 
@@ -16,8 +16,10 @@ Prompt direction: three cascading rounded UI panels forming a clean `C`, suggest
 
 The selected direction is now expressed as deterministic SVG geometry with flat fills from the showcase palette. The nested windows form the `C` rather than placing a separate letter over them. Minimal title-bar controls preserve the native-window reading without depending on detail.
 
+- [Open the canonical project SVG](../../../icon.svg)
+- [Open the canonical square PNG](../../../icon.png)
 - [Open the 128/64/32/16 px comparison](concept-1-size-study.html)
-- [Open the SVG master](godot-cascade-mark.svg)
+- [Open the development SVG](godot-cascade-mark.svg)
 - [Open the transparent 512 px PNG](godot-cascade-mark-512.png)
 - [Open the Asset Library-sized 128 px PNG](godot-cascade-mark-128.png)
 - [Open the image-model refinement study](concept-1-refinement-study.png)

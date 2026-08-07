@@ -23,7 +23,7 @@ GodotCascade 0.4.0 is the current experimental preview, including typed C# bindi
 - [Public preview stability policy](api-stability.md) — current guarantees, unstable surfaces, and change process
 - [Roadmap](../ROADMAP.md) — completed preview, typed-binding, and semantic-table milestones plus ongoing platform certification
 - [Publication-readiness review](artifacts/publication-readiness-review-2026-08-07.md) — independent structure, completeness, ecosystem, and release assessment
-- [Logo concepts](artifacts/logo-concepts/README.md) — three image-model directions awaiting selection and vector redraw
+- [Logo development](artifacts/logo-concepts/README.md) — selected cascading-native-windows mark, vector master, size study, and earlier directions
 - [Runnable showcase app](showcase-app.md) — launch and manually verify every manifest page and event connection
 - [HTML parity showcase](showcase/index.html) — live HTML references beside captured native Godot output
 

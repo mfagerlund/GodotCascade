@@ -14,6 +14,17 @@ The reproduced findings in the [2026-08-05 code review](docs/artifacts/review.md
 
 The latest completed vertical slices add optional typed C# binding generation without replacing the lightweight runtime path resolver, followed by semantic tables with shared-column layout, keyed repeated rows, and an application-level add/remove/sort/drag showcase.
 
+## Forward pipeline at a glance
+
+The next work is deliberately ordered around external validation before large language expansion:
+
+1. **Public validation:** make the repository public, finalize the Asset Library listing, publish a short native-tree/live-reload demonstration, invite a Godot developer to build a real interface, and compare one production-shaped UI directly with GTML.
+2. **Focused reactivity and composition:** add dependency-tracked path invalidation, bind additional control state and resources, introduce explicit conditional rendering, and support reusable typed GXML components with slots and scoped IDs.
+3. **Language and tooling depth:** add the highest-value GCSS primitives, SVG textures and authored focus order, then provide completion, hover, formatting, rename, and navigation in Godot and VS Code.
+4. **Scale and platform confidence:** add incremental collection updates, item models and virtualization, benchmark realistic interfaces, extend CI across desktop platforms, and complete manual input/accessibility certification.
+
+Phases 10–13 below turn this sequence into falsifiable deliverables. Correctness work from the two independent reviews remains ahead of feature expansion when it touches the same runtime layer.
+
 ## Review follow-up
 
 - [x] [Fix valid shorthand-magenta color parsing](docs/artifacts/review.md#1-valid-shorthand-hex-colors-are-rejected-as-invalid)
@@ -219,9 +230,11 @@ The first public preview should build a small settings menu from `.gxml` and a s
 - [x] Publish a visual README with runnable GXML, GCSS, and GDScript plus native Godot captures
 - [x] Document the direct comparison with GTML, Reactive UI Toolkit, GUML, and native Godot
 - [x] Publish the 0.4 experimental-preview release
+- [x] Select, small-size test, and publish a square project and Asset Library icon
 - [ ] Make the repository public after verifying its release page and installation archive
-- [ ] Prepare the Godot Asset Library icon, metadata, and testing-support submission
+- [ ] Prepare the remaining Godot Asset Library metadata and testing-support submission
 - [ ] Share a short native-tree/live-reload demonstration with the Godot community
+- [ ] Invite at least one external Godot developer to build a real interface and record where the authoring model helps or obstructs them
 - [ ] Build one non-showcase production-shaped UI in both GodotCascade and GTML and publish the comparison
 - [ ] Collect structured feedback on authoring speed, diagnostics, binding ergonomics, runtime cost, and missing controls
 

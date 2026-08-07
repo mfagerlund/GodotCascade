@@ -6,6 +6,7 @@ config_version=5
 [application]
 
 config/name="GodotCascade"
+config/icon="res://icon.svg"
 run/main_scene="res://examples/showcase_app.tscn"
 
 [display]
