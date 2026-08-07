@@ -116,7 +116,7 @@ func _update_identity(message: String) -> void:
 	var current_id := card.get_instance_id() if card != null else 0
 	var preserved := _card_instance_id != 0 and current_id == _card_instance_id
 	_status.text = message
-	_identity.text = "card instance: %s  •  %s" % [current_id, "SAME NODE" if preserved else "NEW NODE"]
+	_identity.text = "engine instance unchanged  •  SAME NODE" if preserved else "engine instance replaced  •  NEW NODE"
 	_identity.modulate = Color("65d6a7") if preserved else Color("f6b86b")
 
 
@@ -200,7 +200,7 @@ func _build_shell() -> void:
 	_status.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	footer.add_child(_status)
 	_identity = Label.new()
-	_identity.text = "card instance: pending"
+	_identity.text = "engine instance: pending"
 	_identity.add_theme_font_size_override("font_size", 12)
 	footer.add_child(_identity)
 

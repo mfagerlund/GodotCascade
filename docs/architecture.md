@@ -5,18 +5,19 @@ GodotCascade is split into pure data transformations around a narrow Godot adapt
 ## Runtime pipeline
 
 ```text
-.gxml ──→ GxmlParser ──┐
-                       ├──→ CascadeBuilder ──→ off-tree candidate Controls
-.gcss ──→ GcssParser ──┘                              │
-                                                      ▼
+.gxml ──→ GxmlParser ──→ DocumentValidator ──┐
+                                             ├──→ CascadeBuilder ──→ off-tree candidate Controls
+.gcss ──→ GcssParser ──→ DeclarationApplier ─┘               │
+binding syntax ─────────→ BindingCompiler ────────────────────┤
+                                                             ▼
 source watcher ──→ CascadeDocument ──→ CascadeReconciler ──→ live Controls
-                                                      │
-binding context ──→ BindingResolver ──────────────────┤
-                                                      ▼
-                                             CascadeBox adapter
-                                                      │
-                                                      ▼
-                                             FlexLayoutEngine
+                                                             │
+binding context ──→ BindingResolver ──────────────────────────┤
+                                                             ▼
+                                                    CascadeBox adapter
+                                                             │
+                                                             ▼
+                                                    FlexLayoutEngine
 ```
 
 The preview source formats are named `.gxml` and `.gcss`. A future rename would follow the documented preview deprecation and migration policy.
@@ -29,19 +30,19 @@ Parsers return logical values plus recoverable line/column diagnostics; GCSS tok
 
 ### Logical element tree
 
-The logical tree represents authored structure before native construction. Elements have type names, attributes, classes, optional IDs, text, parent links, and children. `CascadeBuilder` derives explicit-ID or structural keys and binding metadata when it creates the candidate native tree. The logical tree is deliberately smaller than a browser DOM and is not exposed as a general scripting platform.
+The logical tree represents authored structure before native construction. Elements have type names, attributes, classes, optional IDs, text, parent links, and children. `DocumentValidator` rejects duplicate IDs and invalid table/scroll relationships before construction. `CascadeBuilder` then derives explicit-ID or structural keys and creates the candidate native tree, while `BindingCompiler` owns one-way, writable, and event-binding metadata. The logical tree is deliberately smaller than a browser DOM and is not exposed as a general scripting platform.
 
 ### Style engine
 
 The style engine indexes rules by the rightmost selector before matching plausible candidates. Computed declarations own specificity, inherited text values, pseudo states, and cache keys while remaining separate from mutable Godot theme resources.
 
-The executable slice tokenizes and parses rules, matches them against the logical element tree, resolves specificity, inheritance, and source order in `CascadeBuilder`, and caches immutable computed declaration dictionaries. Application exposes the box-model shape as a mutable `CascadeStyle` resource. `CascadeBox` and owned components consume it and react to draw, measure, and arrange invalidation flags.
+The executable slice tokenizes and parses rules, matches them against the logical element tree, resolves specificity, inheritance, and source order in `CascadeBuilder`, and caches immutable computed declaration dictionaries. `DeclarationApplier` owns shorthand expansion, typed value conversion, pseudo-state mapping, and application to native controls. Application exposes the box-model shape as a mutable `CascadeStyle` resource. `CascadeBox` and owned components consume it and react to draw, measure, and arrange invalidation flags.
 
 Type, class, ID, combined-compound, descendant, and direct-child selectors work today. Inherited text properties and computed-style caching are implemented. Selector lists, sibling combinators, variables, and functional selectors remain outside the focused grammar. Unsupported values are diagnosed rather than retained as arbitrary CSS. The exact matrix lives in [current-support.md](current-support.md).
 
 ### Interactive state
 
-Pseudo-state selectors are parsed separately from base declarations. The builder resolves interactive state declarations into explicit appearance properties. Owned `BaseButton` components then use a shared adapter to normalize native disabled, pressed, checked/selected, hover, and focus state during drawing; they do not rematch the stylesheet on every pointer event.
+Pseudo-state selectors are parsed separately from base declarations. `DeclarationApplier` resolves interactive state declarations into explicit appearance properties. Owned `BaseButton` components then use a shared adapter to normalize native disabled, pressed, checked/selected, hover, and focus state during drawing; they do not rematch the stylesheet on every pointer event.
 
 The shared precedence is disabled, pressed, checked/selected, hover, focus, then base. Focus-ring drawing is layered independently so keyboard focus remains visible while another state wins. Selects add `:open` and option-level selected/hover/disabled state.
 
@@ -60,7 +61,7 @@ Layout has two conceptual passes:
 
 ### Data binding
 
-Exact `{dot.separated.path}` attribute values are stored as metadata on the generated native control. `BindingResolver` traverses dictionaries, arrays, or Godot object properties only; it does not evaluate expressions or invoke methods. `CascadeDocument` applies bindings after initial construction and after reconciliation, so authored reloads and data refreshes share stable native instances. Assigning a context refreshes immediately, while nested state changes use the explicit `refresh_bindings()` boundary until reactive adapters are introduced.
+Exact `{dot.separated.path}` attribute values are compiled by `BindingCompiler` into metadata on the generated native control. `BindingResolver` traverses dictionaries, arrays, or Godot object properties only; it does not evaluate expressions or invoke methods. `CascadeDocument` applies bindings after initial construction and after reconciliation, so authored reloads and data refreshes share stable native instances. Assigning a context refreshes immediately, while nested state changes use the explicit `refresh_bindings()` boundary until reactive adapters are introduced.
 
 Godot .NET projects may instead declare `@Name` bindings in a non-visual GXML `Bindings` contract. `CsharpBindingGenerator` emits a disposable partial `Control` class containing node lookup, native signal wiring, refresh logic, and typed partial getter/setter declarations. The permanent companion partial implements those methods. Formatter and parser CDATA bodies are copied into private static methods with `#line` mappings; neither the editor preview nor the runtime parser executes them. `CascadeDocument.document_reloaded` lets generated wiring reconnect after structural hot reload without polling.
 

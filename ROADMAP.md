@@ -49,7 +49,7 @@ Phases 10–13 below turn this sequence into falsifiable deliverables. Correctne
 - [x] Compile the generated C# example and its user-owned partial in CI
 - [x] Correct the 0.4 publication status and distinguish automated tests from manual platform certification
 - [x] Select and add a software license before publishing 0.4 or submitting to the Godot Asset Library
-- [ ] Split the builder hotspot before substantially broadening the source language
+- [x] Split the builder hotspot before substantially broadening the source language
 - [x] Correct non-ASCII diagnostic offsets and add a regression test
 - [x] Add reconciler property-copy parity coverage before expanding custom component properties
 - [ ] Validate the approach with a non-showcase UI and publish an honest comparison with GTML
@@ -258,7 +258,7 @@ The first public preview should build a small settings menu from `.gxml` and a s
 - [ ] Define SVG support through native Godot textures rather than a browser DOM
 - [ ] Add authored autofocus, tab order, and modal focus-trap contracts
 - [ ] Provide completion, hover, formatting, go-to-definition, rename, and diagnostics in the Godot editor and VS Code
-- [ ] Split `cascade_builder.gd` into construction, validation, binding, and declaration-application services first
+- [x] Split `cascade_builder.gd` into construction, validation, binding, and declaration-application services first
 
 ## Phase 13 — scale and platform confidence
 
