@@ -19,6 +19,9 @@ const CascadeLabel := preload("res://addons/godot_cascade/components/cascade_lab
 const CascadePanel := preload("res://addons/godot_cascade/components/cascade_panel.gd")
 const CascadeProgress := preload("res://addons/godot_cascade/components/cascade_progress.gd")
 const CascadeImage := preload("res://addons/godot_cascade/components/cascade_image.gd")
+const CascadeTable := preload("res://addons/godot_cascade/components/cascade_table.gd")
+const CascadeTablePart := preload("res://addons/godot_cascade/components/cascade_table_part.gd")
+const CascadeTableCell := preload("res://addons/godot_cascade/components/cascade_table_cell.gd")
 const CompatibilityRegistry := preload("res://addons/godot_cascade/runtime/compatibility_registry.gd")
 const TransitionManager := preload("res://addons/godot_cascade/runtime/transition_manager.gd")
 const AccessibilityAudit := preload("res://addons/godot_cascade/runtime/accessibility_audit.gd")
@@ -37,6 +40,7 @@ func _run() -> void:
 	await _test_stack_and_absolute_layout()
 	_test_grid_track_engine()
 	await _test_native_grid_layout()
+	await _test_native_table_layout()
 	await _test_shared_style_invalidation()
 	await _test_layout_container_hover_state()
 	await _test_overflow_and_align_self()
@@ -232,6 +236,66 @@ func _test_native_grid_layout() -> void:
 	_expect_rect("grid auto second cell", Rect2(grid.get_child(1).position, grid.get_child(1).size), Rect2(70.0, 0.0, 150.0, 46.0))
 	_expect_rect("grid auto wrapped cell", Rect2(grid.get_child(2).position, grid.get_child(2).size), Rect2(0.0, 54.0, 60.0, 46.0))
 	grid.queue_free()
+
+
+func _test_native_table_layout() -> void:
+	var table := CascadeTable.new()
+	table.size = Vector2(370.0, 120.0)
+	table.column_tracks = [
+		{"kind": "fixed", "value": 80.0},
+		{"kind": "fraction", "value": 1.0},
+		{"kind": "content"},
+	]
+	table.column_gap = 5.0
+	table.row_gap = 4.0
+	root.add_child(table)
+
+	var header := CascadeTablePart.new()
+	header.semantic_role = "header"
+	table.add_child(header)
+	var header_row := CascadeTablePart.new()
+	header_row.semantic_role = "row"
+	header.add_child(header_row)
+	var body := CascadeTablePart.new()
+	body.semantic_role = "body"
+	table.add_child(body)
+	var body_row := CascadeTablePart.new()
+	body_row.semantic_role = "row"
+	body.add_child(body_row)
+
+	var header_cells: Array[Control] = []
+	var body_cells: Array[Control] = []
+	for index in 3:
+		var header_cell := CascadeTableCell.new()
+		header_cell.header = true
+		header_cell.text = ["Player", "Role", "Score"][index]
+		header_cell.custom_minimum_size = Vector2(60.0, 26.0)
+		header_row.add_child(header_cell)
+		header_cells.append(header_cell)
+		var body_cell := CascadeTableCell.new()
+		body_cell.text = ["Rhea", "Navigator", "1280"][index]
+		body_cell.custom_minimum_size = Vector2(60.0, 30.0)
+		body_row.add_child(body_cell)
+		body_cells.append(body_cell)
+	var cell_action := Button.new()
+	cell_action.text = ""
+	cell_action.custom_minimum_size = Vector2(20.0, 20.0)
+	body_cells[2].add_child(cell_action)
+
+	await process_frame
+	await process_frame
+	_expect_float("table fixed column width", header_cells[0].size.x, 80.0)
+	_expect_float("table fraction column width", header_cells[1].size.x, 220.0)
+	_expect_float("table content column width", header_cells[2].size.x, 60.0)
+	for index in 3:
+		_expect_float("table row %s shares column x" % index, body_cells[index].position.x, header_cells[index].position.x)
+		_expect_float("table row %s shares column width" % index, body_cells[index].size.x, header_cells[index].size.x)
+	_expect_float("table row gap", body.position.y, header_row.size.y + table.row_gap)
+	_expect_true("header cell keeps semantic metadata", header_cells[0].get_meta("cascade_table_role") == "columnheader")
+	_expect_true("table cells remain outside keyboard focus order", body_cells[0].focus_mode == Control.FOCUS_NONE)
+	_expect_true("authored table cell controls retain keyboard focus", cell_action.focus_mode == Control.FOCUS_ALL and cell_action.size.x > 0.0)
+	_expect_true("table cell exposes native accessibility description", body_cells[0].accessibility_description == "Table cell")
+	table.queue_free()
 
 
 func _test_shared_style_invalidation() -> void:

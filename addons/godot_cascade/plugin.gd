@@ -16,6 +16,9 @@ const CASCADE_SLIDER_SCRIPT := preload("res://addons/godot_cascade/components/ca
 const CASCADE_TEXT_INPUT_SCRIPT := preload("res://addons/godot_cascade/components/cascade_text_input.gd")
 const CASCADE_TEXT_AREA_SCRIPT := preload("res://addons/godot_cascade/components/cascade_text_area.gd")
 const CASCADE_IMAGE_SCRIPT := preload("res://addons/godot_cascade/components/cascade_image.gd")
+const CASCADE_TABLE_SCRIPT := preload("res://addons/godot_cascade/components/cascade_table.gd")
+const CASCADE_TABLE_PART_SCRIPT := preload("res://addons/godot_cascade/components/cascade_table_part.gd")
+const CASCADE_TABLE_CELL_SCRIPT := preload("res://addons/godot_cascade/components/cascade_table_cell.gd")
 const CASCADE_DOCUMENT_SCRIPT := preload("res://addons/godot_cascade/runtime/cascade_document.gd")
 const GXML_IMPORTER_SCRIPT := preload("res://addons/godot_cascade/editor/gxml_importer.gd")
 const GCSS_IMPORTER_SCRIPT := preload("res://addons/godot_cascade/editor/gcss_importer.gd")
@@ -53,10 +56,16 @@ func _enter_tree() -> void:
 	add_custom_type("CascadeTextInput", "LineEdit", CASCADE_TEXT_INPUT_SCRIPT, null)
 	add_custom_type("CascadeTextArea", "TextEdit", CASCADE_TEXT_AREA_SCRIPT, null)
 	add_custom_type("CascadeImage", "Control", CASCADE_IMAGE_SCRIPT, null)
+	add_custom_type("CascadeTable", "Container", CASCADE_TABLE_SCRIPT, null)
+	add_custom_type("CascadeTablePart", "Container", CASCADE_TABLE_PART_SCRIPT, null)
+	add_custom_type("CascadeTableCell", "Container", CASCADE_TABLE_CELL_SCRIPT, null)
 	add_custom_type("CascadeDocument", "Control", CASCADE_DOCUMENT_SCRIPT, null)
 
 
 func _exit_tree() -> void:
+	remove_custom_type("CascadeTableCell")
+	remove_custom_type("CascadeTablePart")
+	remove_custom_type("CascadeTable")
 	remove_custom_type("CascadeTextArea")
 	remove_custom_type("CascadeTextInput")
 	remove_custom_type("CascadeDocument")

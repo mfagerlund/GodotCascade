@@ -16,13 +16,14 @@ func _run() -> void:
 	await process_frame
 	await process_frame
 	await process_frame
-	_expect_true("showcase app discovers all manifest pages", app.call("page_count") == 3)
+	_expect_true("showcase app discovers all manifest pages", app.call("page_count") == 4)
 	_expect_true("showcase app starts on layout foundation", app.call("current_page_id") == "layout-foundation")
 	await _verify_layout_page(app)
 	await _verify_system_status_page(app)
 	await _verify_settings_page(app)
+	await _verify_leaderboard_page(app)
 	_expect_true("showcase app previous navigation works", await app.call("previous_page"))
-	_expect_true("showcase app returns to system status", app.call("current_page_id") == "system-status")
+	_expect_true("showcase app returns to settings", app.call("current_page_id") == "settings-menu")
 	_expect_true("showcase app next navigation works", await app.call("next_page"))
 	_expect_true("showcase app reloads current document", await app.call("reload_current_page"))
 	_expect_true("showcase app reports connected page", str(app.call("current_status")).begins_with("Connected"))
@@ -123,6 +124,25 @@ func _verify_settings_page(app: Control) -> void:
 		var event_method := str(event_connections[0]["callable"].get_method()) if not event_connections.is_empty() else "<none>"
 		var context_status := str(state.get("ui").get("status"))
 		_failures.append("settings bindings and Apply connection complete: expected 'Applied ultra quality for Nova', got immediate '%s', final '%s', context '%s'; signal connections=%s event method=%s valid=%s blocked=%s" % [immediate_status, actual_status, context_status, apply_button.get_signal_connection_list("pressed").size(), event_method, event_connections[0]["callable"].is_valid() if not event_connections.is_empty() else false, apply_button.is_blocking_signals()])
+
+
+func _verify_leaderboard_page(app: Control) -> void:
+	_expect_true("leaderboard page loads", await app.call("show_page", 3))
+	var scene: Control = app.call("current_showcase_scene")
+	_expect_document_ready("leaderboard", scene)
+	var table := _find_by_id(scene, "leaderboard")
+	var record_button := _find_by_id(scene, "record-result")
+	var wins := _find_by_class(scene, "wins-cell")
+	_expect_true("leaderboard native table and event control exist", table != null and record_button != null and wins != null)
+	if table == null or record_button == null or wins == null:
+		return
+	_expect_true("leaderboard starts with bound first-row wins", wins.get("text") == "18")
+	record_button.emit_signal("pressed")
+	await process_frame
+	var status := _find_by_id(scene, "leaderboard-status")
+	wins = _find_by_class(scene, "wins-cell")
+	_expect_true("leaderboard event refreshes repeated table cell", wins != null and wins.get("text") == "19")
+	_expect_true("leaderboard event refreshes bound status", status != null and status.get("text") == "Recorded a win for Rhea · rating 2492")
 
 
 func _expect_document_ready(label: String, scene: Control) -> void:

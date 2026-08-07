@@ -90,7 +90,7 @@ The repository currently contains several working vertical slices:
 - last-valid rendering when an in-progress edit has parser or builder errors;
 - focused `{dot.separated.path}` one-way bindings, explicit writable form bindings, and optional typed C# partial generation;
 - keyed `Repeat` collections, `on-*` event methods, and registered custom-component lifecycle hooks;
-- three source-generated parity scenes covering layout, media, components, form controls, and bound telemetry data.
+- four source-generated parity scenes covering layout, media, components, form controls, bound telemetry data, and semantic tables.
 
 Version 0.2 adds native single-line text editing, validation, and explicit `bind-*` write-back while retaining the 0.1 source surface. Version 0.3 also adapts native `TextEdit` through `TextInput multiline="true"`, adds keyed repeated-item write-back, and supports hover backgrounds on owned layout containers. Browser-wide property coverage remains out of scope.
 
@@ -162,7 +162,7 @@ Godot .NET projects can also declare `@Name` bindings in GXML and generate a dis
 
 ## Components and interactive states
 
-The executable GXML elements are `Page`, `Row`, `Column`, `Panel`, `Label`, `Button`, `Checkbox`, `RadioButton`/`Radio`, `Switch`, `Select`/`Option`, `Slider`, `Progress`, and the adapted `TextInput`. GodotCascade owns the measurement and drawing of its exact components while native `LineEdit` and `TextEdit` continue to own single-line and multiline editing behavior.
+The executable GXML elements are `Page`, `Row`, `Column`, `Panel`, `Label`, `Button`, `Checkbox`, `RadioButton`/`Radio`, `Switch`, `Select`/`Option`, `Slider`, `Progress`, semantic `Table` header/body/row/cell elements, and the adapted `TextInput`. GodotCascade owns the measurement and drawing of its exact components while native `LineEdit` and `TextEdit` continue to own single-line and multiline editing behavior.
 
 Button state selectors respond dynamically to Godot's native interaction state:
 
@@ -225,7 +225,7 @@ Add a **CascadeButton** from the Create New Node dialog after enabling the addon
 
 ## HTML parity showcase
 
-The generated [parity showcase](docs/showcase/index.html) presents each demo as a fixed-viewport HTML reference beside an actual capture of its source-generated GodotCascade scene. It includes the executable `.gxml` and `.gcss` translation and a semantic mapping table. The current demos cover flex/box, grid/stack overlays, a telemetry dashboard, and native form controls. The [runnable Godot app](docs/showcase-app.md) loads those same manifest entries for direct interaction testing.
+The generated [parity showcase](docs/showcase/index.html) presents each demo as a fixed-viewport HTML reference beside an actual capture of its source-generated GodotCascade scene. It includes the executable `.gxml` and `.gcss` translation and a semantic mapping table. The current demos cover flex/box, grid/stack overlays, a telemetry dashboard, native form controls, and a repeated semantic leaderboard table. The [runnable Godot app](docs/showcase-app.md) loads those same manifest entries for direct interaction testing.
 
 Showcases are registered in `examples/showcase/manifest.json`. A demo keeps four artifacts together:
 

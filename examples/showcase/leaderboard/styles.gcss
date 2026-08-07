@@ -1,0 +1,51 @@
+.leaderboard-page {
+    min-height: 540px;
+    padding: 30px 48px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    background: #0a0f19;
+}
+
+.leaderboard-heading { display: flex; flex-direction: column; gap: 5px; }
+.eyebrow { color: #7aa7ff; font-size: 11px; }
+.title-row { display: flex; flex-direction: row; align-items: center; gap: 14px; }
+.title { color: #f2f5fb; font-size: 30px; flex-grow: 1; }
+.subtitle { color: #8d9bb5; font-size: 14px; }
+.live-pill { padding: 6px 10px; background: #132b26; border: 1px solid #286452; border-radius: 99px; }
+.live-text { color: #75e0b4; font-size: 10px; }
+
+Table {
+    grid-template-columns: 70px minmax(170px, 1fr) minmax(150px, 1fr) 90px 100px;
+    column-gap: 0px;
+    row-gap: 0px;
+    background: #101827;
+    border: 1px solid #2b3b57;
+    border-radius: 12px;
+    overflow: clip;
+    flex-grow: 1;
+}
+
+TableHeaderCell {
+    min-height: 38px;
+    padding: 9px 12px;
+    color: #8fa3c4;
+    font-size: 11px;
+    background: #172237;
+    border: 1px solid #2b3b57;
+}
+
+TableCell {
+    min-height: 46px;
+    padding: 11px 12px;
+    color: #d9e2f2;
+    font-size: 14px;
+    background: #101827;
+    border: 1px solid #22314b;
+}
+
+.leaderboard-footer { display: flex; flex-direction: row; align-items: center; gap: 16px; }
+.status { color: #7f91af; font-size: 13px; flex-grow: 1; }
+#record-result { min-width: 156px; min-height: 38px; background: #1c64d1; border: 1px solid #5aa7ff; border-radius: 8px; }
+#record-result:hover { background: #2878e5; }
+#record-result:pressed { background: #174fa5; }

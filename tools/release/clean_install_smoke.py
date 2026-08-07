@@ -26,12 +26,12 @@ func _initialize() -> void:
 
 
 func _run() -> void:
-\tvar markup := GxmlParser.parse("<Column><Label id=\\"message\\">Clean install</Label><TextInput id=\\"profile\\" text=\\"Rhea\\" required=\\"true\\" /></Column>")
-\tvar stylesheet := GcssParser.parse("#message { color: #4da3ff; font-size: 18px; } TextInput:invalid { border-color: #ff6677; }")
+\tvar markup := GxmlParser.parse("<Column><Label id=\\"message\\">Clean install</Label><TextInput id=\\"profile\\" text=\\"Rhea\\" required=\\"true\\" /><Table><TableHeader><TableRow><TableHeaderCell>Name</TableHeaderCell></TableRow></TableHeader><TableBody><TableRow><TableCell>Rhea</TableCell></TableRow></TableBody></Table></Column>")
+\tvar stylesheet := GcssParser.parse("#message { color: #4da3ff; font-size: 18px; } TextInput:invalid { border-color: #ff6677; } Table { grid-template-columns: 1fr; } TableCell { padding: 4px; }")
 \tvar result := CascadeBuilder.build(markup["root"], stylesheet["rules"])
 \tvar diagnostics: Array = markup["diagnostics"] + stylesheet["diagnostics"] + result["diagnostics"]
 \tvar root: Control = result["root"]
-\tif not diagnostics.is_empty() or root == null or root.get_child_count() != 2:
+\tif not diagnostics.is_empty() or root == null or root.get_child_count() != 3:
 \t\tpush_error("Packaged addon smoke test failed: %s" % [diagnostics])
 \t\tif root != null:
 \t\t\troot.free()
@@ -39,7 +39,8 @@ func _run() -> void:
 \t\treturn
 \tvar label: Control = root.get_child(0)
 \tvar input: Control = root.get_child(1)
-\tif label.get("text") != "Clean install" or label.get("text_color") != Color("4da3ff") or not input is LineEdit or input.get("text") != "Rhea" or not input.call("validate"):
+\tvar table: Control = root.get_child(2)
+\tif label.get("text") != "Clean install" or label.get("text_color") != Color("4da3ff") or not input is LineEdit or input.get("text") != "Rhea" or not input.call("validate") or table.get_meta("cascade_table_role", "") != "table":
 \t\tpush_error("Packaged addon produced the wrong native control state.")
 \t\troot.free()
 \t\tquit(1)

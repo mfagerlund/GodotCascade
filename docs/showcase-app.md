@@ -16,7 +16,7 @@ Open a particular manifest page with its ID:
 python tools/showcase/run_showcase.py --godot "C:\path\to\godot.exe" --page settings-menu
 ```
 
-Available IDs are `layout-foundation`, `system-status`, and `settings-menu`. Previous, Next, and the page picker change pages. Reload rebuilds the current GXML/GCSS document. The right side of the toolbar reports build errors and warnings for the mounted page.
+Available IDs are `layout-foundation`, `system-status`, `settings-menu`, and `leaderboard`. Previous, Next, and the page picker change pages. Reload rebuilds the current GXML/GCSS document. The right side of the toolbar reports build errors and warnings for the mounted page.
 
 ## Manual connection checks
 
@@ -26,6 +26,7 @@ Available IDs are `layout-foundation`, `system-status`, and `settings-menu`. Pre
 | System status | Select **Review route** | The sync status changes to **Route review requested**. |
 | Settings menu | Edit the profile and session notes; toggle controls; move UI scale; choose a quality | Bound labels and the footer change to **Unsaved changes**. |
 | Settings menu | Select **Apply settings** with a valid profile | The footer reports the selected quality and profile, for example **Applied ultra quality for Nova**. |
+| Flight leaderboard | Select **Record Rhea win** | Rhea's wins and rating update and the footer reports the recorded result. |
 | Any page | Select **Reload** | The document rebuilds and the toolbar returns to a **Connected** status when no errors exist. |
 
 The automated equivalent visits all manifest pages and verifies their authored event and binding paths:

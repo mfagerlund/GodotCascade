@@ -123,6 +123,49 @@
         ["aria-label", "accessible-label", "Native accessibility name"],
         ["fieldset-like cards", "Panel + Column", "CascadePanel flex layout"]
       ]
+    },
+    {
+      "id": "leaderboard",
+      "title": "Flight leaderboard",
+      "summary": "A semantic table with shared fixed, fractional, content-bounded columns across its header and keyed repeated body rows.",
+      "viewport": [960, 540],
+      "html": "examples/showcase/leaderboard/reference.html",
+      "gxml": "examples/showcase/leaderboard/interface.gxml",
+      "gcss": "examples/showcase/leaderboard/styles.gcss",
+      "godot_scene": "examples/leaderboard_showcase.tscn",
+      "godot_screenshot": "docs/showcase/assets/leaderboard-godot.png",
+      "shared_copy": [
+        "SEASON 12 · COMPETITIVE",
+        "Flight leaderboard",
+        "LIVE STANDINGS",
+        "Shared column measurement across a semantic header and repeated native rows.",
+        "Rank",
+        "Pilot",
+        "Division",
+        "Wins",
+        "Rating",
+        "Record Rhea win"
+      ],
+      "source_parity": [
+        {"label": "semantic table", "html": "<table aria-label=\"Flight leaderboard\">", "gxml": "<Table id=\"leaderboard\" accessible-label=\"Flight leaderboard\">"},
+        {"label": "semantic header", "html": "<thead>", "gxml": "<TableHeader>"},
+        {"label": "column headers", "html": "<th scope=\"col\">", "gxml": "<TableHeaderCell>"},
+        {"label": "keyed repeated rows", "html": "<tbody>", "gxml": "<Repeat items=\"{entries}\" key=\"id\">"},
+        {"label": "shared columns", "html": "<colgroup>", "gxml": "<Table", "gcss": "grid-template-columns:"},
+        {"label": "bound cells", "html": "Rhea Sol", "gxml": "text=\"{item.pilot}\""},
+        {"label": "record event", "html": "addEventListener('click'", "gxml": "on-pressed=\"_on_record_result\""}
+      ],
+      "mappings": [
+        ["<table>", "<Table>", "CascadeTable shared track layout"],
+        ["<thead> / <tbody>", "TableHeader / TableBody", "Semantic structural containers"],
+        ["<tr>", "TableRow", "Shared row placement"],
+        ["<th scope=col>", "TableHeaderCell", "Column-header accessibility metadata"],
+        ["<td>", "TableCell", "Owned box/text cell"],
+        ["<colgroup>", "grid-template-columns", "Fixed/fraction/minmax tracks"],
+        ["tbody rows", "Repeat items={entries} key=id", "Keyed native row expansion"],
+        ["cell text", "text={item.path}", "Scoped one-way binding"],
+        ["button click", "on-pressed=\"_on_record_result\"", "Native signal binding"]
+      ]
     }
   ]
 }

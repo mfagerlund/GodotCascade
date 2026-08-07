@@ -54,6 +54,8 @@ Layout has two conceptual passes:
 
 `FlexLayoutEngine` and `GridLayoutEngine` consume plain layout requests and item values and produce rectangles without touching the scene tree. `CascadeBox` and `CascadeGrid` are native `Container` adapters that measure children, translate `CascadeStyle` and compatibility metadata into engine values, then apply the resulting rectangles. `CascadeStack` owns overlay and absolute-inset placement without adding unrelated policy to `CascadeBox`.
 
+`CascadeTable` reuses grid track resolution but owns semantic row grouping. It flattens visible cells only for one shared column/row calculation, then projects the resulting rectangles back through `TableHeader`, `TableBody`, repeated row groups, and `TableRow` containers. Cells own their box/text measurement; structural containers remain non-focusable and do not compete with authored interactive cell content.
+
 ### Data binding
 
 Exact `{dot.separated.path}` attribute values are stored as metadata on the generated native control. `BindingResolver` traverses dictionaries, arrays, or Godot object properties only; it does not evaluate expressions or invoke methods. `CascadeDocument` applies bindings after initial construction and after reconciliation, so authored reloads and data refreshes share stable native instances. Assigning a context refreshes immediately, while nested state changes use the explicit `refresh_bindings()` boundary until reactive adapters are introduced.

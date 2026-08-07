@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GodotCascade table reference</title>
+  <style>
+    * { box-sizing:border-box; }
+    :root { color-scheme:dark; font-family:Inter,ui-sans-serif,system-ui,sans-serif; background:#0a0f19; color:#d9e2f2; }
+    body { width:960px; height:540px; margin:0; overflow:hidden; background:#0a0f19; }
+    .leaderboard-page { min-height:540px; padding:30px 48px; display:flex; flex-direction:column; gap:18px; background:#0a0f19; }
+    .leaderboard-heading { display:flex; flex-direction:column; gap:5px; }
+    .eyebrow { margin:0; color:#7aa7ff; font-size:11px; }
+    .title-row { display:flex; align-items:center; gap:14px; }
+    h1 { margin:0; flex:1; color:#f2f5fb; font-size:30px; font-weight:400; }
+    .subtitle { margin:0; color:#8d9bb5; font-size:14px; }
+    .live-pill { padding:6px 10px; background:#132b26; border:1px solid #286452; border-radius:99px; color:#75e0b4; font-size:10px; }
+    .table-shell { flex:1; overflow:hidden; border:1px solid #2b3b57; border-radius:12px; background:#101827; }
+    table { width:100%; border-collapse:collapse; table-layout:fixed; }
+    col.rank { width:70px; } col.pilot, col.division { width:calc((100% - 260px)/2); } col.wins { width:90px; } col.rating { width:100px; }
+    th { height:38px; padding:9px 12px; color:#8fa3c4; font-size:11px; font-weight:400; text-align:left; background:#172237; border:1px solid #2b3b57; }
+    td { height:46px; padding:11px 12px; color:#d9e2f2; font-size:14px; border:1px solid #22314b; }
+    .leaderboard-footer { display:flex; align-items:center; gap:16px; }
+    .status { flex:1; margin:0; color:#7f91af; font-size:13px; }
+    button { min-width:156px; min-height:38px; padding:8px 14px; color:#fff; background:#1c64d1; border:1px solid #5aa7ff; border-radius:8px; font:inherit; cursor:pointer; }
+    button:hover { background:#2878e5; } button:active { background:#174fa5; }
+  </style>
+</head>
+<body>
+  <main class="leaderboard-page">
+    <header class="leaderboard-heading">
+      <p class="eyebrow">SEASON 12 · COMPETITIVE</p>
+      <div class="title-row"><h1>Flight leaderboard</h1><span class="live-pill">LIVE STANDINGS</span></div>
+      <p class="subtitle">Shared column measurement across a semantic header and repeated native rows.</p>
+    </header>
+    <div class="table-shell">
+      <table aria-label="Flight leaderboard">
+        <colgroup><col class="rank"><col class="pilot"><col class="division"><col class="wins"><col class="rating"></colgroup>
+        <thead><tr><th scope="col">Rank</th><th scope="col">Pilot</th><th scope="col">Division</th><th scope="col">Wins</th><th scope="col">Rating</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>Rhea Sol</td><td>Orion</td><td id="rhea-wins">18</td><td id="rhea-rating">2480</td></tr>
+          <tr><td>2</td><td>Milo Vance</td><td>Aurora</td><td>16</td><td>2395</td></tr>
+          <tr><td>3</td><td>Sana Keene</td><td>Orion</td><td>15</td><td>2310</td></tr>
+          <tr><td>4</td><td>Tomas Reed</td><td>Vanguard</td><td>13</td><td>2190</td></tr>
+          <tr><td>5</td><td>Imani Vale</td><td>Aurora</td><td>12</td><td>2115</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <footer class="leaderboard-footer"><p class="status" id="status">Season 12 · five ranked pilots</p><button id="record-result">Record Rhea win</button></footer>
+  </main>
+  <script>
+    document.querySelector('#record-result').addEventListener('click', () => {
+      document.querySelector('#rhea-wins').textContent = '19';
+      document.querySelector('#rhea-rating').textContent = '2492';
+      document.querySelector('#status').textContent = 'Recorded a win for Rhea · rating 2492';
+    });
+  </script>
+</body>
+</html>

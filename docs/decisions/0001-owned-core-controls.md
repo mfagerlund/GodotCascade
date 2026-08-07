@@ -24,6 +24,7 @@ Examples:
 | `CascadeProgress` | Implemented | `Control` | native scene and drawing lifecycle | clamped range values, track/fill layout, drawing, and box model |
 | `CascadePanel` | Implemented | `CascadeBox` / `Container` | container lifecycle and child layout notifications | semantic component identity plus shared box/flex behavior |
 | `CascadeImage` | Implemented | `Control` | native texture resources | contain/cover/fill/intrinsic crop geometry, clipping, drawing, and box model |
+| `CascadeTable` / `CascadeTableCell` | Implemented | `Container` with internal native `Label` for text cells | container lifecycle, text shaping, authored child input/accessibility | shared semantic column layout, cell box model, and header/body/row projection |
 
 The form-control roadmap follows the same rule:
 
@@ -53,5 +54,5 @@ Unsupported or inexact declarations produce a compatibility diagnostic through `
 - Components remain native Godot nodes and retain relevant engine behavior.
 - The project owns more drawing, text layout, theme interoperability, and tests.
 - Theme adapters become optional integration paths rather than the foundation of styling.
-- `CascadeButton`, `CascadeLabel`, `CascadePanel`, `CascadeProgress`, and `CascadeImage` validate the decision across interactive, textual, container, value-display, and media controls.
+- `CascadeButton`, `CascadeLabel`, `CascadePanel`, `CascadeProgress`, `CascadeImage`, and the table/cell pair validate the decision across interactive, textual, container, value-display, media, and shared-column controls.
 - Checkbox and radio-button work now shares one pseudo-state adapter; select/dropdown can build on it when popup, option-selection, and keyboard-navigation behavior is introduced.

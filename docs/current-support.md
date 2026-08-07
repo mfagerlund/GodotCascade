@@ -24,12 +24,45 @@ This page documents the executable subset on `main`. GodotCascade borrows produc
 | `Progress` | `CascadeProgress` | Owned horizontal track, fill, range, and box model |
 | `Image` | `CascadeImage` | Texture resource rendering with contain, cover, fill, or intrinsic crop geometry |
 | `Repeat` | `CascadeBox` plus expanded template | One child template repeated from an array binding with optional item key |
+| `Table` | `CascadeTable` | Shared column measurement across semantic header and body rows |
+| `TableHeader` / `TableBody` | `CascadeTablePart` | Non-focusable semantic row groups |
+| `TableRow` | `CascadeTablePart` | Non-focusable semantic row container arranged by its table |
+| `TableHeaderCell` / `TableCell` | `CascadeTableCell` | Owned box/text cell with optional authored native content |
 
-Every element accepts `id`, `class`, `accessible-label`, and `accessible-description`. Text-bearing controls use their visible text as the native accessibility name when no explicit label is authored. `Label`, `Button`, `Checkbox`, `RadioButton`, and `Switch` accept text as element content or through a `text` attribute. Interactive controls accept boolean `disabled`; toggle controls accept boolean `checked`; radio buttons use `group` to share a native `ButtonGroup`. `Select` accepts `selected` as an option value or zero-based index; `Option` accepts `value` and boolean `disabled`. `Progress` and `Slider` accept numeric `min`, `max`, and `value`; `Slider` also accepts a positive `step`. `TextInput` accepts `text`, `placeholder`, boolean `read-only`, `disabled`, `required`, and `multiline`, non-negative `max-length`, a Godot regular-expression `pattern`, and `error-message`. `secret` is supported only by the single-line adapter and is an error with `multiline="true"`. `Image` requires a `src` path that loads a Godot `Texture2D` resource.
+Every element accepts `id`, `class`, `accessible-label`, and `accessible-description`. Text-bearing controls use their visible text as the native accessibility name when no explicit label is authored. `Label`, `Button`, `Checkbox`, `RadioButton`, `Switch`, `TableHeaderCell`, and `TableCell` accept text as element content or through a `text` attribute. Interactive controls accept boolean `disabled`; toggle controls accept boolean `checked`; radio buttons use `group` to share a native `ButtonGroup`. `Select` accepts `selected` as an option value or zero-based index; `Option` accepts `value` and boolean `disabled`. `Progress` and `Slider` accept numeric `min`, `max`, and `value`; `Slider` also accepts a positive `step`. `TextInput` accepts `text`, `placeholder`, boolean `read-only`, `disabled`, `required`, and `multiline`, non-negative `max-length`, a Godot regular-expression `pattern`, and `error-message`. `secret` is supported only by the single-line adapter and is an error with `multiline="true"`. `Image` requires a `src` path that loads a Godot `Texture2D` resource.
 
 Unknown elements are build errors unless their native factory is registered through `ComponentRegistry`. `Window` is not implemented.
 
-`Table`, table-row/cell elements, and a data-grid component are not implemented yet. A fixed visual matrix can be composed with `Grid`, but there is no table-specific shared column measurement across repeated rows, header semantics, sorting, selection, resizing, or virtualization.
+### Tables
+
+`Table` accepts `TableHeader`, `TableBody`, direct `TableRow`, or a `Repeat` whose single template is `TableRow`. Header and body groups accept rows or repeated rows. A row accepts only `TableHeaderCell` and `TableCell`. Invalid structure is a build error.
+
+```xml
+<Table accessible-label="Flight leaderboard">
+    <TableHeader>
+        <TableRow>
+            <TableHeaderCell>Rank</TableHeaderCell>
+            <TableHeaderCell>Pilot</TableHeaderCell>
+            <TableHeaderCell>Rating</TableHeaderCell>
+        </TableRow>
+    </TableHeader>
+    <TableBody>
+        <Repeat items="{entries}" key="id">
+            <TableRow>
+                <TableCell text="{item.rank}" />
+                <TableCell text="{item.pilot}" />
+                <TableCell text="{item.rating}" />
+            </TableRow>
+        </Repeat>
+    </TableBody>
+</Table>
+```
+
+`grid-template-columns` on `Table` uses the existing fixed (`80px`), content (`auto`), fractional (`1fr`), and `minmax()` track grammar. When omitted, the table infers one content track for each cell in its widest row. `column-gap`, `row-gap`, and one- or two-value `gap` are supported. Every row uses the same resolved column widths; row heights remain content-sized. `grid-template-rows`, cell spanning, and per-row column definitions are intentionally unsupported.
+
+Cells accept direct text, `text`, one-way text bindings, accessibility attributes, and authored child controls. Authored children fill the cell content box and retain their own keyboard behavior. Table structure and cells are not focusable themselves, so interactive cell contents remain in ordinary document focus order. Header/cell semantic roles are retained as `cascade_table_role` metadata; native accessibility names and descriptions remain available through the normal attributes. Style the table and cells for exact padding, background, border, size, color, and font behavior. Header/body/row structural nodes support background and border painting but do not introduce padding or independent sizing.
+
+This is a semantic display table, not a data-grid widget. Sorting, row/cell selection, column resizing/reordering, sticky headers, pagination, and virtualization remain application-level or future component work.
 
 ## Bindings
 
@@ -44,7 +77,7 @@ An entire supported attribute value may be an exact property-path binding:
 
 The one-way property-binding surface is:
 
-- `text` on `Label`, `Button`, and `TextInput`;
+- `text` on `Label`, `Button`, `TextInput`, `TableHeaderCell`, and `TableCell`;
 - `min`, `max`, and `value` on `Progress` and `Slider`.
 
 `BindingResolver` traverses typed Godot object properties, Arrays using numeric path segments, and Dictionaries. Typed `RefCounted` or `Resource` models are recommended for application state; Dictionaries remain useful for JSON-shaped data and prototypes. The resolver does not execute expressions or call methods. Assigning a new `CascadeDocument.binding_context` refreshes automatically; nested mutations require `refresh_bindings()`.
@@ -155,7 +188,7 @@ Unsupported properties produce warnings; unsupported values for known properties
 
 ## Component support
 
-Implemented exact components are `CascadeBox`, `CascadeGrid`, `CascadeStack`, `CascadePanel`, `CascadeLabel`, `CascadeImage`, `CascadeButton`, `CascadeCheckbox`, `CascadeRadioButton`, `CascadeSwitch`, `CascadeSelect`, `CascadeSlider`, and `CascadeProgress`. `CascadeTextInput` and `CascadeTextArea` are adapted: native `LineEdit`/`TextEdit` own editing behavior while Cascade maps the documented box and state surface. Exact means GodotCascade owns the supported measurement and visual semantics.
+Implemented exact components are `CascadeBox`, `CascadeGrid`, `CascadeStack`, `CascadePanel`, `CascadeLabel`, `CascadeImage`, `CascadeButton`, `CascadeCheckbox`, `CascadeRadioButton`, `CascadeSwitch`, `CascadeSelect`, `CascadeSlider`, `CascadeProgress`, `CascadeTable`, and `CascadeTableCell`. `CascadeTablePart` is structural. `CascadeTextInput` and `CascadeTextArea` are adapted: native `LineEdit`/`TextEdit` own editing behavior while Cascade maps the documented box and state surface. Exact means GodotCascade owns the supported measurement and visual semantics.
 
 Ordinary Godot `Control` children are layout-only by default. Integrations can declare an adapted property surface; `CompatibilityRegistry` reports warnings for inexact or unsupported visual mappings while permitting layout properties. See the [compatibility tier reference](compatibility-tiers.md) and [ADR 0001](decisions/0001-owned-core-controls.md).
 

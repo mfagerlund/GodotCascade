@@ -51,6 +51,7 @@ func _run() -> void:
 	_test_image_pipeline()
 	_test_stack_pipeline()
 	_test_grid_pipeline()
+	_test_table_pipeline()
 	_test_review_regressions()
 	_test_parser_recovery()
 	_test_binding_resolver()
@@ -507,6 +508,41 @@ func _test_grid_pipeline() -> void:
 		_expect_int("grid authored column", int(featured.get_meta("cascade_grid_column")), 1)
 		_expect_int("grid authored column span", int(featured.get_meta("cascade_grid_column_span")), 2)
 		grid.free()
+
+
+func _test_table_pipeline() -> void:
+	var markup := GxmlParser.parse("""<Table id="players">
+		<TableHeader><TableRow><TableHeaderCell>Player</TableHeaderCell><TableHeaderCell>Role</TableHeaderCell><TableHeaderCell>Score</TableHeaderCell></TableRow></TableHeader>
+		<TableBody><Repeat items="{players}" key="id"><TableRow><TableCell id="player-name" text="{item.name}"/><TableCell text="{item.role}"/><TableCell text="{item.score}"/></TableRow></Repeat></TableBody>
+	</Table>""")
+	var stylesheet := GcssParser.parse("Table { grid-template-columns: 90px 1fr minmax(60px, 120px); gap: 4px 8px; } TableHeaderCell { padding: 6px 8px; } TableCell { padding: 6px 8px; }")
+	var context := {"players": [
+		{"id": "rhea", "name": "Rhea", "role": "Navigator", "score": 1280},
+		{"id": "milo", "name": "Milo", "role": "Engineer", "score": 940},
+	]}
+	var build := CascadeBuilder.build(markup["root"], stylesheet["rules"], context)
+	_expect_int("table parser diagnostics", markup["diagnostics"].size(), 0)
+	_expect_int("table stylesheet diagnostics", stylesheet["diagnostics"].size(), 0)
+	_expect_int("table builder diagnostics", build["diagnostics"].size(), 0)
+	var table: Control = build["root"]
+	if table != null:
+		_expect_int("table column track count", table.get("column_tracks").size(), 3)
+		_expect_float("table column gap", table.get("column_gap"), 8.0)
+		_expect_float("table row gap", table.get("row_gap"), 4.0)
+		var names := _find_by_id(table, "player-name")
+		_expect_int("table repeat expands bound rows", names.size(), 2)
+		if names.size() == 2:
+			_expect_true("table repeated cell retains scoped binding", names[0].get_meta("cascade_bindings")["text"] == "item.name")
+			_expect_true("table repeated cell retains first item scope", names[0].get_meta("cascade_binding_scope")["item"]["name"] == "Rhea")
+			_expect_true("table repeated cell retains second item scope", names[1].get_meta("cascade_binding_scope")["item"]["name"] == "Milo")
+		_expect_true("table has semantic role metadata", table.get_meta("cascade_table_role") == "table")
+		table.free()
+
+	var invalid_markup := GxmlParser.parse("<Table><Label>Not a row</Label></Table>")
+	var invalid_build := CascadeBuilder.build(invalid_markup["root"], [])
+	_expect_true("table rejects non-row children", _has_error_diagnostics(invalid_build["diagnostics"]))
+	if invalid_build["root"] != null:
+		invalid_build["root"].free()
 
 
 func _test_image_pipeline() -> void:

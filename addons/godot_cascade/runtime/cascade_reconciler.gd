@@ -23,6 +23,7 @@ const COPIED_PROPERTIES: PackedStringArray = [
 	"min_value", "max_value", "value", "fill_color", "fill_border_radius",
 	"step", "track_height", "thumb_size", "thumb_color", "disabled_thumb_color", "hover_fill_color", "hover_thumb_color",
 	"texture", "fit",
+	"header", "semantic_role",
 	"placeholder_text", "placeholder_color", "editable", "read_only", "secret", "max_length", "required", "validation_pattern", "validation_message",
 	"focused_background_color", "invalid_background_color", "invalid_text_color", "invalid_border_color",
 ]
@@ -95,7 +96,7 @@ static func _copy_properties(existing: Control, desired: Control) -> void:
 	var runtime_state := existing.call("capture_runtime_state") if existing.has_method("capture_runtime_state") else {}
 	existing.name = desired.name
 	existing.visible = desired.visible
-	for metadata_name in ["cascade_element_type", "cascade_id", "cascade_classes", "cascade_key", "cascade_bindings", "cascade_writable_bindings", "cascade_events", "cascade_binding_scope", "cascade_source_path", "cascade_source_line", "cascade_source_column", "cascade_transition_properties", "cascade_transition_duration", "cascade_explicit_accessible_label", "cascade_authored_accessible_description", "cascade_compatibility_tier", "cascade_adapted_properties"]:
+	for metadata_name in ["cascade_element_type", "cascade_id", "cascade_classes", "cascade_key", "cascade_bindings", "cascade_writable_bindings", "cascade_events", "cascade_binding_scope", "cascade_source_path", "cascade_source_line", "cascade_source_column", "cascade_transition_properties", "cascade_transition_duration", "cascade_explicit_accessible_label", "cascade_authored_accessible_description", "cascade_compatibility_tier", "cascade_adapted_properties", "cascade_table_role"]:
 		if desired.has_meta(metadata_name):
 			existing.set_meta(metadata_name, desired.get_meta(metadata_name))
 		elif existing.has_meta(metadata_name):

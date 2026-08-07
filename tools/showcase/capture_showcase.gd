@@ -44,6 +44,15 @@ func _capture_demo(demo: Dictionary) -> Error:
 	await process_frame
 	await process_frame
 	await process_frame
+	if not instance.has_method("generated_root") or instance.call("generated_root") == null:
+		push_error("Showcase scene did not produce a CascadeDocument root: %s" % scene_path)
+		capture_viewport.queue_free()
+		return ERR_CANT_CREATE
+	var diagnostics: Array = instance.get("diagnostics")
+	if diagnostics.any(func(item): return item.get("severity", "error") == "error"):
+		push_error("Showcase scene has build errors: %s" % diagnostics)
+		capture_viewport.queue_free()
+		return ERR_PARSE_ERROR
 
 	var texture := capture_viewport.get_texture()
 	if texture == null:

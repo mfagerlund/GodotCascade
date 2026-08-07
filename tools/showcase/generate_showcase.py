@@ -217,7 +217,7 @@ def generate(check: bool = False) -> None:
       <p>{html.escape(manifest['description'])} This page is generated from the showcase manifest so reference designs, executable source, scenes, and captures evolve together.</p>
       <nav class="doc-links" aria-label="Project documentation">
         <a href="../current-support.md">Current support</a>
-        <a href="../bindings.md">Bindings</a>
+        <a href="../bindings.md#typed-c-code-generation">Bindings + C# codegen</a>
         <a href="../showcase-app.md">Run in Godot</a>
         <a href="../architecture.md">Architecture</a>
         <a href="../../ROADMAP.md">Roadmap</a>

@@ -1,0 +1,14 @@
+[remap]
+
+importer="godot_cascade.gxml"
+type="CascadeMarkupResource"
+uid="uid://dqsxsu1022crd"
+path="res://.godot/imported/interface.gxml-407ac17caa9392306922142706520f13.res"
+
+[deps]
+
+source_file="res://examples/showcase/leaderboard/interface.gxml"
+dest_files=["res://.godot/imported/interface.gxml-407ac17caa9392306922142706520f13.res"]
+
+[params]
+

@@ -1,0 +1,39 @@
+<!-- Semantic table source paired with reference.html. -->
+<Page class="leaderboard-page">
+    <Column class="leaderboard-heading">
+        <Label class="eyebrow">SEASON 12 · COMPETITIVE</Label>
+        <Row class="title-row">
+            <Label class="title">Flight leaderboard</Label>
+            <Panel class="live-pill"><Label class="live-text">LIVE STANDINGS</Label></Panel>
+        </Row>
+        <Label class="subtitle">Shared column measurement across a semantic header and repeated native rows.</Label>
+    </Column>
+
+    <Table id="leaderboard" accessible-label="Flight leaderboard">
+        <TableHeader>
+            <TableRow>
+                <TableHeaderCell>Rank</TableHeaderCell>
+                <TableHeaderCell>Pilot</TableHeaderCell>
+                <TableHeaderCell>Division</TableHeaderCell>
+                <TableHeaderCell>Wins</TableHeaderCell>
+                <TableHeaderCell>Rating</TableHeaderCell>
+            </TableRow>
+        </TableHeader>
+        <TableBody>
+            <Repeat items="{entries}" key="id">
+                <TableRow>
+                    <TableCell text="{item.rank}" />
+                    <TableCell text="{item.pilot}" />
+                    <TableCell text="{item.division}" />
+                    <TableCell class="wins-cell" text="{item.wins}" />
+                    <TableCell class="rating-cell" text="{item.rating}" />
+                </TableRow>
+            </Repeat>
+        </TableBody>
+    </Table>
+
+    <Row class="leaderboard-footer">
+        <Label id="leaderboard-status" class="status" text="{status}" />
+        <Button id="record-result" on-pressed="_on_record_result">Record Rhea win</Button>
+    </Row>
+</Page>

@@ -63,7 +63,7 @@
       <p>Executable HTML references and native GodotCascade output generated from paired demo sources against the current focused language subset. This page is generated from the showcase manifest so reference designs, executable source, scenes, and captures evolve together.</p>
       <nav class="doc-links" aria-label="Project documentation">
         <a href="../current-support.md">Current support</a>
-        <a href="../bindings.md">Bindings</a>
+        <a href="../bindings.md#typed-c-code-generation">Bindings + C# codegen</a>
         <a href="../showcase-app.md">Run in Godot</a>
         <a href="../architecture.md">Architecture</a>
         <a href="../../ROADMAP.md">Roadmap</a>
@@ -1067,6 +1067,211 @@ Option:selected { background: #16233a; color: #ffffff; }
 #apply:hover { background: #2878e5; }
 #apply:pressed { background: #174fa5; }
 #apply:focus-visible { border-color: #b7d2ff; border-width: 2px; }
+</code></pre>
+      </details>
+      </section>
+    </article>
+    <article class="demo" id="leaderboard">
+      <header class="demo-heading">
+        <div>
+          <p class="eyebrow">Current demo</p>
+          <h2>Flight leaderboard</h2>
+          <p>A semantic table with shared fixed, fractional, content-bounded columns across its header and keyed repeated body rows.</p>
+        </div>
+        <dl>
+          <div><dt>Viewport</dt><dd>960 × 540</dd></div>
+          <div><dt>Godot scene</dt><dd><code>examples/leaderboard_showcase.tscn</code></dd></div>
+        </dl>
+      </header>
+
+      <div class="comparison">
+        <section class="render-column">
+          <div class="render-label"><span>HTML reference</span><small><a href="references/leaderboard-ddb4db08faf2.html" target="_blank" rel="noreferrer">Open reference</a></small></div>
+          <div class="render-frame" data-viewport-width="960" data-viewport-height="540" style="--viewport-width:960px; --viewport-height:540px; aspect-ratio:960/540">
+            <iframe width="960" height="540" title="HTML rendering of Flight leaderboard" src="references/leaderboard-ddb4db08faf2.html"></iframe>
+          </div>
+        </section>
+        <section class="render-column">
+          <div class="render-label"><span>GodotCascade</span><small>Captured from the native Godot scene</small></div>
+          <div class="render-frame godot-render" data-viewport-width="960" data-viewport-height="540" style="--viewport-width:960px; --viewport-height:540px; aspect-ratio:960/540"><img src="assets/leaderboard-godot.png" alt="GodotCascade render of Flight leaderboard"></div>
+        </section>
+      </div>
+
+      <section class="mapping">
+        <div>
+          <p class="eyebrow">Translation contract</p>
+          <h3>Same intent, native target</h3>
+          <p>The mapping is semantic rather than a promise of browser compatibility. Each supported declaration resolves into a typed CascadeStyle or layout value.</p>
+        </div>
+        <table>
+          <thead><tr><th>HTML/CSS</th><th>GodotCascade source</th><th>Runtime</th></tr></thead>
+          <tbody><tr><td><code>&lt;table&gt;</code></td><td><code>&lt;Table&gt;</code></td><td><code>CascadeTable shared track layout</code></td></tr><tr><td><code>&lt;thead&gt; / &lt;tbody&gt;</code></td><td><code>TableHeader / TableBody</code></td><td><code>Semantic structural containers</code></td></tr><tr><td><code>&lt;tr&gt;</code></td><td><code>TableRow</code></td><td><code>Shared row placement</code></td></tr><tr><td><code>&lt;th scope=col&gt;</code></td><td><code>TableHeaderCell</code></td><td><code>Column-header accessibility metadata</code></td></tr><tr><td><code>&lt;td&gt;</code></td><td><code>TableCell</code></td><td><code>Owned box/text cell</code></td></tr><tr><td><code>&lt;colgroup&gt;</code></td><td><code>grid-template-columns</code></td><td><code>Fixed/fraction/minmax tracks</code></td></tr><tr><td><code>tbody rows</code></td><td><code>Repeat items={entries} key=id</code></td><td><code>Keyed native row expansion</code></td></tr><tr><td><code>cell text</code></td><td><code>text={item.path}</code></td><td><code>Scoped one-way binding</code></td></tr><tr><td><code>button click</code></td><td><code>on-pressed=&quot;_on_record_result&quot;</code></td><td><code>Native signal binding</code></td></tr></tbody>
+        </table>
+      </section>
+
+      <section class="sources">
+
+      <details class="source-panel">
+        <summary><span>HTML reference</span><code>examples/showcase/leaderboard/reference.html</code></summary>
+        <pre><code class="language-html">&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;utf-8&quot;&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+  &lt;title&gt;GodotCascade table reference&lt;/title&gt;
+  &lt;style&gt;
+    * { box-sizing:border-box; }
+    :root { color-scheme:dark; font-family:Inter,ui-sans-serif,system-ui,sans-serif; background:#0a0f19; color:#d9e2f2; }
+    body { width:960px; height:540px; margin:0; overflow:hidden; background:#0a0f19; }
+    .leaderboard-page { min-height:540px; padding:30px 48px; display:flex; flex-direction:column; gap:18px; background:#0a0f19; }
+    .leaderboard-heading { display:flex; flex-direction:column; gap:5px; }
+    .eyebrow { margin:0; color:#7aa7ff; font-size:11px; }
+    .title-row { display:flex; align-items:center; gap:14px; }
+    h1 { margin:0; flex:1; color:#f2f5fb; font-size:30px; font-weight:400; }
+    .subtitle { margin:0; color:#8d9bb5; font-size:14px; }
+    .live-pill { padding:6px 10px; background:#132b26; border:1px solid #286452; border-radius:99px; color:#75e0b4; font-size:10px; }
+    .table-shell { flex:1; overflow:hidden; border:1px solid #2b3b57; border-radius:12px; background:#101827; }
+    table { width:100%; border-collapse:collapse; table-layout:fixed; }
+    col.rank { width:70px; } col.pilot, col.division { width:calc((100% - 260px)/2); } col.wins { width:90px; } col.rating { width:100px; }
+    th { height:38px; padding:9px 12px; color:#8fa3c4; font-size:11px; font-weight:400; text-align:left; background:#172237; border:1px solid #2b3b57; }
+    td { height:46px; padding:11px 12px; color:#d9e2f2; font-size:14px; border:1px solid #22314b; }
+    .leaderboard-footer { display:flex; align-items:center; gap:16px; }
+    .status { flex:1; margin:0; color:#7f91af; font-size:13px; }
+    button { min-width:156px; min-height:38px; padding:8px 14px; color:#fff; background:#1c64d1; border:1px solid #5aa7ff; border-radius:8px; font:inherit; cursor:pointer; }
+    button:hover { background:#2878e5; } button:active { background:#174fa5; }
+  &lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;main class=&quot;leaderboard-page&quot;&gt;
+    &lt;header class=&quot;leaderboard-heading&quot;&gt;
+      &lt;p class=&quot;eyebrow&quot;&gt;SEASON 12 · COMPETITIVE&lt;/p&gt;
+      &lt;div class=&quot;title-row&quot;&gt;&lt;h1&gt;Flight leaderboard&lt;/h1&gt;&lt;span class=&quot;live-pill&quot;&gt;LIVE STANDINGS&lt;/span&gt;&lt;/div&gt;
+      &lt;p class=&quot;subtitle&quot;&gt;Shared column measurement across a semantic header and repeated native rows.&lt;/p&gt;
+    &lt;/header&gt;
+    &lt;div class=&quot;table-shell&quot;&gt;
+      &lt;table aria-label=&quot;Flight leaderboard&quot;&gt;
+        &lt;colgroup&gt;&lt;col class=&quot;rank&quot;&gt;&lt;col class=&quot;pilot&quot;&gt;&lt;col class=&quot;division&quot;&gt;&lt;col class=&quot;wins&quot;&gt;&lt;col class=&quot;rating&quot;&gt;&lt;/colgroup&gt;
+        &lt;thead&gt;&lt;tr&gt;&lt;th scope=&quot;col&quot;&gt;Rank&lt;/th&gt;&lt;th scope=&quot;col&quot;&gt;Pilot&lt;/th&gt;&lt;th scope=&quot;col&quot;&gt;Division&lt;/th&gt;&lt;th scope=&quot;col&quot;&gt;Wins&lt;/th&gt;&lt;th scope=&quot;col&quot;&gt;Rating&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;
+        &lt;tbody&gt;
+          &lt;tr&gt;&lt;td&gt;1&lt;/td&gt;&lt;td&gt;Rhea Sol&lt;/td&gt;&lt;td&gt;Orion&lt;/td&gt;&lt;td id=&quot;rhea-wins&quot;&gt;18&lt;/td&gt;&lt;td id=&quot;rhea-rating&quot;&gt;2480&lt;/td&gt;&lt;/tr&gt;
+          &lt;tr&gt;&lt;td&gt;2&lt;/td&gt;&lt;td&gt;Milo Vance&lt;/td&gt;&lt;td&gt;Aurora&lt;/td&gt;&lt;td&gt;16&lt;/td&gt;&lt;td&gt;2395&lt;/td&gt;&lt;/tr&gt;
+          &lt;tr&gt;&lt;td&gt;3&lt;/td&gt;&lt;td&gt;Sana Keene&lt;/td&gt;&lt;td&gt;Orion&lt;/td&gt;&lt;td&gt;15&lt;/td&gt;&lt;td&gt;2310&lt;/td&gt;&lt;/tr&gt;
+          &lt;tr&gt;&lt;td&gt;4&lt;/td&gt;&lt;td&gt;Tomas Reed&lt;/td&gt;&lt;td&gt;Vanguard&lt;/td&gt;&lt;td&gt;13&lt;/td&gt;&lt;td&gt;2190&lt;/td&gt;&lt;/tr&gt;
+          &lt;tr&gt;&lt;td&gt;5&lt;/td&gt;&lt;td&gt;Imani Vale&lt;/td&gt;&lt;td&gt;Aurora&lt;/td&gt;&lt;td&gt;12&lt;/td&gt;&lt;td&gt;2115&lt;/td&gt;&lt;/tr&gt;
+        &lt;/tbody&gt;
+      &lt;/table&gt;
+    &lt;/div&gt;
+    &lt;footer class=&quot;leaderboard-footer&quot;&gt;&lt;p class=&quot;status&quot; id=&quot;status&quot;&gt;Season 12 · five ranked pilots&lt;/p&gt;&lt;button id=&quot;record-result&quot;&gt;Record Rhea win&lt;/button&gt;&lt;/footer&gt;
+  &lt;/main&gt;
+  &lt;script&gt;
+    document.querySelector(&#x27;#record-result&#x27;).addEventListener(&#x27;click&#x27;, () =&gt; {
+      document.querySelector(&#x27;#rhea-wins&#x27;).textContent = &#x27;19&#x27;;
+      document.querySelector(&#x27;#rhea-rating&#x27;).textContent = &#x27;2492&#x27;;
+      document.querySelector(&#x27;#status&#x27;).textContent = &#x27;Recorded a win for Rhea · rating 2492&#x27;;
+    });
+  &lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+      </details>
+
+      <details class="source-panel">
+        <summary><span>GodotCascade markup</span><code>examples/showcase/leaderboard/interface.gxml</code></summary>
+        <pre><code class="language-xml">&lt;!-- Semantic table source paired with reference.html. --&gt;
+&lt;Page class=&quot;leaderboard-page&quot;&gt;
+    &lt;Column class=&quot;leaderboard-heading&quot;&gt;
+        &lt;Label class=&quot;eyebrow&quot;&gt;SEASON 12 · COMPETITIVE&lt;/Label&gt;
+        &lt;Row class=&quot;title-row&quot;&gt;
+            &lt;Label class=&quot;title&quot;&gt;Flight leaderboard&lt;/Label&gt;
+            &lt;Panel class=&quot;live-pill&quot;&gt;&lt;Label class=&quot;live-text&quot;&gt;LIVE STANDINGS&lt;/Label&gt;&lt;/Panel&gt;
+        &lt;/Row&gt;
+        &lt;Label class=&quot;subtitle&quot;&gt;Shared column measurement across a semantic header and repeated native rows.&lt;/Label&gt;
+    &lt;/Column&gt;
+
+    &lt;Table id=&quot;leaderboard&quot; accessible-label=&quot;Flight leaderboard&quot;&gt;
+        &lt;TableHeader&gt;
+            &lt;TableRow&gt;
+                &lt;TableHeaderCell&gt;Rank&lt;/TableHeaderCell&gt;
+                &lt;TableHeaderCell&gt;Pilot&lt;/TableHeaderCell&gt;
+                &lt;TableHeaderCell&gt;Division&lt;/TableHeaderCell&gt;
+                &lt;TableHeaderCell&gt;Wins&lt;/TableHeaderCell&gt;
+                &lt;TableHeaderCell&gt;Rating&lt;/TableHeaderCell&gt;
+            &lt;/TableRow&gt;
+        &lt;/TableHeader&gt;
+        &lt;TableBody&gt;
+            &lt;Repeat items=&quot;{entries}&quot; key=&quot;id&quot;&gt;
+                &lt;TableRow&gt;
+                    &lt;TableCell text=&quot;{item.rank}&quot; /&gt;
+                    &lt;TableCell text=&quot;{item.pilot}&quot; /&gt;
+                    &lt;TableCell text=&quot;{item.division}&quot; /&gt;
+                    &lt;TableCell class=&quot;wins-cell&quot; text=&quot;{item.wins}&quot; /&gt;
+                    &lt;TableCell class=&quot;rating-cell&quot; text=&quot;{item.rating}&quot; /&gt;
+                &lt;/TableRow&gt;
+            &lt;/Repeat&gt;
+        &lt;/TableBody&gt;
+    &lt;/Table&gt;
+
+    &lt;Row class=&quot;leaderboard-footer&quot;&gt;
+        &lt;Label id=&quot;leaderboard-status&quot; class=&quot;status&quot; text=&quot;{status}&quot; /&gt;
+        &lt;Button id=&quot;record-result&quot; on-pressed=&quot;_on_record_result&quot;&gt;Record Rhea win&lt;/Button&gt;
+    &lt;/Row&gt;
+&lt;/Page&gt;
+</code></pre>
+      </details>
+
+      <details class="source-panel">
+        <summary><span>GodotCascade stylesheet</span><code>examples/showcase/leaderboard/styles.gcss</code></summary>
+        <pre><code class="language-css">.leaderboard-page {
+    min-height: 540px;
+    padding: 30px 48px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    background: #0a0f19;
+}
+
+.leaderboard-heading { display: flex; flex-direction: column; gap: 5px; }
+.eyebrow { color: #7aa7ff; font-size: 11px; }
+.title-row { display: flex; flex-direction: row; align-items: center; gap: 14px; }
+.title { color: #f2f5fb; font-size: 30px; flex-grow: 1; }
+.subtitle { color: #8d9bb5; font-size: 14px; }
+.live-pill { padding: 6px 10px; background: #132b26; border: 1px solid #286452; border-radius: 99px; }
+.live-text { color: #75e0b4; font-size: 10px; }
+
+Table {
+    grid-template-columns: 70px minmax(170px, 1fr) minmax(150px, 1fr) 90px 100px;
+    column-gap: 0px;
+    row-gap: 0px;
+    background: #101827;
+    border: 1px solid #2b3b57;
+    border-radius: 12px;
+    overflow: clip;
+    flex-grow: 1;
+}
+
+TableHeaderCell {
+    min-height: 38px;
+    padding: 9px 12px;
+    color: #8fa3c4;
+    font-size: 11px;
+    background: #172237;
+    border: 1px solid #2b3b57;
+}
+
+TableCell {
+    min-height: 46px;
+    padding: 11px 12px;
+    color: #d9e2f2;
+    font-size: 14px;
+    background: #101827;
+    border: 1px solid #22314b;
+}
+
+.leaderboard-footer { display: flex; flex-direction: row; align-items: center; gap: 16px; }
+.status { color: #7f91af; font-size: 13px; flex-grow: 1; }
+#record-result { min-width: 156px; min-height: 38px; background: #1c64d1; border: 1px solid #5aa7ff; border-radius: 8px; }
+#record-result:hover { background: #2878e5; }
+#record-result:pressed { background: #174fa5; }
 </code></pre>
       </details>
       </section>

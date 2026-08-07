@@ -17,6 +17,9 @@ const CascadeSlider := preload("res://addons/godot_cascade/components/cascade_sl
 const CascadeTextInput := preload("res://addons/godot_cascade/components/cascade_text_input.gd")
 const CascadeTextArea := preload("res://addons/godot_cascade/components/cascade_text_area.gd")
 const CascadeImage := preload("res://addons/godot_cascade/components/cascade_image.gd")
+const CascadeTable := preload("res://addons/godot_cascade/components/cascade_table.gd")
+const CascadeTablePart := preload("res://addons/godot_cascade/components/cascade_table_part.gd")
+const CascadeTableCell := preload("res://addons/godot_cascade/components/cascade_table_cell.gd")
 const PropertyCache := preload("res://addons/godot_cascade/runtime/property_cache.gd")
 const ComputedStyleCache := preload("res://addons/godot_cascade/style/computed_style_cache.gd")
 const ComponentRegistry := preload("res://addons/godot_cascade/runtime/component_registry.gd")
@@ -47,7 +50,13 @@ static func _build_element(
 	binding_scope: Dictionary = {},
 	key_scope: String = ""
 ) -> Control:
-	var control := _create_control(element.tag_name, diagnostics, element.attributes)
+	_validate_table_relation(element, diagnostics)
+	var control: Control
+	if element.tag_name.to_lower() == "repeat" and element.children.size() == 1 and element.children[0].tag_name.to_lower() == "tablerow":
+		control = CascadeTablePart.new()
+		control.set("semantic_role", "group")
+	else:
+		control = _create_control(element.tag_name, diagnostics, element.attributes)
 	if control == null:
 		return null
 
@@ -186,6 +195,30 @@ static func _create_control(tag_name: String, diagnostics: Array[Dictionary], at
 			return CascadeTextArea.new() if _raw_boolean_attribute(attributes, "multiline") else CascadeTextInput.new()
 		"image":
 			return CascadeImage.new()
+		"table":
+			var table := CascadeTable.new()
+			table.set_meta("cascade_table_role", "table")
+			return table
+		"tableheader":
+			var header := CascadeTablePart.new()
+			header.semantic_role = "header"
+			return header
+		"tablebody":
+			var body := CascadeTablePart.new()
+			body.semantic_role = "body"
+			return body
+		"tablerow":
+			var row := CascadeTablePart.new()
+			row.semantic_role = "row"
+			return row
+		"tableheadercell":
+			var header_cell := CascadeTableCell.new()
+			header_cell.header = true
+			return header_cell
+		"tablecell":
+			var cell := CascadeTableCell.new()
+			cell.set_meta("cascade_table_role", "cell")
+			return cell
 		"repeat":
 			return CascadeBox.new()
 		"bindings":
@@ -212,6 +245,30 @@ static func _raw_boolean_attribute(attributes: Dictionary, attribute_name: Strin
 
 static func _is_text_input(control: Control) -> bool:
 	return control is CascadeTextInput or control is CascadeTextArea
+
+
+static func _validate_table_relation(element, diagnostics: Array[Dictionary]) -> void:
+	var parent = element.parent_element()
+	if parent == null:
+		return
+	var tag: String = element.tag_name.to_lower()
+	var parent_tag: String = parent.tag_name.to_lower()
+	if parent_tag == "table" and tag not in ["tableheader", "tablebody", "tablerow", "repeat", "bindings"]:
+		diagnostics.append(_diagnostic("error", "<Table> accepts only TableHeader, TableBody, TableRow, or Repeat children; got <%s>." % element.tag_name))
+	elif parent_tag in ["tableheader", "tablebody"] and tag not in ["tablerow", "repeat"]:
+		diagnostics.append(_diagnostic("error", "<%s> accepts only TableRow or Repeat children; got <%s>." % [parent.tag_name, element.tag_name]))
+	elif parent_tag == "tablerow" and tag not in ["tableheadercell", "tablecell"]:
+		diagnostics.append(_diagnostic("error", "<TableRow> accepts only TableHeaderCell or TableCell children; got <%s>." % element.tag_name))
+	elif tag in ["tableheader", "tablebody"] and parent_tag != "table":
+		diagnostics.append(_diagnostic("error", "<%s> must be a direct child of <Table>." % element.tag_name))
+	elif tag == "tablerow" and parent_tag not in ["table", "tableheader", "tablebody", "repeat"]:
+		diagnostics.append(_diagnostic("error", "<TableRow> must be inside Table, TableHeader, TableBody, or a repeated table group."))
+	elif tag in ["tableheadercell", "tablecell"] and parent_tag != "tablerow":
+		diagnostics.append(_diagnostic("error", "<%s> must be a direct child of <TableRow>." % element.tag_name))
+	elif tag == "repeat" and parent_tag in ["table", "tableheader", "tablebody"] and (
+		element.children.size() != 1 or element.children[0].tag_name.to_lower() != "tablerow"
+	):
+		diagnostics.append(_diagnostic("error", "Repeat inside table structure must contain exactly one TableRow template."))
 
 
 static func _compute_declarations(element, rule_index: Dictionary) -> Dictionary:
@@ -472,6 +529,12 @@ static func _apply_declaration(
 	if not state.is_empty():
 		_apply_state_declaration(control, property_name, value, state, line, diagnostics)
 		return
+	if control is CascadeTablePart:
+		if property_name in ["color", "font-size"]:
+			return
+		if property_name not in ["background", "background-color", "border", "border-color", "border-width", "border-radius", "transition-property", "transition-duration"]:
+			_diagnostic_not_applicable(diagnostics, line, property_name, control)
+			return
 
 	var style: CascadeStyle = control.get("cascade_style")
 	match property_name:
@@ -511,7 +574,7 @@ static func _apply_declaration(
 				"stretch": CascadeBox.CrossAlignment.STRETCH,
 			}, line, diagnostics)
 		"gap":
-			if control is CascadeGrid:
+			if control is CascadeGrid or control is CascadeTable:
 				var gaps := _split_whitespace(value)
 				if gaps.size() < 1 or gaps.size() > 2:
 					_diagnostic_bad_value(diagnostics, line, property_name, value)
@@ -530,6 +593,9 @@ static func _apply_declaration(
 			else:
 				_set_length_property(control, property_name.replace("-", "_"), value, line, diagnostics)
 		"grid-template-columns", "grid-template-rows":
+			if property_name == "grid-template-rows" and control is CascadeTable:
+				_diagnostic_not_applicable(diagnostics, line, property_name, control)
+				return
 			var tracks := _parse_grid_tracks(value, line, diagnostics)
 			if not tracks.is_empty():
 				control.set("column_tracks" if property_name.ends_with("columns") else "row_tracks", tracks)
@@ -686,7 +752,7 @@ static func _apply_attributes(
 ) -> void:
 	_apply_event_attributes(control, attributes, diagnostics)
 	_apply_writable_binding_attributes(control, attributes, diagnostics)
-	if control is CascadeLabel or control is CascadeButton or _is_text_input(control):
+	if control is CascadeLabel or control is CascadeButton or control is CascadeTableCell or _is_text_input(control):
 		var raw_text := str(attributes.get("text", element_text))
 		if raw_text.begins_with("@"):
 			pass

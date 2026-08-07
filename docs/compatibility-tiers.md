@@ -27,6 +27,6 @@ line_edit.set_meta("cascade_adapted_properties", PackedStringArray(["color", "fo
 
 Declaring a tier does not implement an adapter. The integration remains responsible for applying each listed property and documenting semantic differences. Properties not listed receive an unsupported-adapter warning.
 
-`CascadeTextInput` and `CascadeTextArea` are the built-in adapted controls. They delegate editing, selection, clipboard, undo/redo, shaping, bidi, and IME behavior to native `LineEdit`/`TextEdit`; password behavior remains native and single-line-only. Cascade maps the documented box, text, validation, and focus-state properties.
+`CascadeTable` and `CascadeTableCell` are exact for their documented shared-track and cell box/text surfaces; `CascadeTablePart` is a structural header/body/row carrier. `CascadeTextInput` and `CascadeTextArea` are the built-in adapted controls. They delegate editing, selection, clipboard, undo/redo, shaping, bidi, and IME behavior to native `LineEdit`/`TextEdit`; password behavior remains native and single-line-only. Cascade maps the documented box, text, validation, and focus-state properties.
 
 Layout properties accepted without a compatibility warning are width and height constraints, margins, flex growth/alignment, grid placement, and stack positioning. Padding and visual/text declarations are intentionally not claimed for layout-only controls.

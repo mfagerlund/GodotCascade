@@ -12,7 +12,7 @@ Versions 0.1.0, 0.2.0, and 0.3.0 are tagged and published through the reproducib
 
 The reproduced findings in the [2026-08-05 code review](docs/artifacts/review.md) are part of this roadmap. Blocking correctness fixes take priority when they touch the same runtime layer as an active vertical slice.
 
-The next completed vertical slice adds optional typed C# binding generation without replacing the lightweight runtime path resolver. Table semantics and shared-column layout follow as the next component milestone.
+The latest completed vertical slices add optional typed C# binding generation without replacing the lightweight runtime path resolver, followed by semantic tables with shared-column layout and keyed repeated rows.
 
 ## Review follow-up
 
@@ -190,12 +190,12 @@ The first public preview should build a small settings menu from `.gxml` and a s
 - [x] Packaged headless generator command, deterministic example output, diagnostics, and compile verification
 - [x] Preserve the existing typed Godot-object and Dictionary/JSON runtime binding paths
 
-## Phase 9 — native tables
+## Phase 9 — native tables — complete
 
-- [ ] Semantic `Table`, `TableHeader`, `TableBody`, `TableRow`, `TableHeaderCell`, and `TableCell` elements
-- [ ] Shared column measurement across header and body rows
-- [ ] Fixed, fractional, content-sized, and min/max column tracks
-- [ ] Header/cell accessibility metadata and deterministic keyboard focus behavior
-- [ ] Repeated row binding with stable keys
-- [ ] HTML/native showcase parity page and component/layout regression matrix
-- [ ] Document explicit boundaries for sorting, selection, resizing, and virtualization
+- [x] Semantic `Table`, `TableHeader`, `TableBody`, `TableRow`, `TableHeaderCell`, and `TableCell` elements
+- [x] Shared column measurement across header and body rows
+- [x] Fixed, fractional, content-sized, and min/max column tracks
+- [x] Header/cell accessibility metadata and deterministic keyboard focus behavior
+- [x] Repeated row binding with stable keys
+- [x] HTML/native showcase parity page and component/layout regression matrix
+- [x] Document explicit boundaries for sorting, selection, resizing, and virtualization

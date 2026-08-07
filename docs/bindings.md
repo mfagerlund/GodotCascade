@@ -69,6 +69,7 @@ The current one-way surface is:
 | GXML element | Bound attributes |
 | --- | --- |
 | `Label`, `Button`, `TextInput` | `text` |
+| `TableHeaderCell`, `TableCell` | `text` |
 | `Progress`, `Slider` | `min`, `max`, `value` |
 
 Assigning a new `binding_context` refreshes automatically. Mutating a nested value does not notify GodotCascade, so call `refresh_bindings()` afterward:

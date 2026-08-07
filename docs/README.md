@@ -21,7 +21,7 @@ GodotCascade 0.3.0 is the current public preview, including adapted multiline ed
 - [Performance budgets](performance.md) — executable 500-item benchmark and allocation ceilings
 - [Migration notes](migrations.md) — source/API compatibility and upgrade instructions
 - [Public preview stability policy](api-stability.md) — current guarantees, unstable surfaces, and change process
-- [Roadmap](../ROADMAP.md) — completed 0.1, 0.2, and 0.3 milestones plus ongoing platform certification
+- [Roadmap](../ROADMAP.md) — completed preview, typed-binding, and semantic-table milestones plus ongoing platform certification
 - [Runnable showcase app](showcase-app.md) — launch and manually verify every manifest page and event connection
 - [HTML parity showcase](showcase/index.html) — live HTML references beside captured native Godot output
 
