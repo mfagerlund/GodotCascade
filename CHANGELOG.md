@@ -4,6 +4,8 @@ All notable changes to GodotCascade are documented here. Versions follow semanti
 
 ## [Unreleased]
 
+## [0.8.0] — 2026-08-07
+
 - Added retained binding/dependency indexes so named scalar and repeated-item invalidations update only matching native controls while preserving exact debugger traces.
 - Added an atomic zero-candidate path for pure keyed Array reorders whose item identities and row structure are unchanged, with candidate reconciliation retained as the correctness fallback.
 - Added a cross-platform side-by-side Cascade/plain-Godot manual certification fixture, evidence-record validator, and external-developer evaluation protocol without overstating headless accessibility coverage.
@@ -89,7 +91,8 @@ The first public preview provides:
 
 See the [0.1.0 release notes](docs/releases/0.1.0.md) for installation and known boundaries.
 
-[Unreleased]: https://github.com/mfagerlund/GodotCascade/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/mfagerlund/GodotCascade/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/mfagerlund/GodotCascade/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/mfagerlund/GodotCascade/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/mfagerlund/GodotCascade/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/mfagerlund/GodotCascade/compare/v0.4.0...v0.5.0

@@ -1,5 +1,13 @@
 # Migration notes
 
+## 0.8.0 retained invalidation and certification tooling
+
+Version 0.8.0 is backward-compatible with the documented 0.7 source-format version 1 surface. Binding/dependency indexes and the narrow same-identity keyed `Array` reorder path are internal optimizations; existing sources require no changes. Structural or ambiguous collection updates retain the 0.7 candidate-reconciliation behavior. Debugger traces preserve depth-first control and dependency order.
+
+Accessibility diagnostics now carry an `accessibility` category so a repaired repeated value clears and re-audits the complete live document instead of leaving a stale warning. Consumers that display the public diagnostic dictionaries may use the new category but must continue accepting diagnostics without it.
+
+The new platform record/evaluator tools are opt-in development utilities and do not alter packaged runtime behavior.
+
 ## 0.7.0 collections, virtualization, and language tooling
 
 Version 0.7.0 is backward-compatible with the documented 0.6 source-format version 1 surface. `CascadeItemModel`, localized collection transactions, fixed-height virtualization, advanced focused styles, SVG textures, focus contracts, and language tooling are additive. Virtual Repeat deliberately has a stricter geometry contract: positive fixed `item-height`, stable keys, one Scroll ancestor, rows that fit the declared height after bindings, no Repeat padding/border, and `row-gap: 0` for virtual tables. Existing non-virtual Repeat sources are unchanged.
