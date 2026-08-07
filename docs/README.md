@@ -1,6 +1,6 @@
 # GodotCascade documentation
 
-GodotCascade 0.6.0 is the current experimental preview. It includes reusable typed GXML components with slots and scoped IDs, dependency/invalidation traces in the layout debugger, case-sensitive GCSS custom properties, typed `calc()` arithmetic, targeted binding invalidation, native state bindings, exact boolean conditions, typed C# generation, semantic tables, native scrolling, and scoped repeated forms. Documentation distinguishes the supported focused surface from intentionally unsupported browser features.
+GodotCascade 0.7.0 is the current experimental preview. It includes retained typed collections, fixed-height 10,000-item list/table virtualization, reusable typed GXML components, Godot/VS Code language tooling, dependency traces, focused advanced styles, native SVG textures, authored focus contracts, typed `calc()`, C# generation, semantic tables, and scoped forms. Documentation distinguishes the supported focused surface from intentionally unsupported browser features.
 
 ## Start here
 
@@ -21,7 +21,7 @@ GodotCascade 0.6.0 is the current experimental preview. It includes reusable typ
 - [Language tooling](language-tooling.md) — Godot CodeEdit and VS Code completion, hover, format, definition, rename, and diagnostics
 - [Production readiness](production-readiness.md) — transitions, responsive rules, navigation, accessibility, and release gates
 - [Release process](release-process.md) — reproducible packaging, clean-install smoke testing, and tag publishing
-- [Asset Library submission](asset-library-submission.md) — copy-ready 0.6.0 metadata, direct assets, and verified preflight
+- [Asset Library submission](asset-library-submission.md) — copy-ready 0.7.0 metadata, direct assets, and verified preflight
 - [Changelog](../CHANGELOG.md) — versioned user-visible changes
 - [Performance budgets](performance.md) — executable synthetic and representative workload gates, native comparisons, and regression ceilings
 - [Representative workload benchmark](artifacts/representative-workload-benchmark-2026-08-07.md) — verified Godot 4.7/4.7.1 settings, dashboard, leaderboard, and 10k-inventory totals and limitations

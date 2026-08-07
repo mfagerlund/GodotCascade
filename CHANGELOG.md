@@ -4,6 +4,8 @@ All notable changes to GodotCascade are documented here. Versions follow semanti
 
 ## [Unreleased]
 
+## [0.7.0] — 2026-08-07
+
 - Added weighted `flex-shrink`/`flex-basis`, descendant opacity, Godot 4.7 container-safe translate/rotate/scale, rounded two-stop linear gradients, and inherited project-local `Font` resources.
 - Certified project-local SVG sources through Godot's native texture importer, including intrinsic sizing, binding refresh, and documented non-DOM boundaries.
 - Added source-diagnosed `tab-index`, `autofocus`, and modal `focus-trap` contracts with visibility/disabled recomputation, focus-escape redirection, hot-reload stability, and prior-focus restoration.
@@ -83,7 +85,8 @@ The first public preview provides:
 
 See the [0.1.0 release notes](docs/releases/0.1.0.md) for installation and known boundaries.
 
-[Unreleased]: https://github.com/mfagerlund/GodotCascade/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/mfagerlund/GodotCascade/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/mfagerlund/GodotCascade/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/mfagerlund/GodotCascade/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/mfagerlund/GodotCascade/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/mfagerlund/GodotCascade/compare/v0.3.0...v0.4.0

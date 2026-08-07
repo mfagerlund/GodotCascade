@@ -13,14 +13,16 @@ GodotCascade is a GDScript addon targeting Godot 4.7 and later 4.x maintenance r
 
 | Godot | Windows desktop | Linux desktop | macOS desktop | Android | iOS |
 | --- | --- | --- | --- | --- | --- |
-| 4.7 stable | Supported locally | Supported in the full release gate | Cross-platform smoke job added; result pending | Unverified | Unverified |
-| 4.7.1 stable | Supported locally: import, ten suites, showcase, and benchmark | Cross-platform smoke job added; result pending | Cross-platform smoke job added; result pending | Unverified | Unverified |
+| 4.7 stable | Supported locally: import, ten suites, and both benchmarks | Smoke-tested in current CI | Expected; no current 4.7 macOS job | Unverified | Unverified |
+| 4.7.1 stable | Supported locally plus current CI smoke | Supported in the full release gate | Smoke-tested in current CI | Unverified | Unverified |
 | Earlier than 4.7 | Unsupported | Unsupported | Unsupported | Unsupported | Unsupported |
 | Later 4.x | Expected, CI update required | Expected, CI update required | Expected, CI update required | Unverified | Unverified |
 
 The full CI/release job runs on Ubuntu with Godot 4.7.1. A separate matrix runs the source pipeline, editor-tooling smoke, item-model, localized collection, and virtualization suites on the minimum Godot 4.7 Linux runner and current Windows/macOS runners. Tagged releases wait for both jobs.
 
-The local 4.7.1 Windows result used the SHA-512-verified official `Godot_v4.7.1-stable_win64` build. The 500-control benchmark measured one cold complete build; it is not a per-frame cost.
+The current matrix passed for commit `31557ac` in [GitHub Actions run 31220031925](https://github.com/mfagerlund/GodotCascade/actions/runs/31220031925): full Godot 4.7.1/Linux verification, Godot 4.7/Linux smoke, Godot 4.7.1/Windows smoke, and Godot 4.7.1/macOS smoke. Each downloaded official archive was checked against its published SHA-512 sum.
+
+The local Windows results used SHA-512-verified official Godot 4.7 and 4.7.1 standard builds. The 500-control benchmark measures complete named operations; no reported value is a per-frame cost.
 
 ## Native service boundary
 

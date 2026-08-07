@@ -1,5 +1,9 @@
 # Migration notes
 
+## 0.7.0 collections, virtualization, and language tooling
+
+Version 0.7.0 is backward-compatible with the documented 0.6 source-format version 1 surface. `CascadeItemModel`, localized collection transactions, fixed-height virtualization, advanced focused styles, SVG textures, focus contracts, and language tooling are additive. Virtual Repeat deliberately has a stricter geometry contract: positive fixed `item-height`, stable keys, one Scroll ancestor, rows that fit the declared height after bindings, no Repeat padding/border, and `row-gap: 0` for virtual tables. Existing non-virtual Repeat sources are unchanged.
+
 ## 0.6.0 composition, traces, and GCSS expressions
 
 Version 0.6.0 is backward-compatible with the documented 0.5 source-format version 1 surface; no existing GXML or GCSS migration is required. Reusable typed components, debugger dependency/invalidation traces, case-sensitive custom properties, and typed `calc()` are additive. Ordinary property names remain case-insensitive. Custom property names are intentionally case-sensitive, and unsupported expression dimensions remain recoverable errors rather than browser-compatible token preservation.

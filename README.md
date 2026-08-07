@@ -14,7 +14,7 @@ GodotCascade is an experimental retained-mode UI framework for Godot 4. It bring
 The goal is to make game UI faster to build and easier to maintain without embedding a browser or replacing Godot's renderer. A GodotCascade interface remains a tree of native controls, so it can continue to use Godot's signals, themes, input, rendering, and editor tooling.
 
 > [!IMPORTANT]
-> GodotCascade 0.6.0 is the current experimental preview for Godot 4.7, adding reusable typed GXML components, debugger dependency traces, and focused GCSS custom properties with typed `calc()` without becoming a browser engine. APIs outside the documented preview references remain unstable.
+> GodotCascade 0.7.0 is the current experimental preview for Godot 4.7. It adds retained typed collections, fixed-height 10,000-item list/table virtualization, complete Godot/VS Code language tooling, advanced focused styles, and a cross-platform automated runtime matrix without becoming a browser engine. APIs outside the documented preview references remain unstable.
 
 ## Native Godot renders
 
@@ -405,7 +405,7 @@ python tools/release/package_addon.py
 python tools/release/clean_install_smoke.py --godot path/to/godot
 ```
 
-See the [changelog](CHANGELOG.md), [0.6.0 release notes](docs/releases/0.6.0.md), [platform support matrix](docs/platform-support.md), [TextInput certification matrix](docs/text-input-certification.md), and [release process](docs/release-process.md). CI is configured to run the same headless suites and benchmarks, editor import scan, generated-showcase check, deterministic packaging step, clean-project installation smoke test, and minimum/current cross-platform smoke matrix. The support matrix records a runner as tested only after its remote job is green.
+See the [changelog](CHANGELOG.md), [0.7.0 release notes](docs/releases/0.7.0.md), [platform support matrix](docs/platform-support.md), [TextInput certification matrix](docs/text-input-certification.md), and [release process](docs/release-process.md). CI is configured to run the same headless suites and benchmarks, editor import scan, generated-showcase check, deterministic packaging step, clean-project installation smoke test, and minimum/current cross-platform smoke matrix. The support matrix records a runner as tested only after its remote job is green.
 
 ## Architecture
 

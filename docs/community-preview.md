@@ -6,11 +6,11 @@ The public live-reload artifact is already available at the URL below. This draf
 
 ## Suggested title
 
-GodotCascade 0.6: experimental GXML/GCSS UI that builds native Godot Controls
+GodotCascade 0.7: experimental GXML/GCSS UI that builds native Godot Controls
 
 ## Suggested post
 
-I've published GodotCascade 0.6, an experimental retained-mode UI framework for Godot 4.7. It turns a deliberately focused GXML/GCSS language into ordinary Godot `Control` trees. The current preview includes flex, grid, stack, and semantic-table layout; native form controls; reusable typed components; focused custom properties and typed arithmetic; explicit one-way and writable bindings; optional typed C# binding generation; source diagnostics; and keyed hot reload.
+I've published GodotCascade 0.7, an experimental retained-mode UI framework for Godot 4.7. It turns a deliberately focused GXML/GCSS language into ordinary Godot `Control` trees. The current preview includes flex, grid, stack, and semantic-table layout; native form controls; reusable typed components; retained typed collections and fixed-height virtualization; explicit bindings; optional typed C# generation; source diagnostics; and Godot/VS Code language tools.
 
 The goal is not browser compatibility. The interesting trade-off is a constrained, diagnosable authoring model while retaining native nodes, input, focus, editing behavior, signals, and Inspector visibility.
 
@@ -37,7 +37,7 @@ The repository includes a reproducible addon ZIP, the complete native CI suite, 
 ## Links to attach
 
 - [Repository](https://github.com/mfagerlund/GodotCascade)
-- [0.6.0 release](https://github.com/mfagerlund/GodotCascade/releases/tag/v0.6.0)
+- [0.7.0 release](https://github.com/mfagerlund/GodotCascade/releases/tag/v0.7.0)
 - [Native live-reload recording](live-reload-demo.md)
 - [Public parity showcase](https://mfagerlund.github.io/GodotCascade/showcase/)
 - [Current support reference](current-support.md)
