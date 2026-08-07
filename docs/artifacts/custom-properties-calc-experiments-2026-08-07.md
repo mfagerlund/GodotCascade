@@ -63,7 +63,19 @@ Five consecutive local 500-control benchmark runs passed. Median literal parse/b
 
 The manifest-driven native capture completed and the generated showcase stayed current; the layout screenshot remained byte-identical because the new variables and arithmetic intentionally reproduce the old literal values. Automated in-app browser visual inspection could not run because no browser backend was connected in the session. Static showcase generation/link checks and the existing paired HTML/Godot source/app suites remain the automated fallback; that browser availability limitation is not represented as visual certification.
 
-Final suite, clean-install, packaging, and exact pushed CI/Pages evidence is added here after the commit completes its release gates.
+Feature commit: [`afc9116`](https://github.com/mfagerlund/GodotCascade/commit/afc9116b964f34e00947d8c24218344956a51502)
+
+- All five local Godot 4.7 suites passed: flex engine, layout smoke, components, source pipeline, and runnable showcase app.
+- Repository verification passed for 272 files, including formatting, JSON, relative links/images, and license copies.
+- Generated showcase freshness passed, and the published page returned HTTP 200 with the new custom-property summary and typed-calc mapping.
+- Generated C# binding compilation passed with zero warnings and zero errors.
+- The final local benchmark passed at 194.312 ms literal parse/build and 220.400 ms expression-heavy build; the five-run distribution above is the more useful comparison.
+- Addon packaging produced 115 files with SHA-256 `6b58b75feb83ecf17102ff4d14e955622bb680d210a8d933c65db2efbb8e9839`.
+- Clean-install import and smoke testing passed with only the packaged addon present.
+- GitHub [Verify run 31204337235](https://github.com/mfagerlund/GodotCascade/actions/runs/31204337235) passed every repository, import, suite, C#, performance, package, clean-install, and artifact step for the exact feature SHA.
+- GitHub [Pages run 31204335348](https://github.com/mfagerlund/GodotCascade/actions/runs/31204335348) built and deployed the exact feature SHA successfully.
+
+The GitHub-managed legacy Pages workflow emitted a non-failing Node 20 deprecation annotation for its internal `actions/checkout@v4` and `actions/upload-artifact@v4`. The repository's own Verify workflow already uses current action majors; changing the managed Pages implementation would require replacing legacy Pages publishing with a custom workflow and was not justified by a successful deployment.
 
 ## Known limits
 
