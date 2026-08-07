@@ -6,6 +6,7 @@ GodotCascade 0.3.0 is the current public preview, including adapted multiline ed
 
 - [Project README](../README.md) — overview, setup, examples, and development commands
 - [Getting started](getting-started.md) — installation, first document, bindings, and next references
+- [Bindings](bindings.md) — one-way paths, writable forms, events, repeated scopes, refresh behavior, validation, limits, and C# integration
 - [Current support reference](current-support.md) — exact GXML elements, GCSS properties, selectors, pseudo states, and known limits
 - [Architecture](architecture.md) — runtime boundaries, reconciliation, binding, layout, and invalidation
 - [Adapted text input plan](adapted-text-input-plan.md) — native editing boundary and required behavior matrix

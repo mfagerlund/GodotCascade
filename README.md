@@ -152,6 +152,8 @@ Writable bindings are opt-in, so existing `{path}` attributes remain one-way:
 
 Native edits assign only existing Dictionary, Array, or object-property paths, emit `binding_value_changed`, and refresh dependent one-way controls. `CascadeDocument.validate()` evaluates adapted controls and publishes validation diagnostics. No expressions, converters, implicit object creation, or method calls are involved.
 
+See the [binding guide](docs/bindings.md) for the complete path grammar, supported attributes, dependent refresh behavior, repeated-item scopes, event targets, diagnostics, limits, and C# integration boundary.
+
 ## Components and interactive states
 
 The executable GXML elements are `Page`, `Row`, `Column`, `Panel`, `Label`, `Button`, `Checkbox`, `RadioButton`/`Radio`, `Switch`, `Select`/`Option`, `Slider`, `Progress`, and the adapted `TextInput`. GodotCascade owns the measurement and drawing of its exact components while native `LineEdit` and `TextEdit` continue to own single-line and multiline editing behavior.

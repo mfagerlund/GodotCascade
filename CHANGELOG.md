@@ -4,6 +4,7 @@ All notable changes to GodotCascade are documented here. Versions follow semanti
 
 ## [Unreleased]
 
+- Added an end-to-end binding guide covering one-way paths, writable forms, dependent refresh, events, repeated scopes, validation, diagnostics, limits, and C# integration.
 - Made the settings showcase's two-way write-back visible through live one-way labels bound to the same profile, quality, scale, and shadow values.
 - Compacted select popup rows and removed inherited closed-control borders from options.
 - Added antialiasing to slider, switch, and radio circular drawing.

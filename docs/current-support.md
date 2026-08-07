@@ -33,6 +33,8 @@ Unknown elements are build errors unless their native factory is registered thro
 
 ## Bindings
 
+For an end-to-end explanation and application examples, see the dedicated [binding guide](bindings.md).
+
 An entire supported attribute value may be an exact property-path binding:
 
 ```xml
