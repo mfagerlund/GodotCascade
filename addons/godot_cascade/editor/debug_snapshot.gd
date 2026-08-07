@@ -2,6 +2,8 @@ extends RefCounted
 
 ## Read-only resolved tree snapshot shared by the editor dock and tests.
 
+const BindingTrace := preload("res://addons/godot_cascade/runtime/binding_trace.gd")
+
 
 static func capture(root: Control) -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
@@ -28,6 +30,9 @@ static func _capture_node(control: Control, depth: int, result: Array[Dictionary
 		"key": str(control.get_meta("cascade_key", "")),
 		"rect": Rect2(control.position, control.size),
 		"style": style_values,
+		"binding_dependencies": BindingTrace.dependencies(control),
+		"binding_trace": control.get_meta(BindingTrace.TRACE_META, {}).duplicate(true),
+		"document_binding_trace": control.get_meta(BindingTrace.DOCUMENT_TRACE_META, {}).duplicate(true),
 		"source_path": str(control.get_meta("cascade_source_path", "")),
 		"source_line": int(control.get_meta("cascade_source_line", 1)),
 		"source_column": int(control.get_meta("cascade_source_column", 1)),

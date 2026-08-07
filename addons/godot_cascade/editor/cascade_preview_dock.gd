@@ -62,6 +62,7 @@ func _build_ui() -> void:
 	_document.log_diagnostics_to_console = false
 	_document.size = Vector2(960.0, 540.0)
 	_document.diagnostics_changed.connect(_on_diagnostics_changed)
+	_document.binding_trace_changed.connect(_on_binding_trace_changed)
 	_viewport.add_child(_document)
 
 	_status = Label.new()
@@ -70,11 +71,12 @@ func _build_ui() -> void:
 
 	_tree = Tree.new()
 	_tree.custom_minimum_size.y = 220.0
-	_tree.columns = 4
+	_tree.columns = 5
 	_tree.set_column_title(0, "Element")
 	_tree.set_column_title(1, "ID / classes")
 	_tree.set_column_title(2, "Rect")
 	_tree.set_column_title(3, "Resolved style")
+	_tree.set_column_title(4, "Bindings / invalidation")
 	_tree.column_titles_visible = true
 	_tree.item_activated.connect(_on_tree_item_activated)
 	add_child(_tree)
@@ -103,6 +105,17 @@ func _on_diagnostics_changed(diagnostics: Array[Dictionary]) -> void:
 	_update_debug_tree()
 
 
+func _on_binding_trace_changed(trace: Dictionary) -> void:
+	if not trace.is_empty():
+		_status.text = "Binding #%s: %s %s → %s control(s)" % [
+			trace.get("sequence", 0),
+			trace.get("strategy", "targeted"),
+			", ".join(trace.get("paths", PackedStringArray())),
+			trace.get("affected_controls", []).size(),
+		]
+	_update_debug_tree()
+
+
 func _update_debug_tree() -> void:
 	if _tree == null:
 		return
@@ -122,11 +135,34 @@ func _update_debug_tree() -> void:
 		item.set_text(2, str(entry["rect"]))
 		var style: Dictionary = entry["style"]
 		item.set_text(3, "bg %s · pad %s" % [style.get("background", "—"), style.get("padding", "—")])
+		var dependencies: Array = entry["binding_dependencies"]
+		var rendered_dependencies := PackedStringArray()
+		for dependency in dependencies:
+			var arrow := "↔" if dependency["mode"] == "two-way" else ("⇄" if dependency["mode"] in ["reconcile", "collection"] else "←")
+			rendered_dependencies.append("%s %s %s" % [dependency["property"], arrow, dependency["path"]])
+		var trace: Dictionary = entry["binding_trace"]
+		var rendered_trace := ""
+		if not trace.is_empty():
+			rendered_trace = "  • #%s %s" % [trace.get("sequence", 0), trace.get("strategy", "targeted")]
+		item.set_text(4, "%s%s" % ["; ".join(rendered_dependencies), rendered_trace])
+		if not dependencies.is_empty() or not trace.is_empty():
+			item.set_tooltip_text(4, _binding_tooltip(dependencies, trace))
 		item.set_metadata(0, {"path": entry["source_path"], "line": entry["source_line"], "column": entry["source_column"]})
 		if parents.size() == depth + 1:
 			parents.append(item)
 		else:
 			parents[depth + 1] = item
+
+
+func _binding_tooltip(dependencies: Array, trace: Dictionary) -> String:
+	var lines := PackedStringArray()
+	for dependency in dependencies:
+		lines.append("%s: %s (%s)" % [dependency["property"], dependency["path"], dependency["mode"]])
+	if not trace.is_empty():
+		lines.append("Last invalidation #%s: %s via %s" % [trace.get("sequence", 0), ", ".join(trace.get("paths", PackedStringArray())), trace.get("trigger", "manual")])
+		for match in trace.get("matches", []):
+			lines.append("matched %s: %s" % [match["property"], match["path"]])
+	return "\n".join(lines)
 
 
 func _on_tree_item_activated() -> void:

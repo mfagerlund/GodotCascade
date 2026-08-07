@@ -5,6 +5,7 @@ extends Control
 
 signal diagnostics_changed(diagnostics: Array[Dictionary])
 signal binding_value_changed(path: String, value: Variant, control: Control)
+signal binding_trace_changed(trace: Dictionary)
 signal validation_changed(valid: bool, diagnostics: Array[Dictionary])
 signal document_reloaded(root: Control)
 
@@ -16,6 +17,7 @@ const BindingResolver := preload("res://addons/godot_cascade/runtime/binding_res
 const ObservableBindingContext := preload("res://addons/godot_cascade/runtime/observable_binding_context.gd")
 const ComponentRegistry := preload("res://addons/godot_cascade/runtime/component_registry.gd")
 const AccessibilityAudit := preload("res://addons/godot_cascade/runtime/accessibility_audit.gd")
+const BindingTrace := preload("res://addons/godot_cascade/runtime/binding_trace.gd")
 
 @export_file("*.gxml") var markup_path := "":
 	set(value):
@@ -44,7 +46,7 @@ var binding_context: Variant:
 		binding_context = value
 		_connect_binding_observable()
 		if _generated_root != null:
-			refresh_bindings()
+			_refresh_all_bindings("context_changed")
 var event_context: Object:
 	set(value):
 		event_context = value
@@ -57,6 +59,8 @@ var _source_signatures := {}
 var _published_diagnostic_keys := {}
 var _last_build_size := Vector2.ZERO
 var _applying_bindings := false
+var _binding_trace_sequence := 0
+var _last_binding_trace: Dictionary = {}
 
 
 func _ready() -> void:
@@ -133,6 +137,8 @@ func reload_document() -> bool:
 			add_child(_generated_root)
 			_generated_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 			ComponentRegistry.mount_tree(_generated_root)
+	BindingTrace.clear(_generated_root)
+	_last_binding_trace = {}
 	_refresh_bindings(false)
 	_applying_bindings = was_applying_bindings
 	_refresh_writable_bindings(false)
@@ -163,6 +169,12 @@ func generated_root() -> Control:
 	return _generated_root
 
 
+## Latest named/full binding refresh trace for runtime and editor tooling.
+## Only the most recent trace is retained.
+func last_binding_trace() -> Dictionary:
+	return _last_binding_trace.duplicate(true)
+
+
 ## Returns the uniquely matching authored id, or null when it is absent or
 ## appears in more than one reusable-component scope.
 func get_element_by_id(element_id: String) -> Control:
@@ -181,9 +193,7 @@ func get_element_by_scoped_id(scoped_id: String) -> Control:
 ## Reapplies every {dot.separated.path} binding to the existing native tree.
 ## Call this after mutating binding_context; compatible controls keep identity.
 func refresh_bindings() -> bool:
-	if _generated_root != null and (_contains_element(_generated_root, "repeat") or _tree_has_rebuild_binding(_generated_root)):
-		return reload_document()
-	return _refresh_bindings(true)
+	return _refresh_all_bindings("manual")
 
 
 ## Reapplies only bindings that overlap one of the named paths.
@@ -191,14 +201,40 @@ func refresh_bindings() -> bool:
 ## `settings.profile`, and invalidating `settings.profile.name` also refreshes
 ## a control bound to `settings.profile`.
 func refresh_binding_paths(paths: PackedStringArray) -> bool:
+	return _refresh_named_bindings(paths, "manual")
+
+
+func _refresh_all_bindings(trigger: String, publish: bool = true) -> bool:
+	var strategy := "targeted"
+	var reason := "property"
+	var success: bool
+	if _generated_root != null and (_contains_element(_generated_root, "repeat") or _tree_has_rebuild_binding(_generated_root)):
+		strategy = "reconcile"
+		reason = "collection" if _contains_element(_generated_root, "repeat") else "rebuild_dependency"
+		success = reload_document()
+	else:
+		success = _refresh_bindings(publish)
+	_record_binding_trace(PackedStringArray(["*"]), trigger, strategy, reason, success)
+	return success
+
+
+func _refresh_named_bindings(paths: PackedStringArray, trigger: String, publish: bool = true, reconcile_collections: bool = true) -> bool:
 	var normalized := _normalized_binding_paths(paths)
 	if normalized.is_empty():
 		return false
 	if "*" in normalized:
-		return refresh_bindings()
-	if _generated_root != null and (_contains_element(_generated_root, "repeat") or _tree_has_matching_rebuild_binding(_generated_root, normalized)):
-		return reload_document()
-	return _refresh_binding_paths(normalized, true)
+		return _refresh_all_bindings(trigger, publish)
+	var strategy := "targeted"
+	var reason := "property"
+	var success: bool
+	if _generated_root != null and ((reconcile_collections and _contains_element(_generated_root, "repeat")) or _tree_has_matching_rebuild_binding(_generated_root, normalized)):
+		strategy = "reconcile"
+		reason = "collection" if reconcile_collections and _contains_element(_generated_root, "repeat") else "rebuild_dependency"
+		success = reload_document()
+	else:
+		success = _refresh_binding_paths(normalized, publish)
+	_record_binding_trace(normalized, trigger, strategy, reason, success)
+	return success
 
 
 ## Reconnects authored on-* signal bindings without disturbing user connections.
@@ -441,10 +477,7 @@ func _write_binding(control: Control, property_name: String, path: String, value
 		return
 	binding_value_changed.emit(path, value, control)
 	var changed_paths := PackedStringArray([path])
-	if _tree_has_matching_rebuild_binding(_generated_root, changed_paths):
-		reload_document()
-		return
-	_refresh_binding_paths(changed_paths, false)
+	_refresh_named_bindings(changed_paths, "write_back", false, false)
 	_publish_diagnostics()
 
 
@@ -498,7 +531,23 @@ func _disconnect_binding_observable() -> void:
 
 
 func _on_binding_paths_invalidated(paths: PackedStringArray) -> void:
-	refresh_binding_paths(paths)
+	_refresh_named_bindings(paths, "observable")
+
+
+func _record_binding_trace(paths: PackedStringArray, trigger: String, strategy: String, reason: String, success: bool) -> void:
+	_binding_trace_sequence += 1
+	var stats := last_reconcile_stats if strategy == "reconcile" else {}
+	_last_binding_trace = BindingTrace.record(
+		_generated_root,
+		paths,
+		trigger,
+		strategy,
+		reason,
+		_binding_trace_sequence,
+		success,
+		stats
+	)
+	binding_trace_changed.emit(_last_binding_trace.duplicate(true))
 
 
 func _normalized_binding_paths(paths: PackedStringArray) -> PackedStringArray:

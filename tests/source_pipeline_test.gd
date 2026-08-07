@@ -96,6 +96,7 @@ func _run() -> void:
 		var debug_snapshot := DebugSnapshot.capture(generated_root)
 		_expect_true("layout debugger captures generated hierarchy", debug_snapshot.size() > 5)
 		_expect_true("layout debugger includes resolved style", not debug_snapshot[0]["style"].is_empty())
+		_expect_true("layout debugger includes binding dependencies", debug_snapshot.any(func(entry): return not entry["binding_dependencies"].is_empty()))
 		var card_grids := _find_by_class(generated_root, "cards")
 		_expect_int("one cards grid", card_grids.size(), 1)
 		if card_grids.size() == 1:
@@ -155,6 +156,7 @@ func _run() -> void:
 		telemetry["reserve"] = 41.0
 		telemetry["reserve_label"] = "41%"
 		_expect_true("manual binding refresh succeeds", system_document.refresh_bindings())
+		_expect_true("repeated document trace explains conservative reconciliation", system_document.last_binding_trace()["strategy"] == "reconcile" and system_document.last_binding_trace()["reason"] == "collection")
 		_expect_float("binding refresh updates progress", reserve.get("value"), 41.0)
 		_expect_true("binding refresh preserves progress identity", reserve.get_instance_id() == reserve_instance_id)
 		var reserve_labels := _find_by_id(system_root, "reserve-value")
@@ -167,6 +169,8 @@ func _run() -> void:
 		_expect_true("descendant progress fill purple", system_progress[0].get("fill_color") == Color("b18cff"))
 		_expect_true("descendant progress fill green", system_progress[1].get("fill_color") == Color("65d6a7"))
 		_expect_true("descendant progress fill orange", system_progress[2].get("fill_color") == Color("ffb665"))
+	var system_debug_snapshot := DebugSnapshot.capture(system_root)
+	_expect_true("debugger exposes repeated collection dependencies", system_debug_snapshot.any(func(entry): return entry["binding_dependencies"].any(func(dependency): return dependency["property"] == "items" and dependency["mode"] == "collection")))
 
 	var settings_document := SETTINGS_MENU_SCENE.instantiate()
 	root.add_child(settings_document)
@@ -876,6 +880,7 @@ func _test_one_way_state_bindings() -> void:
 	_expect_true("false conditional omits native branch", _find_by_id(document.generated_root(), "conditional-content").is_empty())
 	state["ui"]["include"] = true
 	_expect_true("conditional path refresh reconciles", document.refresh_binding_paths(PackedStringArray(["ui.include"])))
+	_expect_true("conditional invalidation trace selects reconciliation", document.last_binding_trace()["strategy"] == "reconcile" and document.last_binding_trace()["reason"] == "rebuild_dependency" and document.last_binding_trace()["paths"] == PackedStringArray(["ui.include"]))
 	_expect_int("true conditional creates native branch", _find_by_id(document.generated_root(), "conditional-content").size(), 1)
 	state["ui"]["include"] = false
 	_expect_true("conditional false refresh reconciles", document.refresh_binding_paths(PackedStringArray(["ui.include"])))
@@ -894,6 +899,9 @@ func _test_one_way_state_bindings() -> void:
 	var card_instance := card.get_instance_id()
 	state["ui"]["classes"] = ["hot"]
 	_expect_true("bound class refresh reconciles", document.refresh_binding_paths(PackedStringArray(["ui.classes"])))
+	var class_trace_snapshot := DebugSnapshot.capture(document.generated_root())
+	var traced_class: Array = class_trace_snapshot.filter(func(entry): return entry["id"] == "card")
+	_expect_true("class dependency is exposed as reconcile trace", traced_class.size() == 1 and traced_class[0]["binding_dependencies"].any(func(dependency): return dependency["property"] == "class" and dependency["mode"] == "reconcile"))
 	card = _find_by_id(document.generated_root(), "card")[0]
 	_expect_true("bound class rematches selectors", card.get("cascade_style").background_color == Color("445566"))
 	_expect_true("bound class reconciliation preserves native identity", card.get_instance_id() == card_instance)
@@ -938,28 +946,45 @@ func _test_observable_binding_context() -> void:
 	var name_label: Control = _find_by_id(document.generated_root(), "name")[0]
 	var status_label: Control = _find_by_id(document.generated_root(), "status")[0]
 	var name_instance := name_label.get_instance_id()
+	var dependency_snapshot := DebugSnapshot.capture(document.generated_root())
+	var profile_snapshot: Dictionary = dependency_snapshot.filter(func(entry): return entry["id"] == "profile")[0]
+	var name_snapshot: Dictionary = dependency_snapshot.filter(func(entry): return entry["id"] == "name")[0]
+	_expect_true("debugger exposes two-way dependency", profile_snapshot["binding_dependencies"].any(func(dependency): return dependency["property"] == "text" and dependency["path"] == "player.name" and dependency["mode"] == "two-way"))
+	_expect_true("debugger exposes one-way dependency", name_snapshot["binding_dependencies"].any(func(dependency): return dependency["property"] == "text" and dependency["path"] == "player.name" and dependency["mode"] == "one-way"))
 	state["player"]["name"] = "Nova"
 	state["status"] = "Changed but not invalidated"
 	_expect_true("observable accepts exact named path", observable.invalidate("player.name"))
 	_expect_true("observable refreshes matching dependency", name_label.get("text") == "Nova")
 	_expect_true("observable leaves unrelated dependency untouched", status_label.get("text") == "Ready")
 	_expect_true("observable refresh preserves native identity", name_label.get_instance_id() == name_instance)
+	var observable_trace: Dictionary = document.last_binding_trace()
+	_expect_true("observable trace records trigger and targeted strategy", observable_trace["trigger"] == "observable" and observable_trace["strategy"] == "targeted")
+	_expect_int("observable trace counts matched dependencies", int(observable_trace["affected_bindings"]), 2)
+	var invalidation_snapshot := DebugSnapshot.capture(document.generated_root())
+	_expect_true("snapshot exposes document-level invalidation summary", invalidation_snapshot[0]["document_binding_trace"]["sequence"] == observable_trace["sequence"])
+	name_snapshot = invalidation_snapshot.filter(func(entry): return entry["id"] == "name")[0]
+	var status_snapshot: Dictionary = invalidation_snapshot.filter(func(entry): return entry["id"] == "status")[0]
+	_expect_true("matched control exposes latest invalidation", name_snapshot["binding_trace"]["paths"] == PackedStringArray(["player.name"]))
+	_expect_true("unmatched control has no active invalidation trace", status_snapshot["binding_trace"].is_empty())
 	state["player"]["name"] = "Rhea Prime"
 	_expect_true("observable parent path invalidates child dependency", observable.invalidate("player"))
 	_expect_true("observable parent refresh updates child binding", name_label.get("text") == "Rhea Prime")
 	_expect_true("observable rejects expression-like invalidation", not observable.invalidate("player.name + status"))
 	_expect_true("direct named refresh updates one path", document.refresh_binding_paths(PackedStringArray(["status"])))
 	_expect_true("direct named refresh applies pending value", status_label.get("text") == "Changed but not invalidated")
+	_expect_true("manual trace distinguishes direct refresh", document.last_binding_trace()["trigger"] == "manual" and document.last_binding_trace()["affected_bindings"] == 1)
 	input.text = "Orion"
 	input.text_changed.emit(input.text)
 	await process_frame
 	_expect_true("observable wrapper supports writable binding", state["player"]["name"] == "Orion")
 	_expect_true("observable writable update refreshes matching label", name_label.get("text") == "Orion")
+	_expect_true("write-back trace identifies native edit", document.last_binding_trace()["trigger"] == "write_back")
 	state["player"]["name"] = "Vega"
 	state["status"] = "All refreshed"
 	observable.invalidate_all()
 	_expect_true("observable full invalidation refreshes name", name_label.get("text") == "Vega")
 	_expect_true("observable full invalidation refreshes status", status_label.get("text") == "All refreshed")
+	_expect_true("full invalidation trace records wildcard", document.last_binding_trace()["paths"] == PackedStringArray(["*"]) and document.last_binding_trace()["affected_bindings"] == 3)
 	document.queue_free()
 	await process_frame
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(markup_path))

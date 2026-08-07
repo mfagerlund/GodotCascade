@@ -181,7 +181,7 @@ The repository currently contains several working vertical slices:
 - a focused `.gcss` subset with type/class/ID, descendant/direct-child selectors, specificity, inheritance, source order, typed values, layout values, and native pseudo states;
 - `CascadeDocument`, which builds the running native UI directly from paired source files;
 - content-based source watching with automatic runtime reloads;
-- `.gxml`/`.gcss` import resources plus a docked live preview, Inspector summary, layout debugger, and source navigation;
+- `.gxml`/`.gcss` import resources plus a docked live preview, Inspector summary, dependency/invalidation-aware layout debugger, and source navigation;
 - stable ID and structural keys that reconcile edits into the existing native tree;
 - last-valid rendering when an in-progress edit has parser or builder errors;
 - focused `{dot.separated.path}` one-way bindings, explicit writable form bindings, and optional typed C# partial generation;
@@ -434,7 +434,7 @@ The first nine vertical slices—layout, styling, markup, tooling, form controls
 The next pipeline is intentionally validation-first:
 
 1. **Public validation:** submit the prepared 0.5 testing-level Asset Library entry after maintainer approval, share the native live-reload artifact, and compare one production-shaped UI directly with GTML.
-2. **Focused reactivity and composition:** completed observable path invalidation, broader bound properties, exact conditions, and reusable typed GXML components; dependency traces in the debugger remain next.
+2. **Focused reactivity and composition:** completed observable path invalidation, broader bound properties, exact conditions, reusable typed GXML components, and dependency/invalidation traces in the debugger.
 3. **Language and editor depth:** the highest-value missing style primitives, focus traps/tab order, and real completion/hover/rename/go-to-definition tooling.
 4. **Scale and platform confidence:** collection-only updates, item models and virtualization, representative benchmarks, multi-platform CI, and manual IME/touch/screen-reader certification.
 

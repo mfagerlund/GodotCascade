@@ -17,7 +17,13 @@ The lower tree is the style/layout debugger. Each row shows:
 - GXML element, ID, classes, and reconciliation key;
 - the resolved native rectangle;
 - resolved background and padding values;
+- one-way (`←`), writable (`↔`), and reconcile/collection (`⇄`) binding dependencies;
+- the latest invalidation sequence on rows it matched and whether it used a targeted update or keyed reconciliation;
 - the authored GXML source location.
+
+Hover the binding column for exact property paths, dependency modes, invalidated paths, and matched properties. Conditional dependencies remain visible on the document root when their branch is absent. Class bindings explain selector-rematch reconciliation, and `Repeat` items are identified as collection dependencies.
+
+The debugger retains only the latest invalidation, not an unbounded event log. `CascadeDocument.last_binding_trace()` exposes the same document-level record to runtime tooling, and `binding_trace_changed(trace)` fires after manual, observable, context-change, and native write-back refreshes. A trace reports its sequence, trigger, paths, `targeted`/`reconcile` strategy, reason, affected control IDs/keys, matched dependency count, success, and reconciliation statistics when applicable.
 
 Double-clicking a row selects its source file in the FileSystem dock and leaves the exact line/column in the preview status. This provides source navigation without pretending `.gxml` is a GDScript resource.
 

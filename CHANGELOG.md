@@ -5,6 +5,7 @@ All notable changes to GodotCascade are documented here. Versions follow semanti
 ## [Unreleased]
 
 - Added reusable source-level GXML components with checked `String`/`bool`/`int`/`float`/`Variant` parameters, default and named slots, scoped IDs, source-aware diagnostics, and identity-preserving reconciliation.
+- Added bounded binding dependency and invalidation traces to `CascadeDocument`, `DebugSnapshot`, and the editor layout debugger, including targeted-versus-reconcile reasons and affected controls.
 
 ## [0.5.0] — 2026-08-07
 

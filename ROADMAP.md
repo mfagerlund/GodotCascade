@@ -19,7 +19,7 @@ The latest completed vertical slices add targeted observable invalidation, broad
 The next work keeps external validation separate from the remaining engineering pipeline:
 
 1. **Public validation:** finalize the Asset Library listing, publish a short native-tree/live-reload demonstration, invite a Godot developer to build a real interface, and compare one production-shaped UI directly with GTML.
-2. **Focused reactivity and composition:** path invalidation, broader state bindings, conditions, reusable components, and component-boundary reconciliation are complete; expose dependency and invalidation traces in the debugger next.
+2. **Focused reactivity and composition:** path invalidation, broader state bindings, conditions, reusable components, component-boundary reconciliation, and debugger traces are complete.
 3. **Language and tooling depth:** add the highest-value GCSS primitives, SVG textures and authored focus order, then provide completion, hover, formatting, rename, and navigation in Godot and VS Code.
 4. **Scale and platform confidence:** add incremental collection updates, item models and virtualization, benchmark realistic interfaces, extend CI across desktop platforms, and complete manual input/accessibility certification.
 
@@ -249,7 +249,7 @@ The first public preview should build a small settings menu from `.gxml` and a s
 - [x] Design explicit conditional rendering that remains diagnosable and does not evaluate arbitrary code
 - [x] Add reusable GXML components with typed parameters, slots, scoped IDs, and source-aware diagnostics
 - [x] Preserve keyed identity and native editing state across conditional/component boundaries
-- [ ] Add dependency and invalidation traces to the layout debugger
+- [x] Add dependency and invalidation traces to the layout debugger
 
 ## Phase 12 — language and editor depth
 

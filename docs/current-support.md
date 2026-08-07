@@ -96,6 +96,8 @@ Non-root elements accept `if="{boolean.path}"`. False conditions omit the native
 
 `BindingResolver` traverses typed Godot object properties, Arrays using numeric path segments, and Dictionaries. Typed `RefCounted` or `Resource` models are recommended for application state; Dictionaries remain useful for JSON-shaped data and prototypes. The resolver does not execute expressions or call methods. Assigning a new `CascadeDocument.binding_context` refreshes automatically. After nested mutations, call `refresh_bindings()` or wrap the model in `ObservableBindingContext` and call `invalidate("named.path")`; exact, parent, and child dependencies are refreshed without polling. Repeated documents still reconcile when a named path is invalidated because collection topology may have changed.
 
+The layout debugger exposes declared property/path dependencies and the latest matching invalidation. `CascadeDocument.last_binding_trace()` and `binding_trace_changed` provide the same bounded trace to runtime tooling, including trigger, strategy, reason, affected controls/bindings, success, and reconcile statistics. This is observability metadata, not automatic model watching or an expression runtime.
+
 `Repeat` accepts an array path through `items="{path}"`; its template can bind through local `item` and `index` scopes while retaining access to root paths. A `key` path relative to each item enables identity-preserving reorder/add/remove reconciliation.
 
 Form write-back is explicit and reuses the same exact path grammar:

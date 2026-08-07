@@ -1,6 +1,6 @@
 # GodotCascade documentation
 
-GodotCascade 0.5.0 is the current experimental preview; `main` additionally includes reusable typed GXML components with slots and scoped IDs. The preview includes targeted binding invalidation, native state bindings, exact boolean conditions, typed C# generation, semantic tables, native scrolling, and scoped repeated forms. Documentation distinguishes the supported focused surface from intentionally unsupported browser features.
+GodotCascade 0.5.0 is the current experimental preview; `main` additionally includes reusable typed GXML components with slots and scoped IDs plus dependency/invalidation traces in the layout debugger. The preview includes targeted binding invalidation, native state bindings, exact boolean conditions, typed C# generation, semantic tables, native scrolling, and scoped repeated forms. Documentation distinguishes the supported focused surface from intentionally unsupported browser features.
 
 ## Start here
 

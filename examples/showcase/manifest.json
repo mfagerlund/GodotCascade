@@ -26,6 +26,7 @@
         ["padding / gap", "padding / column-gap", "CascadeStyle + layout request"],
         ["card hover", ".cards > .card:hover", "Owned container hover adapter"],
         ["button click", "on-pressed=\"_on_inspect_layout\"", "Event-to-method binding"],
+        ["state dependency inspection", "debugger binding/invalidation trace", "Targeted update or keyed-reconcile reason"],
         [":hover / :active", ":hover / :pressed", "Native button state drawing"]
       ]
     },

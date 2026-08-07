@@ -89,6 +89,7 @@ static func _build_element(
 	control.set_meta("cascade_writable_bindings", {})
 	control.set_meta("cascade_events", {})
 	control.set_meta("cascade_binding_scope", binding_scope)
+	control.set_meta("cascade_condition_binding", BindingCompiler.binding_path(str(element.attributes.get("if", ""))))
 	control.set_meta("cascade_source_line", element.source_line)
 	control.set_meta("cascade_source_column", element.source_column)
 	control.set_meta("cascade_transition_properties", PackedStringArray())
@@ -146,6 +147,7 @@ static func _build_repeat_children(
 		diagnostics.append(_diagnostic("error", "Repeat 'items' must be an exact binding such as '{inventory.items}'."))
 		return
 	var items_path := BindingCompiler.binding_path(raw_items)
+	control.set_meta("cascade_collection_binding", items_path)
 	var resolved := BindingResolver.resolve(binding_context, items_path)
 	if not resolved["found"]:
 		diagnostics.append(_diagnostic("error", "Repeat could not resolve items: %s" % resolved["message"]))
