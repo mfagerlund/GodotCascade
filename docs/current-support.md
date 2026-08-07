@@ -29,10 +29,13 @@ This page documents the executable subset on `main`. GodotCascade borrows produc
 | `TableHeader` / `TableBody` | `CascadeTablePart` | Non-focusable semantic row groups |
 | `TableRow` | `CascadeTablePart` | Non-focusable semantic row container arranged by its table |
 | `TableHeaderCell` / `TableCell` | `CascadeTableCell` | Owned box/text cell with optional authored native content |
+| `Component` / `Param` / `Slot` | Non-visual source composition | Typed reusable template declared at the root and expanded before native construction |
 
 Every element accepts `id`, `class`, `accessible-label`, and `accessible-description`. Text-bearing controls use their visible text as the native accessibility name when no explicit label is authored. `Label`, `Button`, `Checkbox`, `RadioButton`, `Switch`, `TableHeaderCell`, and `TableCell` accept text as element content or through a `text` attribute. Interactive controls accept boolean `disabled`; toggle controls accept boolean `checked`; radio buttons use `group` to share a native `ButtonGroup`. `Select` accepts `selected` as an option value or zero-based index; `Option` accepts `value` and boolean `disabled`. `Progress` and `Slider` accept numeric `min`, `max`, and `value`; `Slider` also accepts a positive `step`. `TextInput` accepts `text`, `placeholder`, boolean `read-only`, `disabled`, `required`, and `multiline`, non-negative `max-length`, a Godot regular-expression `pattern`, and `error-message`. `secret` is supported only by the single-line adapter and is an error with `multiline="true"`. `Image` requires a `src` path that loads a Godot `Texture2D` resource.
 
-Unknown elements are build errors unless their native factory is registered through `ComponentRegistry`. `Window` is not implemented.
+An element name matching a root-level `Component` definition expands its single visual template root. Parameters support `String`, `bool`, `int`, `float`, and `Variant`; children fill default or named slots. Instance `id`, `class`, and `if` are forwarded to the template root. Template IDs are component-scoped for validation and reconciliation while remaining usable by local ID selectors. See [markup and state](markup-and-state.md#reusable-gxml-components) for the exact contract and lookup API.
+
+Other unknown elements are build errors unless their native factory is registered through `ComponentRegistry`. `Window` is not implemented.
 
 `Scroll` requires exactly one content child. It disables horizontal scrolling, adds a native vertical scrollbar when that child's intrinsic height exceeds the available viewport, and maps the supported box-model appearance through Godot's `ScrollContainer` panel style.
 
@@ -111,6 +114,8 @@ Form write-back is explicit and reuses the same exact path grammar:
 ### Generated C# bindings
 
 A GXML document may include one non-visual `Bindings` contract for optional Godot .NET code generation. `@Name` on supported one-way and `bind-*` attributes selects a declared typed binding instead of a dynamic property path. Every generated-bound element requires a unique `id`.
+
+Generated `@Name` bindings inside reusable component templates or passed as component parameters are not currently supported because one generated field cannot identify multiple scoped instances. Use runtime property-path bindings inside reusable components, or keep generated-bound elements outside component definitions.
 
 `Binding` declarations support a C# `type`, required getter method, and optional setter method. `Formatter` and `Parser` declarations copy CDATA bodies verbatim into the generated partial class with GXML `#line` mappings. The generated class owns native signal wiring, `RefreshGeneratedBindings()`, and reconnection through `CascadeDocument.document_reloaded`; the permanent companion partial implements the declared methods. This does not add arbitrary expression evaluation to runtime GXML. See [Bindings](bindings.md#typed-c-code-generation) for the exact syntax and command.
 

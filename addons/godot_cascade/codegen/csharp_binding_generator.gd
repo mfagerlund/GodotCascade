@@ -50,7 +50,8 @@ static func generate(source: String, source_path := "interface.gxml") -> Diction
 	var definitions: Dictionary = _read_definitions(contract, diagnostics)
 	var usages: Array[Dictionary] = []
 	var seen_ids: Dictionary = {}
-	_collect_usages(root, definitions, usages, seen_ids, diagnostics)
+	var component_names := _component_names(root)
+	_collect_usages(root, definitions, usages, seen_ids, diagnostics, false, component_names)
 	if usages.is_empty():
 		diagnostics.append(_diagnostic(contract, "Bindings contract has no @Binding usages."))
 	if _has_errors(diagnostics):
@@ -107,15 +108,29 @@ static func _read_definitions(contract, diagnostics: Array[Dictionary]) -> Dicti
 	return result
 
 
-static func _collect_usages(element, definitions: Dictionary, usages: Array[Dictionary], seen_ids: Dictionary, diagnostics: Array[Dictionary]) -> void:
+static func _collect_usages(
+	element,
+	definitions: Dictionary,
+	usages: Array[Dictionary],
+	seen_ids: Dictionary,
+	diagnostics: Array[Dictionary],
+	inside_component_template: bool = false,
+	component_names: Dictionary = {}
+) -> void:
 	if element.tag_name.to_lower() == "bindings":
 		return
+	var tag_name: String = element.tag_name.to_lower()
+	var is_component_definition := tag_name == "component"
+	var is_component_invocation := component_names.has(tag_name)
 	for attribute_name in element.attributes:
 		var normalized: String = str(attribute_name).to_lower()
 		var raw_value: String = str(element.attributes[attribute_name]).strip_edges()
 		if not raw_value.begins_with("@"):
 			continue
 		var binding_name: String = raw_value.trim_prefix("@").strip_edges()
+		if inside_component_template or is_component_definition or is_component_invocation:
+			diagnostics.append(_diagnostic(element, "Generated binding '@%s' is not supported inside or as an argument to reusable GXML components; use a runtime {path} binding." % binding_name))
+			continue
 		var property_name := ""
 		var writable := false
 		var signal_name := ""
@@ -167,7 +182,18 @@ static func _collect_usages(element, definitions: Dictionary, usages: Array[Dict
 			"multiline": str(element.attributes.get("multiline", "false")).to_lower() in ["true", "1", "yes", "on"],
 		})
 	for child in element.children:
-		_collect_usages(child, definitions, usages, seen_ids, diagnostics)
+		_collect_usages(child, definitions, usages, seen_ids, diagnostics, inside_component_template or is_component_definition, component_names)
+
+
+static func _component_names(root) -> Dictionary:
+	var names := {}
+	for child in root.children:
+		if child.tag_name.to_lower() != "component":
+			continue
+		var name := str(child.attributes.get("name", "")).strip_edges().to_lower()
+		if not name.is_empty():
+			names[name] = true
+	return names
 
 
 static func _render_code(generated_class: String, namespace_name: String, document_path: String, source_path: String, definitions: Dictionary, usages: Array[Dictionary]) -> String:

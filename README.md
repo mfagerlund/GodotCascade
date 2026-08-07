@@ -186,6 +186,7 @@ The repository currently contains several working vertical slices:
 - last-valid rendering when an in-progress edit has parser or builder errors;
 - focused `{dot.separated.path}` one-way bindings, explicit writable form bindings, and optional typed C# partial generation;
 - keyed `Repeat` collections, `on-*` event methods, and registered custom-component lifecycle hooks;
+- reusable source-level GXML components with typed parameters, default/named slots, scoped IDs, and identity-preserving hot reload;
 - four source-generated parity scenes covering layout, media, components, form controls, bound telemetry data, and semantic tables.
 
 Version 0.2 adds native single-line text editing, validation, and explicit `bind-*` write-back while retaining the 0.1 source surface. Version 0.3 also adapts native `TextEdit` through `TextInput multiline="true"`, adds keyed repeated-item write-back, and supports hover backgrounds on owned layout containers. Browser-wide property coverage remains out of scope.
@@ -209,7 +210,6 @@ Choose GodotCascade when you want a reviewable source format, native controls, C
 
 - automatic dependency-tracked reactivity; mutations still require an explicit full or named-path invalidation;
 - general expressions and Vue/JSX-style control flow beyond exact boolean path conditions;
-- reusable markup components with typed parameters rather than native factory registration;
 - an open vocabulary covering every built-in `Control` or arbitrary `Node`;
 - broad CSS features such as variables, `calc()`, opacity, transforms, gradients, custom fonts, and inline SVG;
 - `autofocus`, authored tab order, modal focus traps, and higher-level routing;
@@ -433,8 +433,8 @@ The first nine vertical slices—layout, styling, markup, tooling, form controls
 
 The next pipeline is intentionally validation-first:
 
-1. **Public validation:** publish 0.4, submit a testing-level Asset Library entry, show native live reload, and compare one production-shaped UI directly with GTML.
-2. **Focused reactivity and composition:** observable path invalidation, more bound properties, explicit conditional rendering, and reusable typed GXML components—without adding a general expression runtime.
+1. **Public validation:** submit the prepared 0.5 testing-level Asset Library entry after maintainer approval, share the native live-reload artifact, and compare one production-shaped UI directly with GTML.
+2. **Focused reactivity and composition:** completed observable path invalidation, broader bound properties, exact conditions, and reusable typed GXML components; dependency traces in the debugger remain next.
 3. **Language and editor depth:** the highest-value missing style primitives, focus traps/tab order, and real completion/hover/rename/go-to-definition tooling.
 4. **Scale and platform confidence:** collection-only updates, item models and virtualization, representative benchmarks, multi-platform CI, and manual IME/touch/screen-reader certification.
 

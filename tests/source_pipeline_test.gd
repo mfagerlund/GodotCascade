@@ -78,6 +78,7 @@ func _run() -> void:
 	await _test_writable_binding_pipeline()
 	await _test_repeated_writable_binding_pipeline()
 	await _test_markup_state_features()
+	await _test_reusable_gxml_components()
 	await _test_identity_preserving_reload()
 	root.size = Vector2i(960, 540)
 	var document := GENERATED_SCENE.instantiate()
@@ -372,6 +373,8 @@ return double.TryParse(value.TrimEnd('%'), out result);
 
 	var invalid := CsharpBindingGenerator.generate("<Page><Bindings class=\"Broken\"><Binding name=\"Value\" type=\"double\" get=\"GetValue\" /></Bindings><Slider bind-value=\"@Value\" /></Page>")
 	_expect_true("generated writable binding requires id and setter", invalid["diagnostics"].size() >= 2)
+	var component_binding := CsharpBindingGenerator.generate("<Page><Component name=\"ValueCard\"><Label id=\"value\" text=\"@Value\"/></Component><ValueCard/><Bindings class=\"Broken\"><Binding name=\"Value\" type=\"string\" get=\"GetValue\" /></Bindings></Page>")
+	_expect_true("generated bindings inside reusable components are rejected", component_binding["diagnostics"].any(func(diagnostic): return "reusable GXML components" in diagnostic.get("message", "")))
 
 
 func _test_gcss_specificity() -> void:
@@ -1206,6 +1209,107 @@ func _on_test_card_unmount(_control: Control) -> void:
 
 func _on_phase3_event() -> void:
 	_phase3_events += 1
+
+
+func _test_reusable_gxml_components() -> void:
+	var markup_path := "user://cascade_reusable_component_test.gxml"
+	var stylesheet_path := "user://cascade_reusable_component_test.gcss"
+	var initial_markup := """<Page>
+	<Component name="FieldCard">
+		<Param name="title" type="String" required="true" />
+		<Param name="shown" type="bool" default="true" />
+		<Panel class="field-card" visible="{params.shown}">
+			<Label id="title" class="field-title" text="{params.title}" />
+			<Slot />
+			<Row class="field-actions"><Slot name="actions"><Label>Fallback action</Label></Slot></Row>
+		</Panel>
+	</Component>
+	<FieldCard id="primary" title="{model.title}">
+		<TextInput id="editor" bind-text="{model.value}" />
+		<Label id="shared">Primary slot</Label>
+		<Button id="save" slot="actions">Save</Button>
+	</FieldCard>
+	<FieldCard id="secondary" title="Secondary" class="secondary-card">
+		<Label id="shared">Secondary body</Label>
+	</FieldCard>
+	<Label id="stable" if="{model.show_note}">Stable sibling</Label>
+</Page>"""
+	var updated_markup := initial_markup.replace("class=\"field-card\"", "class=\"field-card refreshed\"")
+	_expect_true("write reusable-component markup", _write_text(markup_path, initial_markup))
+	_expect_true("write reusable-component stylesheet", _write_text(stylesheet_path, "#title { color: #7dbfff; } .secondary-card { background: #182230; }"))
+	var context := {"model": {"title": "Pilot name", "value": "Rhea", "show_note": true}}
+	var document: Control = CascadeDocument.new()
+	document.load_on_ready = false
+	document.log_diagnostics_to_console = false
+	document.watch_sources = false
+	document.binding_context = context
+	document.markup_path = markup_path
+	document.stylesheet_path = stylesheet_path
+	root.add_child(document)
+	_expect_true("reusable-component document loads", document.reload_document())
+	_expect_int("component definitions are non-visual", _find_by_class(document.generated_root(), "field-card").size(), 2)
+	var titles := _find_by_id(document.generated_root(), "title")
+	_expect_int("component-local ids may repeat across scopes", titles.size(), 2)
+	_expect_true("bound typed parameter reaches template", titles[0].get("text") == "Pilot name")
+	_expect_true("literal typed parameter reaches template", titles[1].get("text") == "Secondary")
+	_expect_true("local id selector styles each component", titles.all(func(title): return title.get("text_color") == Color("7dbfff")))
+	_expect_true("default slot inserts caller content", _find_by_id(document.generated_root(), "editor").size() == 1)
+	_expect_true("named slot inserts caller content", _find_by_id(document.generated_root(), "save").size() == 1)
+	_expect_true("unused named slot renders fallback", _find_by_class(document.generated_root(), "field-actions")[1].get_child(0).get("text") == "Fallback action")
+	_expect_true("component invocation class reaches template root", _find_by_class(document.generated_root(), "secondary-card").size() == 1)
+	_expect_true("ambiguous local id lookup returns null", document.get_element_by_id("title") == null)
+	_expect_true("scoped id lookup resolves primary title", document.get_element_by_scoped_id("primary/title") == titles[0])
+	_expect_true("slotted ids are scoped to their component instance", document.get_element_by_scoped_id("primary/shared").get("text") == "Primary slot" and document.get_element_by_scoped_id("secondary/shared").get("text") == "Secondary body")
+	var editor: Control = document.get_element_by_id("editor")
+	editor.set("text", "Edited live")
+	editor.emit_signal("text_changed", "Edited live")
+	editor.set("caret_column", 4)
+	var editor_instance := editor.get_instance_id()
+	_expect_true("write reusable-component template update", _write_text(markup_path, updated_markup))
+	_expect_true("component template hot reload succeeds", document.poll_sources())
+	editor = document.get_element_by_id("editor")
+	_expect_true("component child preserves keyed identity", editor.get_instance_id() == editor_instance)
+	_expect_true("component child preserves native editing state", editor.get("text") == "Edited live")
+	_expect_true("component child preserves caret state", editor.get("caret_column") == 4)
+	var stable: Control = document.get_element_by_id("stable")
+	var stable_instance := stable.get_instance_id()
+	context["model"]["show_note"] = false
+	_expect_true("conditional outside component reconciles", document.refresh_binding_paths(PackedStringArray(["model.show_note"])))
+	context["model"]["show_note"] = true
+	_expect_true("conditional outside component returns", document.refresh_binding_paths(PackedStringArray(["model.show_note"])))
+	_expect_true("component sibling identity survives conditional reconciliation", document.get_element_by_id("editor").get_instance_id() == editor_instance)
+	_expect_true("conditional branch is recreated after removal", document.get_element_by_id("stable").get_instance_id() != stable_instance)
+
+	var invalid_source := """<Page>
+	<Component name="Badge"><Param name="count" type="int" required="true"/><Label text="{params.count}"/></Component>
+	<Badge count="many"><Button slot="missing">No</Button></Badge>
+</Page>"""
+	var invalid_parse := GxmlParser.parse(invalid_source)
+	var invalid_build := CascadeBuilder.build(invalid_parse["root"], [])
+	_expect_true("invalid component arguments are diagnosed", _has_error_diagnostics(invalid_build["diagnostics"]))
+	_expect_true("component diagnostics include invocation source line", invalid_build["diagnostics"].any(func(diagnostic): return diagnostic.get("line", 0) == 3))
+	if invalid_build["root"] != null:
+		invalid_build["root"].free()
+	var reserved_parse := GxmlParser.parse("<Page><Component name=\"Label\"><Panel/></Component></Page>")
+	var reserved_build := CascadeBuilder.build(reserved_parse["root"], [])
+	_expect_true("component names cannot shadow built-in elements", reserved_build["diagnostics"].any(func(diagnostic): return "conflicts with a built-in" in diagnostic.get("message", "")))
+	if reserved_build["root"] != null:
+		reserved_build["root"].free()
+	var nested_parse := GxmlParser.parse("<Page><Panel><Component name=\"Nested\"><Panel/></Component></Panel></Page>")
+	var nested_build := CascadeBuilder.build(nested_parse["root"], [])
+	_expect_true("component definitions must be root children", nested_build["diagnostics"].any(func(diagnostic): return "direct children" in diagnostic.get("message", "")))
+	if nested_build["root"] != null:
+		nested_build["root"].free()
+	var recursive_parse := GxmlParser.parse("<Page><Component name=\"First\"><Second/></Component><Component name=\"Second\"><First/></Component><First/></Page>")
+	var recursive_build := CascadeBuilder.build(recursive_parse["root"], [])
+	_expect_true("recursive component expansion is diagnosed", recursive_build["diagnostics"].any(func(diagnostic): return "Recursive component expansion" in diagnostic.get("message", "")))
+	if recursive_build["root"] != null:
+		recursive_build["root"].free()
+
+	root.remove_child(document)
+	document.free()
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(markup_path))
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(stylesheet_path))
 
 
 func _test_identity_preserving_reload() -> void:

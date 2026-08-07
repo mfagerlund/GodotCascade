@@ -28,17 +28,23 @@ const BindingResolver := preload("res://addons/godot_cascade/runtime/binding_res
 const DocumentValidator := preload("res://addons/godot_cascade/runtime/document_validator.gd")
 const BindingCompiler := preload("res://addons/godot_cascade/runtime/binding_compiler.gd")
 const DeclarationApplier := preload("res://addons/godot_cascade/runtime/declaration_applier.gd")
+const GxmlComponentExpander := preload("res://addons/godot_cascade/runtime/gxml_component_expander.gd")
 
 const INHERITED_PROPERTIES: PackedStringArray = ["color", "font-size"]
 
 
 static func build(root_element, rules: Array, binding_context: Variant = null, viewport_size: Vector2 = Vector2.ZERO) -> Dictionary:
-	var diagnostics: Array[Dictionary] = DocumentValidator.validate(root_element)
+	var expansion := GxmlComponentExpander.expand(root_element)
+	var expanded_root = expansion["root"]
+	var diagnostics: Array[Dictionary] = expansion["diagnostics"]
+	if expanded_root == null:
+		return {"root": null, "diagnostics": diagnostics}
+	diagnostics.append_array(DocumentValidator.validate(expanded_root))
 	var button_groups: Dictionary = {}
 	var document_rebuild_bindings := PackedStringArray()
 	DeclarationApplier.begin_build(viewport_size)
 	var rule_index := _index_rules(rules, viewport_size)
-	var root_control := _build_element(root_element, rule_index, diagnostics, "0", button_groups, binding_context, {}, "", document_rebuild_bindings)
+	var root_control := _build_element(expanded_root, rule_index, diagnostics, "0", button_groups, binding_context, {}, "", document_rebuild_bindings)
 	if root_control != null:
 		root_control.set_meta("cascade_document_rebuild_bindings", document_rebuild_bindings)
 	return {"root": root_control, "diagnostics": diagnostics}
@@ -63,15 +69,20 @@ static func _build_element(
 		control = CascadeTablePart.new()
 		control.set("semantic_role", "group")
 	else:
-		control = _create_control(element.tag_name, diagnostics, element.attributes)
+		control = _create_control(element, diagnostics)
 	if control == null:
 		return null
 
 	control.name = element.element_id() if not element.element_id().is_empty() else element.tag_name
 	control.set_meta("cascade_element_type", element.tag_name)
 	control.set_meta("cascade_id", element.element_id())
+	var component_scope := str(element.attributes.get("__component_scope", ""))
+	control.set_meta("cascade_component_scope", component_scope)
+	control.set_meta("cascade_scoped_id", "%s/%s" % [component_scope, element.element_id()] if not component_scope.is_empty() and not element.element_id().is_empty() else element.element_id())
+	if element.attributes.has("__component_name"):
+		control.set_meta("cascade_component_name", element.attributes["__component_name"])
 	control.set_meta("cascade_classes", element.classes())
-	var local_key: String = "#" + element.element_id() if not element.element_id().is_empty() else key_path
+	var local_key: String = "#%s/%s" % [component_scope, element.element_id()] if not component_scope.is_empty() and not element.element_id().is_empty() else ("#" + element.element_id() if not element.element_id().is_empty() else key_path)
 	control.set_meta("cascade_key", "%s/%s" % [key_scope, local_key] if not key_scope.is_empty() else local_key)
 	control.set_meta("cascade_bindings", {})
 	control.set_meta("cascade_rebuild_bindings", PackedStringArray([class_binding_path]) if not class_binding_path.is_empty() else PackedStringArray())
@@ -179,7 +190,9 @@ static func _build_repeat_children(
 			control.add_child(child)
 
 
-static func _create_control(tag_name: String, diagnostics: Array[Dictionary], attributes: Dictionary = {}) -> Control:
+static func _create_control(element, diagnostics: Array[Dictionary]) -> Control:
+	var tag_name: String = element.tag_name
+	var attributes: Dictionary = element.attributes
 	match tag_name.to_lower():
 		"page", "row", "column":
 			return CascadeBox.new()
@@ -246,9 +259,10 @@ static func _create_control(tag_name: String, diagnostics: Array[Dictionary], at
 					return custom
 				diagnostics.append(_diagnostic("error", "Custom component factory for <%s> did not return a Control." % tag_name))
 				return null
-			diagnostics.append(_diagnostic(
+			diagnostics.append(_diagnostic_at(
 				"error",
-				"Unknown GXML element <%s>. Register a native control factory before using it." % tag_name
+				"Unknown GXML element <%s>. Register a native control factory before using it." % tag_name,
+				element
 			))
 			return null
 
@@ -719,3 +733,12 @@ static func _has_property(target: Object, property_name: String) -> bool:
 
 static func _diagnostic(severity: String, message: String) -> Dictionary:
 	return {"severity": severity, "message": message}
+
+
+static func _diagnostic_at(severity: String, message: String, element) -> Dictionary:
+	return {
+		"severity": severity,
+		"line": element.source_line,
+		"column": element.source_column,
+		"message": message,
+	}

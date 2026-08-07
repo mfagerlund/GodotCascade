@@ -163,6 +163,21 @@ func generated_root() -> Control:
 	return _generated_root
 
 
+## Returns the uniquely matching authored id, or null when it is absent or
+## appears in more than one reusable-component scope.
+func get_element_by_id(element_id: String) -> Control:
+	var matches: Array[Control] = []
+	_collect_elements_by_metadata(_generated_root, "cascade_id", element_id, matches)
+	return matches[0] if matches.size() == 1 else null
+
+
+## Returns an element by its component-qualified id, such as `audio/title`.
+func get_element_by_scoped_id(scoped_id: String) -> Control:
+	var matches: Array[Control] = []
+	_collect_elements_by_metadata(_generated_root, "cascade_scoped_id", scoped_id, matches)
+	return matches[0] if matches.size() == 1 else null
+
+
 ## Reapplies every {dot.separated.path} binding to the existing native tree.
 ## Call this after mutating binding_context; compatible controls keep identity.
 func refresh_bindings() -> bool:
@@ -605,6 +620,15 @@ func _stamp_source_path(node: Node) -> void:
 		node.set_meta("cascade_source_path", markup_path)
 	for child in node.get_children():
 		_stamp_source_path(child)
+
+
+func _collect_elements_by_metadata(node: Node, metadata_name: String, value: String, matches: Array[Control]) -> void:
+	if node == null:
+		return
+	if node is Control and str(node.get_meta(metadata_name, "")) == value:
+		matches.append(node)
+	for child in node.get_children():
+		_collect_elements_by_metadata(child, metadata_name, value, matches)
 
 
 func _capture_source_signatures() -> void:

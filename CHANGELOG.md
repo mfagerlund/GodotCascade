@@ -4,6 +4,8 @@ All notable changes to GodotCascade are documented here. Versions follow semanti
 
 ## [Unreleased]
 
+- Added reusable source-level GXML components with checked `String`/`bool`/`int`/`float`/`Variant` parameters, default and named slots, scoped IDs, source-aware diagnostics, and identity-preserving reconciliation.
+
 ## [0.5.0] — 2026-08-07
 
 - Added an observable binding-context adapter with exact parent/child path invalidation, targeted native updates, writable-binding support, and no polling or expression runtime.

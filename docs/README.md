@@ -1,6 +1,6 @@
 # GodotCascade documentation
 
-GodotCascade 0.5.0 is the current experimental preview, including targeted binding invalidation, native state bindings, exact boolean conditions, typed C# generation, semantic tables, native scrolling, and scoped repeated forms. Documentation distinguishes the supported focused surface from intentionally unsupported browser features.
+GodotCascade 0.5.0 is the current experimental preview; `main` additionally includes reusable typed GXML components with slots and scoped IDs. The preview includes targeted binding invalidation, native state bindings, exact boolean conditions, typed C# generation, semantic tables, native scrolling, and scoped repeated forms. Documentation distinguishes the supported focused surface from intentionally unsupported browser features.
 
 ## Start here
 
@@ -13,7 +13,7 @@ GodotCascade 0.5.0 is the current experimental preview, including targeted bindi
 - [TextInput certification matrix](text-input-certification.md) — automated evidence and platform-dependent limits
 - [Native control compatibility tiers](compatibility-tiers.md) — exact, adapted, and layout-only classification and diagnostics
 - [Style system](style-system.md) — token spans, typed values, selectors, inheritance, computed caching, and theme adapters
-- [Markup and state](markup-and-state.md) — keyed repeats, scoped bindings, event methods, and custom component lifecycle
+- [Markup and state](markup-and-state.md) — reusable typed GXML components, slots, scoped IDs, keyed repeats, events, and native custom-component lifecycle
 - [Editor tooling](editor-tooling.md) — importers, live preview, generated-control Inspector, debugger, and source navigation
 - [Production readiness](production-readiness.md) — transitions, responsive rules, navigation, accessibility, and release gates
 - [Release process](release-process.md) — reproducible packaging, clean-install smoke testing, and tag publishing

@@ -5,8 +5,8 @@ GodotCascade is split into pure data transformations around a narrow Godot adapt
 ## Runtime pipeline
 
 ```text
-.gxml ──→ GxmlParser ──→ DocumentValidator ──┐
-                                             ├──→ CascadeBuilder ──→ off-tree candidate Controls
+.gxml ──→ GxmlParser ──→ ComponentExpander ──→ DocumentValidator ──┐
+                                                                   ├──→ CascadeBuilder ──→ off-tree candidate Controls
 .gcss ──→ GcssParser ──→ DeclarationApplier ─┘               │
 binding syntax ─────────→ BindingCompiler ────────────────────┤
                                                              ▼
@@ -30,7 +30,7 @@ Parsers return logical values plus recoverable line/column diagnostics; GCSS tok
 
 ### Logical element tree
 
-The logical tree represents authored structure before native construction. Elements have type names, attributes, classes, optional IDs, text, parent links, and children. `DocumentValidator` rejects duplicate IDs and invalid table/scroll relationships before construction. `CascadeBuilder` then derives explicit-ID or structural keys and creates the candidate native tree, while `BindingCompiler` owns one-way, writable, and event-binding metadata. The logical tree is deliberately smaller than a browser DOM and is not exposed as a general scripting platform.
+The logical tree represents authored structure before native construction. Elements have type names, attributes, classes, optional IDs, text, parent links, and children. `GxmlComponentExpander` collects root-level reusable definitions, validates typed parameters and slots, substitutes exact `{params.name}` values, and expands instances without introducing native wrapper controls. `DocumentValidator` then rejects duplicate IDs within each component scope and invalid table/scroll relationships. `CascadeBuilder` derives component-qualified explicit-ID or structural keys and creates the candidate native tree, while `BindingCompiler` owns one-way, writable, and event-binding metadata. The logical tree is deliberately smaller than a browser DOM and is not exposed as a general scripting platform.
 
 ### Style engine
 
@@ -71,7 +71,7 @@ Godot .NET projects may instead declare `@Name` bindings in a non-visual GXML `B
 
 The reconciler compares the previous logical tree with the next one, then applies the smallest practical set of mutations to native nodes. It must preserve runtime state—especially focus, line-edit selection, scroll position, animation state, and user signal connections—whenever element identity is stable.
 
-`CascadeDocument` builds each source revision as an off-tree candidate. If parsing and construction succeed, `CascadeReconciler` matches controls by explicit `id`, repeated item key, or structural fallback key and copies authored properties into compatible native instances. This preserves focus, runtime state, and user signal connections. Incompatible or removed elements are replaced narrowly; an invalid candidate is discarded so the last valid tree stays interactive. Parsed elements use weak parent links, allowing selector matching without reference cycles. `ComponentRegistry` brackets reconciliation with mount/update/unmount callbacks, while the document reconnects only its authored `on-*` signal bindings.
+`CascadeDocument` builds each source revision as an off-tree candidate. If parsing and construction succeed, `CascadeReconciler` matches controls by component-scoped explicit `id`, repeated item key, or structural fallback key and copies authored properties into compatible native instances. This preserves focus, runtime state, and user signal connections across reusable component templates and ordinary authored structure. Incompatible or removed elements are replaced narrowly; an invalid candidate is discarded so the last valid tree stays interactive. Parsed elements use weak parent links, allowing selector matching without reference cycles. `ComponentRegistry` brackets reconciliation with mount/update/unmount callbacks, while the document reconnects only its authored `on-*` signal bindings.
 
 The runtime watcher compares source-content signatures rather than filesystem timestamps, avoiding timestamp-resolution and editor atomic-save differences. It polls on a configurable interval and uses the same transactional reload path as explicit reloads.
 

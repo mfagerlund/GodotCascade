@@ -1,5 +1,14 @@
 <!-- Executed by CascadeDocument's focused GXML/GCSS vertical slice. -->
 <Page class="page">
+    <Component name="FeatureCard">
+        <Param name="title" type="String" required="true" />
+        <Panel class="card">
+            <Slot name="media" />
+            <Label id="title" class="card-title" text="{params.title}" />
+            <Slot />
+        </Panel>
+    </Component>
+
     <Stack class="hero">
         <Label class="heading">GodotCascade</Label>
         <Label class="layout-badge">GRID + STACK</Label>
@@ -7,27 +16,24 @@
     <Label class="lede">Native controls. A predictable box model. Far fewer wrappers.</Label>
 
     <Grid class="cards">
-        <Panel class="card box-model">
-            <Label class="card-title">Box model</Label>
+        <FeatureCard id="box-model-card" class="box-model" title="Box model">
             <Label class="card-body">
                 Padding, margins, gaps, borders, and size constraints live in one layout system.
             </Label>
-        </Panel>
+        </FeatureCard>
 
-        <Panel class="card flex-flow">
-            <Label class="card-title">Flex flow</Label>
+        <FeatureCard id="flex-flow-card" class="flex-flow" title="Flex flow">
             <Label class="card-body">
                 Rows and columns support growth, alignment, distribution, and wrapping.
             </Label>
-        </Panel>
+        </FeatureCard>
 
-        <Panel class="card godot-native">
-            <Image class="card-image" src="res://examples/showcase/assets/cascade-orbit.svg" accessible-label="Stylized blue orbital landscape" />
-            <Label class="card-title">Godot native</Label>
+        <FeatureCard id="godot-native-card" class="godot-native" title="Godot native">
+            <Image slot="media" class="card-image" src="res://examples/showcase/assets/cascade-orbit.svg" accessible-label="Stylized blue orbital landscape" />
             <Label class="card-body">
                 Every element remains a real Control with Godot rendering, input, themes, and signals.
             </Label>
-        </Panel>
+        </FeatureCard>
     </Grid>
 
     <Row class="{ui.action_classes}">

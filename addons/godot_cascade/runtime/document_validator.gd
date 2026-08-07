@@ -22,8 +22,10 @@ static func _validate_unique_id(element, first_occurrences: Dictionary, diagnost
 	var element_id: String = element.element_id()
 	if element_id.is_empty():
 		return
-	if first_occurrences.has(element_id):
-		var first: Dictionary = first_occurrences[element_id]
+	var scope := str(element.attributes.get("__component_scope", ""))
+	var scoped_id := "%s/%s" % [scope, element_id] if not scope.is_empty() else element_id
+	if first_occurrences.has(scoped_id):
+		var first: Dictionary = first_occurrences[scoped_id]
 		diagnostics.append({
 			"severity": "error",
 			"line": element.source_line,
@@ -35,7 +37,7 @@ static func _validate_unique_id(element, first_occurrences: Dictionary, diagnost
 			],
 		})
 		return
-	first_occurrences[element_id] = {
+	first_occurrences[scoped_id] = {
 		"line": element.source_line,
 		"column": element.source_column,
 	}

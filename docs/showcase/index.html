@@ -78,7 +78,7 @@
         <div>
           <p class="eyebrow">Current demo</p>
           <h2>Layout foundation</h2>
-          <p>A feature-card layout exercising fractional grid tracks, gaps, stack overlays, absolute insets, flex flow, box styling, and the owned button component.</p>
+          <p>Reusable typed feature cards exercising slots, scoped IDs, fractional grid tracks, stack overlays, flex flow, box styling, and native controls.</p>
         </div>
         <dl>
           <div><dt>Viewport</dt><dd>960 × 540</dd></div>
@@ -107,7 +107,7 @@
         </div>
         <table>
           <thead><tr><th>HTML/CSS</th><th>GodotCascade source</th><th>Runtime</th></tr></thead>
-          <tbody><tr><td><code>&lt;main&gt;</code></td><td><code>&lt;Page&gt;</code></td><td><code>CascadeBox (column)</code></td></tr><tr><td><code>display: grid</code></td><td><code>&lt;Grid&gt;</code></td><td><code>CascadeGrid track layout</code></td></tr><tr><td><code>1fr 1fr 1fr</code></td><td><code>grid-template-columns</code></td><td><code>Fractional track resolution</code></td></tr><tr><td><code>.cards &gt; .card</code></td><td><code>.cards &gt; .card</code></td><td><code>Direct-child selector matching</code></td></tr><tr><td><code>@media (max-width: 700px)</code></td><td><code>@media (max-width: 700px)</code></td><td><code>Viewport-conditional recomputation</code></td></tr><tr><td><code>7vh</code></td><td><code>7vh</code></td><td><code>Viewport-aware length resolution</code></td></tr><tr><td><code>position: absolute</code></td><td><code>&lt;Stack&gt; + right/top</code></td><td><code>Overlay inset placement</code></td></tr><tr><td><code>visual media</code></td><td><code>&lt;Image src=&quot;res://…&quot;&gt;</code></td><td><code>CascadeImage cover crop</code></td></tr><tr><td><code>padding / gap</code></td><td><code>padding / column-gap</code></td><td><code>CascadeStyle + layout request</code></td></tr><tr><td><code>card hover</code></td><td><code>.cards &gt; .card:hover</code></td><td><code>Owned container hover adapter</code></td></tr><tr><td><code>button click</code></td><td><code>on-pressed=&quot;_on_inspect_layout&quot;</code></td><td><code>Event-to-method binding</code></td></tr><tr><td><code>:hover / :active</code></td><td><code>:hover / :pressed</code></td><td><code>Native button state drawing</code></td></tr></tbody>
+          <tbody><tr><td><code>&lt;main&gt;</code></td><td><code>&lt;Page&gt;</code></td><td><code>CascadeBox (column)</code></td></tr><tr><td><code>display: grid</code></td><td><code>&lt;Grid&gt;</code></td><td><code>CascadeGrid track layout</code></td></tr><tr><td><code>repeated card structure</code></td><td><code>&lt;Component&gt; + typed Param + Slot</code></td><td><code>Source-expanded native controls with scoped IDs</code></td></tr><tr><td><code>1fr 1fr 1fr</code></td><td><code>grid-template-columns</code></td><td><code>Fractional track resolution</code></td></tr><tr><td><code>.cards &gt; .card</code></td><td><code>.cards &gt; .card</code></td><td><code>Direct-child selector matching</code></td></tr><tr><td><code>@media (max-width: 700px)</code></td><td><code>@media (max-width: 700px)</code></td><td><code>Viewport-conditional recomputation</code></td></tr><tr><td><code>7vh</code></td><td><code>7vh</code></td><td><code>Viewport-aware length resolution</code></td></tr><tr><td><code>position: absolute</code></td><td><code>&lt;Stack&gt; + right/top</code></td><td><code>Overlay inset placement</code></td></tr><tr><td><code>visual media</code></td><td><code>&lt;Image src=&quot;res://…&quot;&gt;</code></td><td><code>CascadeImage cover crop</code></td></tr><tr><td><code>padding / gap</code></td><td><code>padding / column-gap</code></td><td><code>CascadeStyle + layout request</code></td></tr><tr><td><code>card hover</code></td><td><code>.cards &gt; .card:hover</code></td><td><code>Owned container hover adapter</code></td></tr><tr><td><code>button click</code></td><td><code>on-pressed=&quot;_on_inspect_layout&quot;</code></td><td><code>Event-to-method binding</code></td></tr><tr><td><code>:hover / :active</code></td><td><code>:hover / :pressed</code></td><td><code>Native button state drawing</code></td></tr></tbody>
         </table>
       </section>
 
@@ -340,6 +340,15 @@
         <summary><span>GodotCascade markup</span><code>examples/showcase/layout_foundation/interface.gxml</code></summary>
         <pre><code class="language-xml">&lt;!-- Executed by CascadeDocument&#x27;s focused GXML/GCSS vertical slice. --&gt;
 &lt;Page class=&quot;page&quot;&gt;
+    &lt;Component name=&quot;FeatureCard&quot;&gt;
+        &lt;Param name=&quot;title&quot; type=&quot;String&quot; required=&quot;true&quot; /&gt;
+        &lt;Panel class=&quot;card&quot;&gt;
+            &lt;Slot name=&quot;media&quot; /&gt;
+            &lt;Label id=&quot;title&quot; class=&quot;card-title&quot; text=&quot;{params.title}&quot; /&gt;
+            &lt;Slot /&gt;
+        &lt;/Panel&gt;
+    &lt;/Component&gt;
+
     &lt;Stack class=&quot;hero&quot;&gt;
         &lt;Label class=&quot;heading&quot;&gt;GodotCascade&lt;/Label&gt;
         &lt;Label class=&quot;layout-badge&quot;&gt;GRID + STACK&lt;/Label&gt;
@@ -347,27 +356,24 @@
     &lt;Label class=&quot;lede&quot;&gt;Native controls. A predictable box model. Far fewer wrappers.&lt;/Label&gt;
 
     &lt;Grid class=&quot;cards&quot;&gt;
-        &lt;Panel class=&quot;card box-model&quot;&gt;
-            &lt;Label class=&quot;card-title&quot;&gt;Box model&lt;/Label&gt;
+        &lt;FeatureCard id=&quot;box-model-card&quot; class=&quot;box-model&quot; title=&quot;Box model&quot;&gt;
             &lt;Label class=&quot;card-body&quot;&gt;
                 Padding, margins, gaps, borders, and size constraints live in one layout system.
             &lt;/Label&gt;
-        &lt;/Panel&gt;
+        &lt;/FeatureCard&gt;
 
-        &lt;Panel class=&quot;card flex-flow&quot;&gt;
-            &lt;Label class=&quot;card-title&quot;&gt;Flex flow&lt;/Label&gt;
+        &lt;FeatureCard id=&quot;flex-flow-card&quot; class=&quot;flex-flow&quot; title=&quot;Flex flow&quot;&gt;
             &lt;Label class=&quot;card-body&quot;&gt;
                 Rows and columns support growth, alignment, distribution, and wrapping.
             &lt;/Label&gt;
-        &lt;/Panel&gt;
+        &lt;/FeatureCard&gt;
 
-        &lt;Panel class=&quot;card godot-native&quot;&gt;
-            &lt;Image class=&quot;card-image&quot; src=&quot;res://examples/showcase/assets/cascade-orbit.svg&quot; accessible-label=&quot;Stylized blue orbital landscape&quot; /&gt;
-            &lt;Label class=&quot;card-title&quot;&gt;Godot native&lt;/Label&gt;
+        &lt;FeatureCard id=&quot;godot-native-card&quot; class=&quot;godot-native&quot; title=&quot;Godot native&quot;&gt;
+            &lt;Image slot=&quot;media&quot; class=&quot;card-image&quot; src=&quot;res://examples/showcase/assets/cascade-orbit.svg&quot; accessible-label=&quot;Stylized blue orbital landscape&quot; /&gt;
             &lt;Label class=&quot;card-body&quot;&gt;
                 Every element remains a real Control with Godot rendering, input, themes, and signals.
             &lt;/Label&gt;
-        &lt;/Panel&gt;
+        &lt;/FeatureCard&gt;
     &lt;/Grid&gt;
 
     &lt;Row class=&quot;{ui.action_classes}&quot;&gt;

@@ -6,7 +6,7 @@
     {
       "id": "layout-foundation",
       "title": "Layout foundation",
-      "summary": "A feature-card layout exercising fractional grid tracks, gaps, stack overlays, absolute insets, flex flow, box styling, and the owned button component.",
+      "summary": "Reusable typed feature cards exercising slots, scoped IDs, fractional grid tracks, stack overlays, flex flow, box styling, and native controls.",
       "viewport": [960, 540],
       "html": "examples/showcase/layout_foundation/reference.html",
       "gxml": "examples/showcase/layout_foundation/interface.gxml",
@@ -16,6 +16,7 @@
       "mappings": [
         ["<main>", "<Page>", "CascadeBox (column)"],
         ["display: grid", "<Grid>", "CascadeGrid track layout"],
+        ["repeated card structure", "<Component> + typed Param + Slot", "Source-expanded native controls with scoped IDs"],
         ["1fr 1fr 1fr", "grid-template-columns", "Fractional track resolution"],
         [".cards > .card", ".cards > .card", "Direct-child selector matching"],
         ["@media (max-width: 700px)", "@media (max-width: 700px)", "Viewport-conditional recomputation"],

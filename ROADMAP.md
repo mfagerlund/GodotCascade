@@ -4,22 +4,22 @@ The roadmap favors end-to-end slices over isolated subsystems. Each milestone sh
 
 ## Status snapshot
 
-The executable foundation now covers flex/grid/stack layout, owned and adapted form controls, GXML and focused GCSS parsing, native-tree construction, keyed hot reload, last-valid diagnostics, one-way and explicit writable property-path bindings, automated captures, the HTML parity report, and a manifest-driven runnable Godot showcase app.
+The executable foundation now covers flex/grid/stack layout, owned and adapted form controls, GXML and focused GCSS parsing, reusable typed components with slots and scoped IDs, native-tree construction, keyed hot reload, last-valid diagnostics, one-way and explicit writable property-path bindings, automated captures, the HTML parity report, and a manifest-driven runnable Godot showcase app.
 
 All planned 0.1 milestones and every first-public-preview acceptance item are complete. The source-generated settings-menu slice includes shared interactive-state precedence, a native mouse/keyboard/controller test matrix, and owned checkbox, grouped radio-button, switch, select, and slider components. The layout foundation includes native grid tracks, automatic and explicit placement, stack overlays, absolute insets, media, responsive rules, and viewport values. The editor and performance release gates are executable.
 
-Versions 0.1.0 through 0.4.0 are tagged and published through the reproducible release gate. The 0.2 interactive-forms slice adds an adapted native single-line text input, explicit writable bindings, validation state, input-modality-aware focus styling, and a live settings workflow exercised in both native and HTML showcase views. Version 0.3 adds the corresponding native multiline adapter, repeated-item write-back, and owned-container hover backgrounds. Version 0.4 adds optional typed C# generation, semantic tables, native scrolling, and dynamic collection examples.
+Versions 0.1.0 through 0.5.0 are tagged and published through the reproducible release gate. The 0.2 interactive-forms slice adds an adapted native single-line text input, explicit writable bindings, validation state, input-modality-aware focus styling, and a live settings workflow exercised in both native and HTML showcase views. Version 0.3 adds the corresponding native multiline adapter, repeated-item write-back, and owned-container hover backgrounds. Version 0.4 adds optional typed C# generation, semantic tables, native scrolling, and dynamic collection examples. Version 0.5 adds targeted invalidation, broader one-way native state, and exact conditional rendering.
 
 The reproduced findings in the [2026-08-05 code review](docs/artifacts/review.md) and the [2026-08-07 publication-readiness review](docs/artifacts/publication-readiness-review-2026-08-07.md) are part of this roadmap. Blocking correctness fixes take priority when they touch the same runtime layer as an active vertical slice.
 
-The latest completed vertical slices add optional typed C# binding generation without replacing the lightweight runtime path resolver, followed by semantic tables with shared-column layout, keyed repeated rows, and an application-level add/remove/sort/drag showcase.
+The latest completed vertical slices add targeted observable invalidation, broader one-way state, exact boolean conditions, and reusable source-level components without replacing the lightweight runtime path resolver or introducing an expression engine.
 
 ## Forward pipeline at a glance
 
-The next work is deliberately ordered around external validation before large language expansion:
+The next work keeps external validation separate from the remaining engineering pipeline:
 
 1. **Public validation:** finalize the Asset Library listing, publish a short native-tree/live-reload demonstration, invite a Godot developer to build a real interface, and compare one production-shaped UI directly with GTML.
-2. **Focused reactivity and composition:** add dependency-tracked path invalidation, bind additional control state and resources, introduce explicit conditional rendering, and support reusable typed GXML components with slots and scoped IDs.
+2. **Focused reactivity and composition:** path invalidation, broader state bindings, conditions, reusable components, and component-boundary reconciliation are complete; expose dependency and invalidation traces in the debugger next.
 3. **Language and tooling depth:** add the highest-value GCSS primitives, SVG textures and authored focus order, then provide completion, hover, formatting, rename, and navigation in Godot and VS Code.
 4. **Scale and platform confidence:** add incremental collection updates, item models and virtualization, benchmark realistic interfaces, extend CI across desktop platforms, and complete manual input/accessibility certification.
 
@@ -233,7 +233,7 @@ The first public preview should build a small settings menu from `.gxml` and a s
 - [x] Select, small-size test, and publish a square project and Asset Library icon
 - [x] Make the repository public after verifying its release page and installation archive
 - [x] Prepare and verify the remaining Godot Asset Library metadata for a testing-support submission
-- [ ] Submit the prepared 0.4.0 entry through the authenticated Godot Asset Library form
+- [ ] Submit the prepared 0.5.0 entry through the authenticated Godot Asset Library form
 - [x] Prepare a short, reproducible native-tree/live-reload demonstration
 - [x] Prepare a candid Godot community announcement and structured feedback questions
 - [ ] Publish the live-reload artifact after maintainer approval
@@ -247,8 +247,8 @@ The first public preview should build a small settings menu from `.gxml` and a s
 - [x] Add an observable adapter that can invalidate named paths without polling or a general expression runtime
 - [x] Extend one-way targets to documented state such as visibility, disabled state, classes, image source, and selected values
 - [x] Design explicit conditional rendering that remains diagnosable and does not evaluate arbitrary code
-- [ ] Add reusable GXML components with typed parameters, slots, scoped IDs, and source-aware diagnostics
-- [ ] Preserve keyed identity and native editing state across conditional/component boundaries
+- [x] Add reusable GXML components with typed parameters, slots, scoped IDs, and source-aware diagnostics
+- [x] Preserve keyed identity and native editing state across conditional/component boundaries
 - [ ] Add dependency and invalidation traces to the layout debugger
 
 ## Phase 12 — language and editor depth
