@@ -77,7 +77,8 @@ func _draw() -> void:
 		_current_background_color(),
 		cascade_style.border_color,
 		cascade_style.border_width,
-		cascade_style.border_radius
+		cascade_style.border_radius,
+		cascade_style.background_gradient
 	)
 	if has_focus() and focus_ring_width > 0.0:
 		BoxPainter.draw_box(

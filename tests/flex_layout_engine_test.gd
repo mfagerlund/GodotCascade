@@ -16,6 +16,9 @@ func _initialize() -> void:
 	_test_pixel_snapping()
 	_test_justification_modes()
 	_test_column_wrapping()
+	_test_flex_basis_and_shrink()
+	_test_shrink_floor_redistribution()
+	_test_basis_clamps_and_measurement_uses_shrink_floor()
 
 	if _failures.is_empty():
 		print("GodotCascade flex layout engine tests passed.")
@@ -169,6 +172,44 @@ func _test_column_wrapping() -> void:
 	_expect_rect("column wrap first", result[0], Rect2(0.0, 0.0, 20.0, 45.0))
 	_expect_rect("column wrap second", result[1], Rect2(0.0, 55.0, 20.0, 45.0))
 	_expect_rect("column wrap next line", result[2], Rect2(25.0, 0.0, 20.0, 45.0))
+
+
+func _test_flex_basis_and_shrink() -> void:
+	var request := _request(Vector2(120.0, 20.0), LayoutEngine.DIRECTION_ROW)
+	request.pixel_snap = false
+	var items: Array[LayoutEngine.LayoutItem] = [
+		LayoutEngine.LayoutItem.new(Vector2(80.0, 10.0), Vector4.ZERO, 0.0, Vector2(INF, INF), -1, 1.0, 100.0, Vector2(20.0, 10.0)),
+		LayoutEngine.LayoutItem.new(Vector2(60.0, 10.0), Vector4.ZERO, 0.0, Vector2(INF, INF), -1, 1.0, 80.0, Vector2(20.0, 10.0)),
+	]
+	var result := LayoutEngine.arrange(items, request)
+	_expect_float("basis participates in negative free space", result[0].size.x, 200.0 / 3.0)
+	_expect_float("basis shrink weighting uses scaled factor", result[1].size.x, 160.0 / 3.0)
+	_expect_float("shrunk siblings fill the main axis", result[1].end.x, 120.0)
+
+
+func _test_shrink_floor_redistribution() -> void:
+	var request := _request(Vector2(80.0, 20.0), LayoutEngine.DIRECTION_ROW)
+	request.pixel_snap = false
+	var items: Array[LayoutEngine.LayoutItem] = [
+		LayoutEngine.LayoutItem.new(Vector2(60.0, 10.0), Vector4.ZERO, 0.0, Vector2(INF, INF), -1, 1.0, -1.0, Vector2(50.0, 10.0)),
+		LayoutEngine.LayoutItem.new(Vector2(60.0, 10.0), Vector4.ZERO, 0.0, Vector2(INF, INF), -1, 1.0, -1.0, Vector2(10.0, 10.0)),
+	]
+	var result := LayoutEngine.arrange(items, request)
+	_expect_float("shrink freezes at minimum", result[0].size.x, 50.0)
+	_expect_float("remaining deficit redistributes", result[1].size.x, 30.0)
+
+
+func _test_basis_clamps_and_measurement_uses_shrink_floor() -> void:
+	var request := _request(Vector2(100.0, 20.0), LayoutEngine.DIRECTION_ROW)
+	request.pixel_snap = false
+	var items: Array[LayoutEngine.LayoutItem] = [
+		LayoutEngine.LayoutItem.new(Vector2(30.0, 10.0), Vector4.ZERO, 0.0, Vector2(50.0, INF), -1, 1.0, 5.0, Vector2(20.0, 10.0)),
+		LayoutEngine.LayoutItem.new(Vector2(30.0, 10.0), Vector4.ZERO, 0.0, Vector2(40.0, INF), -1, 1.0, 80.0, Vector2(10.0, 10.0)),
+	]
+	var result := LayoutEngine.arrange(items, request)
+	_expect_float("basis below floor clamps to floor", result[0].size.x, 20.0)
+	_expect_float("basis above maximum clamps to maximum", result[1].size.x, 40.0)
+	_expect_float("shrinkable measurement reports floors", LayoutEngine.measure(items, request).x, 30.0)
 
 
 func _request(request_size: Vector2, request_direction: int) -> LayoutEngine.LayoutRequest:

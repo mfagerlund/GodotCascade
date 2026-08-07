@@ -17,6 +17,7 @@ const BindingResolver := preload("res://addons/godot_cascade/runtime/binding_res
 const ObservableBindingContext := preload("res://addons/godot_cascade/runtime/observable_binding_context.gd")
 const ComponentRegistry := preload("res://addons/godot_cascade/runtime/component_registry.gd")
 const AccessibilityAudit := preload("res://addons/godot_cascade/runtime/accessibility_audit.gd")
+const FocusManager := preload("res://addons/godot_cascade/runtime/focus_manager.gd")
 const BindingTrace := preload("res://addons/godot_cascade/runtime/binding_trace.gd")
 
 @export_file("*.gxml") var markup_path := "":
@@ -61,11 +62,17 @@ var _last_build_size := Vector2.ZERO
 var _applying_bindings := false
 var _binding_trace_sequence := 0
 var _last_binding_trace: Dictionary = {}
+var _active_focus_trap: Control
+var _focus_before_trap: WeakRef
+var _focus_redirecting := false
+var _suppress_focus_contract_refresh := false
 
 
 func _ready() -> void:
 	set_process(watch_sources)
 	resized.connect(_on_document_resized)
+	if not get_viewport().gui_focus_changed.is_connected(_on_viewport_focus_changed):
+		get_viewport().gui_focus_changed.connect(_on_viewport_focus_changed)
 	if load_on_ready:
 		reload_document()
 	else:
@@ -114,10 +121,13 @@ func reload_document() -> bool:
 	var build_result := CascadeBuilder.build(markup_result["root"], style_result["rules"], _binding_root_context(), size)
 	_append_diagnostics(build_result["diagnostics"], "builder")
 	if _has_errors() or build_result["root"] == null:
+		if build_result["root"] != null:
+			build_result["root"].free()
 		_publish_diagnostics()
 		return false
 
 	var desired_root: Control = build_result["root"]
+	var initial_mount := _generated_root == null
 	_stamp_source_path(desired_root)
 	var was_applying_bindings := _applying_bindings
 	_applying_bindings = true
@@ -139,11 +149,13 @@ func reload_document() -> bool:
 			ComponentRegistry.mount_tree(_generated_root)
 	BindingTrace.clear(_generated_root)
 	_last_binding_trace = {}
+	_suppress_focus_contract_refresh = true
 	_refresh_bindings(false)
 	_applying_bindings = was_applying_bindings
 	_refresh_writable_bindings(false)
 	_refresh_events(false)
-	AccessibilityAudit.apply_linear_navigation(_generated_root, wrap_focus_navigation)
+	_suppress_focus_contract_refresh = false
+	_refresh_focus_contracts(initial_mount)
 	if audit_accessibility:
 		for diagnostic in AccessibilityAudit.audit(_generated_root):
 			var stamped: Dictionary = diagnostic.duplicate()
@@ -188,6 +200,61 @@ func get_element_by_scoped_id(scoped_id: String) -> Control:
 	var matches: Array[Control] = []
 	_collect_elements_by_metadata(_generated_root, "cascade_scoped_id", scoped_id, matches)
 	return matches[0] if matches.size() == 1 else null
+
+
+func _refresh_focus_contracts(initial_mount: bool) -> void:
+	if _generated_root == null:
+		return
+	var previous_trap := _active_focus_trap
+	var next_trap := FocusManager.active_trap(_generated_root)
+	var focus_owner := get_viewport().gui_get_focus_owner()
+	if previous_trap == null and next_trap != null and focus_owner is Control and not FocusManager.contains(next_trap, focus_owner):
+		_focus_before_trap = weakref(focus_owner)
+	_active_focus_trap = next_trap
+	FocusManager.apply_navigation(_generated_root, wrap_focus_navigation)
+
+	if previous_trap != null and next_trap == null:
+		_restore_focus_before_trap()
+		return
+	var newly_activated := next_trap != null and previous_trap != next_trap
+	if initial_mount or newly_activated:
+		var scope := next_trap if next_trap != null else _generated_root
+		var target := FocusManager.autofocus_target(scope)
+		if target == null and newly_activated:
+			target = FocusManager.first_focusable(scope)
+		if target != null:
+			target.call_deferred("grab_focus")
+	elif next_trap != null and (not focus_owner is Control or not FocusManager.contains(next_trap, focus_owner)):
+		_redirect_focus_to_trap.call_deferred()
+
+
+func _on_viewport_focus_changed(control: Control) -> void:
+	if _focus_redirecting or _active_focus_trap == null or control == null:
+		return
+	if not FocusManager.contains(_active_focus_trap, control):
+		_redirect_focus_to_trap.call_deferred()
+
+
+func _redirect_focus_to_trap() -> void:
+	if _active_focus_trap == null or not is_instance_valid(_active_focus_trap):
+		return
+	var target := FocusManager.autofocus_target(_active_focus_trap)
+	if target == null:
+		target = FocusManager.first_focusable(_active_focus_trap)
+	if target == null:
+		return
+	_focus_redirecting = true
+	target.grab_focus()
+	_focus_redirecting = false
+
+
+func _restore_focus_before_trap() -> void:
+	if _focus_before_trap == null:
+		return
+	var target = _focus_before_trap.get_ref()
+	_focus_before_trap = null
+	if target is Control and is_instance_valid(target) and target.is_inside_tree() and target.visible and target.focus_mode != Control.FOCUS_NONE:
+		target.call_deferred("grab_focus")
 
 
 ## Reapplies every {dot.separated.path} binding to the existing native tree.
@@ -318,6 +385,8 @@ func _refresh_bindings(publish: bool) -> bool:
 	_applying_bindings = true
 	_apply_bindings(_generated_root)
 	_applying_bindings = was_applying_bindings
+	if not _suppress_focus_contract_refresh:
+		_refresh_focus_contracts(false)
 	if publish:
 		_publish_diagnostics()
 	return not _has_errors()
@@ -335,6 +404,8 @@ func _refresh_binding_paths(paths: PackedStringArray, publish: bool) -> bool:
 	_applying_bindings = true
 	_apply_bindings(_generated_root, paths)
 	_applying_bindings = was_applying_bindings
+	if not _suppress_focus_contract_refresh:
+		_refresh_focus_contracts(false)
 	if publish:
 		_publish_diagnostics()
 	return not _has_errors()

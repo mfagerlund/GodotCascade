@@ -78,7 +78,9 @@ func _get_minimum_size() -> Vector2:
 		if _label != null:
 			content_minimum = _label.get_combined_minimum_size()
 		elif not text.is_empty():
-			content_minimum = get_theme_default_font().get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size)
+			var resolved_font := font if font != null else get_theme_default_font()
+			if resolved_font != null:
+				content_minimum = resolved_font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size)
 	else:
 		for child in authored:
 			content_minimum = content_minimum.max(child.get_combined_minimum_size())
@@ -92,7 +94,8 @@ func _draw() -> void:
 		cascade_style.background_color,
 		cascade_style.border_color,
 		cascade_style.border_width,
-		_resolved_corner_radii()
+		_resolved_corner_radii(),
+		cascade_style.background_gradient
 	)
 
 

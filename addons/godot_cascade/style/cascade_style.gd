@@ -136,6 +136,19 @@ enum SelfAlignment {
 		if is_equal_approx(flex_grow, next): return
 		flex_grow = next
 		_emit_invalidation(Invalidation.ARRANGE)
+@export_range(0.0, 100.0, 0.05, "or_greater") var flex_shrink := 0.0:
+	set(value):
+		var next := maxf(value, 0.0)
+		if is_equal_approx(flex_shrink, next): return
+		flex_shrink = next
+		_emit_invalidation(Invalidation.ARRANGE)
+## A negative value represents the authored `auto` basis.
+@export var flex_basis := -1.0:
+	set(value):
+		var next := maxf(value, -1.0)
+		if is_equal_approx(flex_basis, next): return
+		flex_basis = next
+		_emit_invalidation(Invalidation.MEASURE | Invalidation.ARRANGE)
 
 @export_group("Box Appearance")
 @export var background_color := Color.TRANSPARENT:
@@ -143,6 +156,14 @@ enum SelfAlignment {
 		if background_color == value:
 			return
 		background_color = value
+		_emit_invalidation(Invalidation.DRAW)
+## Focused two-stop linear gradient descriptor produced by the GCSS adapter.
+@export var background_gradient: Dictionary = {}:
+	set(value):
+		var next := value.duplicate(true)
+		if background_gradient == next:
+			return
+		background_gradient = next
 		_emit_invalidation(Invalidation.DRAW)
 @export var border_color := Color.TRANSPARENT:
 	set(value):

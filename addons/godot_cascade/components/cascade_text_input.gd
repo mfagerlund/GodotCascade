@@ -24,6 +24,11 @@ const FocusVisibilityTracker := preload("res://addons/godot_cascade/components/f
 	set(next):
 		text_color = next
 		_sync_theme()
+@export var font: Font:
+	set(next):
+		font = next
+		_sync_theme()
+		update_minimum_size()
 @export_range(1, 256, 1, "or_greater") var font_size := 16:
 	set(next):
 		font_size = maxi(next, 1)
@@ -151,13 +156,13 @@ func _ready() -> void:
 
 
 func _get_minimum_size() -> Vector2:
-	var font := get_theme_default_font()
+	var resolved_font := font if font != null else get_theme_default_font()
 	var sample := placeholder_text if text.is_empty() else text
 	var content := Vector2(80.0, float(font_size))
-	if font != null:
-		content = font.get_string_size(sample, HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size)
+	if resolved_font != null:
+		content = resolved_font.get_string_size(sample, HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size)
 		content.x = maxf(content.x, 80.0)
-		content.y = font.get_height(font_size)
+		content.y = resolved_font.get_height(font_size)
 	var minimum := content + Vector2(
 		cascade_style.padding_left + cascade_style.padding_right + cascade_style.border_width * 2.0,
 		cascade_style.padding_top + cascade_style.padding_bottom + cascade_style.border_width * 2.0
@@ -311,3 +316,7 @@ func _sync_theme() -> void:
 	add_theme_color_override("font_uneditable_color", resolved_text)
 	add_theme_color_override("font_placeholder_color", placeholder_color)
 	add_theme_font_size_override("font_size", font_size)
+	if font != null:
+		add_theme_font_override("font", font)
+	else:
+		remove_theme_font_override("font")

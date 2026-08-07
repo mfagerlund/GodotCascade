@@ -22,8 +22,9 @@ const LAYOUT_PROPERTIES := {
 	"width": true, "height": true, "min-width": true, "min-height": true,
 	"max-width": true, "max-height": true, "margin": true, "margin-left": true,
 	"margin-top": true, "margin-right": true, "margin-bottom": true,
-	"flex-grow": true, "align-self": true, "grid-column": true, "grid-row": true,
+	"flex-grow": true, "flex-shrink": true, "flex-basis": true, "align-self": true, "grid-column": true, "grid-row": true,
 	"position": true, "left": true, "top": true, "right": true, "bottom": true,
+	"opacity": true, "transform": true, "transform-origin": true, "font-source": true,
 }
 
 

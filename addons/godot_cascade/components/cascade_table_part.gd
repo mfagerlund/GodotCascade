@@ -38,7 +38,8 @@ func _draw() -> void:
 		cascade_style.background_color,
 		cascade_style.border_color,
 		cascade_style.border_width,
-		cascade_style.border_radius
+		cascade_style.border_radius,
+		cascade_style.background_gradient
 	)
 
 

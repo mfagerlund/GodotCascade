@@ -78,7 +78,7 @@
         <div>
           <p class="eyebrow">Current demo</p>
           <h2>Layout foundation</h2>
-          <p>Reusable typed feature cards exercising inherited custom properties, typed calc arithmetic, slots, fractional grid tracks, stack overlays, and native controls.</p>
+          <p>Reusable typed feature cards exercising custom properties, typed calc, flex basis/shrink, native opacity/transforms, gradients, custom fonts, slots, fractional grid tracks, and stack overlays.</p>
         </div>
         <dl>
           <div><dt>Viewport</dt><dd>960 × 540</dd></div>
@@ -88,9 +88,9 @@
 
       <div class="comparison">
         <section class="render-column">
-          <div class="render-label"><span>HTML reference</span><small><a href="references/layout-foundation-9e30dbf1233d.html" target="_blank" rel="noreferrer">Open reference</a></small></div>
+          <div class="render-label"><span>HTML reference</span><small><a href="references/layout-foundation-d8486ec9f93a.html" target="_blank" rel="noreferrer">Open reference</a></small></div>
           <div class="render-frame" data-viewport-width="960" data-viewport-height="540" style="--viewport-width:960px; --viewport-height:540px; aspect-ratio:960/540">
-            <iframe width="960" height="540" title="HTML rendering of Layout foundation" src="references/layout-foundation-9e30dbf1233d.html"></iframe>
+            <iframe width="960" height="540" title="HTML rendering of Layout foundation" src="references/layout-foundation-d8486ec9f93a.html"></iframe>
           </div>
         </section>
         <section class="render-column">
@@ -107,7 +107,7 @@
         </div>
         <table>
           <thead><tr><th>HTML/CSS</th><th>GodotCascade source</th><th>Runtime</th></tr></thead>
-          <tbody><tr><td><code>&lt;main&gt;</code></td><td><code>&lt;Page&gt;</code></td><td><code>CascadeBox (column)</code></td></tr><tr><td><code>display: grid</code></td><td><code>&lt;Grid&gt;</code></td><td><code>CascadeGrid track layout</code></td></tr><tr><td><code>repeated card structure</code></td><td><code>&lt;Component&gt; + typed Param + Slot</code></td><td><code>Source-expanded native controls with scoped IDs</code></td></tr><tr><td><code>1fr 1fr 1fr</code></td><td><code>grid-template-columns</code></td><td><code>Fractional track resolution</code></td></tr><tr><td><code>.cards &gt; .card</code></td><td><code>.cards &gt; .card</code></td><td><code>Direct-child selector matching</code></td></tr><tr><td><code>@media (max-width: 700px)</code></td><td><code>@media (max-width: 700px)</code></td><td><code>Viewport-conditional recomputation</code></td></tr><tr><td><code>7vh</code></td><td><code>7vh</code></td><td><code>Viewport-aware length resolution</code></td></tr><tr><td><code>--accent / var()</code></td><td><code>--accent / var()</code></td><td><code>Cascaded, inherited custom-property resolution</code></td></tr><tr><td><code>calc(var(--section-gap) * 1)</code></td><td><code>calc(var(--section-gap) * 1)</code></td><td><code>Typed length arithmetic before native application</code></td></tr><tr><td><code>position: absolute</code></td><td><code>&lt;Stack&gt; + right/top</code></td><td><code>Overlay inset placement</code></td></tr><tr><td><code>visual media</code></td><td><code>&lt;Image src=&quot;res://…&quot;&gt;</code></td><td><code>CascadeImage cover crop</code></td></tr><tr><td><code>padding / gap</code></td><td><code>padding / column-gap</code></td><td><code>CascadeStyle + layout request</code></td></tr><tr><td><code>card hover</code></td><td><code>.cards &gt; .card:hover</code></td><td><code>Owned container hover adapter</code></td></tr><tr><td><code>button click</code></td><td><code>on-pressed=&quot;_on_inspect_layout&quot;</code></td><td><code>Event-to-method binding</code></td></tr><tr><td><code>state dependency inspection</code></td><td><code>debugger binding/invalidation trace</code></td><td><code>Targeted update or keyed-reconcile reason</code></td></tr><tr><td><code>:hover / :active</code></td><td><code>:hover / :pressed</code></td><td><code>Native button state drawing</code></td></tr></tbody>
+          <tbody><tr><td><code>&lt;main&gt;</code></td><td><code>&lt;Page&gt;</code></td><td><code>CascadeBox (column)</code></td></tr><tr><td><code>display: grid</code></td><td><code>&lt;Grid&gt;</code></td><td><code>CascadeGrid track layout</code></td></tr><tr><td><code>repeated card structure</code></td><td><code>&lt;Component&gt; + typed Param + Slot</code></td><td><code>Source-expanded native controls with scoped IDs</code></td></tr><tr><td><code>1fr 1fr 1fr</code></td><td><code>grid-template-columns</code></td><td><code>Fractional track resolution</code></td></tr><tr><td><code>.cards &gt; .card</code></td><td><code>.cards &gt; .card</code></td><td><code>Direct-child selector matching</code></td></tr><tr><td><code>@media (max-width: 700px)</code></td><td><code>@media (max-width: 700px)</code></td><td><code>Viewport-conditional recomputation</code></td></tr><tr><td><code>7vh</code></td><td><code>7vh</code></td><td><code>Viewport-aware length resolution</code></td></tr><tr><td><code>--accent / var()</code></td><td><code>--accent / var()</code></td><td><code>Cascaded, inherited custom-property resolution</code></td></tr><tr><td><code>calc(var(--section-gap) * 1)</code></td><td><code>calc(var(--section-gap) * 1)</code></td><td><code>Typed length arithmetic before native application</code></td></tr><tr><td><code>linear-gradient(110deg, …)</code></td><td><code>linear-gradient(110deg, …)</code></td><td><code>Rounded native two-stop gradient polygon</code></td></tr><tr><td><code>flex-basis / flex-shrink</code></td><td><code>flex-basis / flex-shrink</code></td><td><code>Weighted main-axis shrink in the pure layout engine</code></td></tr><tr><td><code>opacity / transform</code></td><td><code>opacity / transform</code></td><td><code>Canvas modulation plus container-safe Control offset transform</code></td></tr><tr><td><code>font-family</code></td><td><code>font-source: resource(…)</code></td><td><code>Imported Godot Font resource with inherited native application</code></td></tr><tr><td><code>position: absolute</code></td><td><code>&lt;Stack&gt; + right/top</code></td><td><code>Overlay inset placement</code></td></tr><tr><td><code>visual media</code></td><td><code>&lt;Image src=&quot;res://…&quot;&gt;</code></td><td><code>CascadeImage cover crop</code></td></tr><tr><td><code>padding / gap</code></td><td><code>padding / column-gap</code></td><td><code>CascadeStyle + layout request</code></td></tr><tr><td><code>card hover</code></td><td><code>.cards &gt; .card:hover</code></td><td><code>Owned container hover adapter</code></td></tr><tr><td><code>button click</code></td><td><code>on-pressed=&quot;_on_inspect_layout&quot;</code></td><td><code>Event-to-method binding</code></td></tr><tr><td><code>state dependency inspection</code></td><td><code>debugger binding/invalidation trace</code></td><td><code>Targeted update or keyed-reconcile reason</code></td></tr><tr><td><code>:hover / :active</code></td><td><code>:hover / :pressed</code></td><td><code>Native button state drawing</code></td></tr></tbody>
         </table>
       </section>
 
@@ -159,6 +159,9 @@
     .hero {
       position: relative;
       height: calc(var(--hero-height) + 0px);
+      padding: 8px 12px;
+      background: linear-gradient(110deg, #162d50, #111827);
+      border-radius: 9px;
     }
 
     h1 {
@@ -178,6 +181,10 @@
       padding: 5px 8px;
       color: var(--accent);
       font-size: 12px;
+      font-family: &quot;Cascadia Mono&quot;, Consolas, monospace;
+      opacity: .92;
+      transform: translate(-2px, 2px) rotate(1deg);
+      transform-origin: right top;
       background: #17253a;
       border: 1px solid #315a89;
       border-radius: 6px;
@@ -272,6 +279,8 @@
 
     .status {
       flex: 1;
+      flex-basis: 240px;
+      flex-shrink: 1;
       color: var(--accent);
       font-size: 16px;
     }
@@ -290,6 +299,7 @@
       color: #f2f4f7;
       font: inherit;
       cursor: pointer;
+      flex-shrink: 0;
     }
 
     button:hover { background: #475467; }
@@ -423,7 +433,12 @@
     font-size: 30px;
 }
 
-.hero { height: calc(var(--hero-height) + 0px); }
+.hero {
+    height: calc(var(--hero-height) + 0px);
+    padding: 8px 12px;
+    background: linear-gradient(110deg, #162d50, #111827);
+    border-radius: 9px;
+}
 
 .layout-badge {
     position: absolute;
@@ -434,6 +449,10 @@
     padding: 5px 8px;
     color: var(--accent);
     font-size: 12px;
+    font-source: resource(&quot;res://examples/showcase/assets/cascade-mono-font.tres&quot;);
+    opacity: 0.92;
+    transform: translate(-2px, 2px) rotate(1deg);
+    transform-origin: right top;
     background: #17253a;
     border: 1px solid #315a89;
     border-radius: 6px;
@@ -484,7 +503,7 @@
     gap: 12px;
 }
 
-.status { color: var(--accent); flex-grow: 1; }
+.status { color: var(--accent); flex-grow: 1; flex-shrink: 1; flex-basis: 240px; }
 .inspected .status { color: #65d6a7; }
 .inspection-note { color: #65d6a7; font-size: 11px; }
 
@@ -496,6 +515,7 @@
     color: #f2f4f7;
     border: 1px solid #667085;
     border-radius: 7px;
+    flex-shrink: 0;
 }
 
 #inspect:hover { background: #475467; }

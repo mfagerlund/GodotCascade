@@ -30,8 +30,9 @@ const BindingCompiler := preload("res://addons/godot_cascade/runtime/binding_com
 const DeclarationApplier := preload("res://addons/godot_cascade/runtime/declaration_applier.gd")
 const GxmlComponentExpander := preload("res://addons/godot_cascade/runtime/gxml_component_expander.gd")
 const GcssExpression := preload("res://addons/godot_cascade/style/gcss_expression.gd")
+const FocusManager := preload("res://addons/godot_cascade/runtime/focus_manager.gd")
 
-const INHERITED_PROPERTIES: PackedStringArray = ["color", "font-size"]
+const INHERITED_PROPERTIES: PackedStringArray = ["color", "font-size", "font-source"]
 
 
 static func build(root_element, rules: Array, binding_context: Variant = null, viewport_size: Vector2 = Vector2.ZERO) -> Dictionary:
@@ -48,6 +49,7 @@ static func build(root_element, rules: Array, binding_context: Variant = null, v
 	var root_control := _build_element(expanded_root, rule_index, diagnostics, "0", button_groups, binding_context, {}, "", document_rebuild_bindings)
 	if root_control != null:
 		root_control.set_meta("cascade_document_rebuild_bindings", document_rebuild_bindings)
+		diagnostics.append_array(FocusManager.validate(root_control))
 	return {"root": root_control, "diagnostics": diagnostics}
 
 
@@ -530,6 +532,7 @@ static func _apply_attributes(
 	BindingCompiler.apply_writable_attributes(control, attributes, diagnostics)
 	_apply_boolean_attribute(control, attributes, "visible", "visible", diagnostics)
 	_apply_boolean_attribute(control, attributes, "disabled", "disabled", diagnostics)
+	_apply_focus_attributes(control, attributes, diagnostics)
 	if control is CascadeLabel or control is CascadeButton or control is CascadeTableCell or _is_text_input(control):
 		var raw_text := str(attributes.get("text", element_text))
 		if raw_text.begins_with("@"):
@@ -611,6 +614,29 @@ static func _apply_text_input_attributes(control: Control, attributes: Dictionar
 	if not control.validation_pattern_is_valid():
 		diagnostics.append(_diagnostic("error", "TextInput pattern is not a valid Godot regular expression."))
 	control.validation_message = str(attributes.get("error-message", "Invalid value."))
+
+
+static func _apply_focus_attributes(control: Control, attributes: Dictionary, diagnostics: Array[Dictionary]) -> void:
+	if attributes.has("tab-index"):
+		var raw_index := str(attributes["tab-index"]).strip_edges()
+		if not raw_index.is_valid_int() or raw_index.to_int() < -1:
+			diagnostics.append(_control_diagnostic(control, "Attribute 'tab-index' requires an integer of -1 or greater, got '%s'." % raw_index))
+		else:
+			control.set_meta("cascade_tab_index", raw_index.to_int())
+	for attribute_name in ["autofocus", "focus-trap"]:
+		if not attributes.has(attribute_name):
+			continue
+		var parsed: Variant = _parse_bool_attribute(attribute_name, str(attributes[attribute_name]), diagnostics)
+		if parsed == null or not parsed:
+			continue
+		if attribute_name == "autofocus":
+			control.set_meta("cascade_autofocus", true)
+		else:
+			var element_type := str(control.get_meta("cascade_element_type", "")).to_lower()
+			if element_type not in ["page", "row", "column", "panel", "stack", "grid"]:
+				diagnostics.append(_control_diagnostic(control, "Attribute 'focus-trap' requires a container element."))
+			else:
+				control.set_meta("cascade_focus_trap", true)
 
 
 static func _apply_image_attributes(control: Control, attributes: Dictionary, diagnostics: Array[Dictionary]) -> void:
@@ -818,6 +844,15 @@ static func _has_property(target: Object, property_name: String) -> bool:
 
 static func _diagnostic(severity: String, message: String) -> Dictionary:
 	return {"severity": severity, "message": message}
+
+
+static func _control_diagnostic(control: Control, message: String) -> Dictionary:
+	return {
+		"severity": "error",
+		"message": message,
+		"line": int(control.get_meta("cascade_source_line", 1)),
+		"column": int(control.get_meta("cascade_source_column", 1)),
+	}
 
 
 static func _diagnostic_at(severity: String, message: String, element) -> Dictionary:

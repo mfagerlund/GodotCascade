@@ -254,6 +254,19 @@ static func _apply_declaration(
 			_set_length_property(style, "max_height", value, line, diagnostics)
 		"flex-grow":
 			_set_number_property(style, "flex_grow", value, line, diagnostics)
+		"flex-shrink":
+			_set_number_property(style, "flex_shrink", value, line, diagnostics)
+		"flex-basis":
+			if value.strip_edges().to_lower() == "auto":
+				style.flex_basis = -1.0
+			else:
+				_set_length_property(style, "flex_basis", value, line, diagnostics)
+		"opacity":
+			_apply_opacity(control, value, line, diagnostics)
+		"transform":
+			_apply_transform(control, value, line, diagnostics)
+		"transform-origin":
+			_apply_transform_origin(control, value, line, diagnostics)
 		"align-self":
 			_apply_enum(style, "align_self", value, {
 				"auto": CascadeStyle.SelfAlignment.AUTO,
@@ -306,7 +319,14 @@ static func _apply_declaration(
 			else:
 				control.set_meta("cascade_%s" % property_name, inset)
 		"background", "background-color":
-			style.background_color = _parse_color(value, line, diagnostics)
+			if property_name == "background" and value.strip_edges().to_lower().begins_with("linear-gradient("):
+				var gradient := _parse_linear_gradient(value, line, diagnostics)
+				if not gradient.is_empty():
+					style.background_gradient = gradient
+					style.background_color = Color.TRANSPARENT
+			else:
+				style.background_gradient = {}
+				style.background_color = _parse_color(value, line, diagnostics)
 		"border-color":
 			style.border_color = _parse_color(value, line, diagnostics)
 		"border-width":
@@ -322,6 +342,8 @@ static func _apply_declaration(
 				_diagnostic_not_applicable(diagnostics, line, property_name, control)
 		"font-size":
 			_set_length_property(control, "font_size", value, line, diagnostics)
+		"font-source":
+			_apply_font(control, value, line, diagnostics)
 		"fill-color":
 			if _has_property(control, "fill_color"):
 				control.set("fill_color", _parse_color(value, line, diagnostics))
@@ -352,6 +374,9 @@ static func _apply_state_declaration(
 		return
 	if normalized_state == "invalid" and property_name == "border-color" and _has_property(control, "invalid_border_color"):
 		control.set("invalid_border_color", _parse_color(value, line, diagnostics))
+		return
+	if property_name == "background" and value.strip_edges().to_lower().begins_with("linear-gradient("):
+		_diagnostic_unsupported_state(diagnostics, line, state, property_name)
 		return
 	if property_name in ["background", "background-color"]:
 		var background_property := "%s_background_color" % normalized_state
@@ -486,6 +511,208 @@ static func _set_number_property(target: Object, property_name: String, value: S
 		_diagnostic_not_applicable(diagnostics, line, property_name.replace("_", "-"), target)
 		return
 	target.set(property_name, parsed)
+
+
+static func _apply_opacity(control: Control, value: String, line: int, diagnostics: Array[Dictionary]) -> void:
+	var parsed := _parse_number(value)
+	if is_nan(parsed) or parsed < 0.0 or parsed > 1.0:
+		_diagnostic_bad_value(diagnostics, line, "opacity", value)
+		return
+	var color := control.modulate
+	color.a = parsed
+	control.modulate = color
+
+
+static func _apply_transform(control: Control, value: String, line: int, diagnostics: Array[Dictionary]) -> void:
+	var normalized := value.strip_edges()
+	if normalized.to_lower() == "none":
+		control.offset_transform_enabled = false
+		control.offset_transform_position = Vector2.ZERO
+		control.offset_transform_position_ratio = Vector2.ZERO
+		control.offset_transform_rotation = 0.0
+		control.offset_transform_scale = Vector2.ONE
+		return
+	var calls := _parse_function_calls(normalized)
+	if calls.is_empty():
+		_diagnostic_bad_value(diagnostics, line, "transform", value)
+		return
+	var position := Vector2.ZERO
+	var scale := Vector2.ONE
+	var rotation := 0.0
+	for call in calls:
+		var function_name := str(call["name"]).to_lower()
+		var arguments := _split_function_arguments(str(call["arguments"]))
+		match function_name:
+			"translate", "translatex", "translatey":
+				if arguments.is_empty() or arguments.size() > 2:
+					_diagnostic_bad_value(diagnostics, line, "transform", value)
+					return
+				var first := _parse_length(arguments[0])
+				var second := _parse_length(arguments[1]) if arguments.size() == 2 else 0.0
+				if is_nan(first) or is_nan(second):
+					_diagnostic_bad_value(diagnostics, line, "transform", value)
+					return
+				if function_name == "translatex": position.x += first
+				elif function_name == "translatey": position.y += first
+				else: position += Vector2(first, second)
+			"scale", "scalex", "scaley":
+				if arguments.is_empty() or arguments.size() > 2:
+					_diagnostic_bad_value(diagnostics, line, "transform", value)
+					return
+				var first := _parse_number(arguments[0])
+				var second := _parse_number(arguments[1]) if arguments.size() == 2 else first
+				if is_nan(first) or is_nan(second) or first < 0.0 or second < 0.0:
+					_diagnostic_bad_value(diagnostics, line, "transform", value)
+					return
+				if function_name == "scalex": scale.x *= first
+				elif function_name == "scaley": scale.y *= first
+				else: scale *= Vector2(first, second)
+			"rotate":
+				if arguments.size() != 1:
+					_diagnostic_bad_value(diagnostics, line, "transform", value)
+					return
+				var angle := _parse_angle(arguments[0])
+				if is_nan(angle):
+					_diagnostic_bad_value(diagnostics, line, "transform", value)
+					return
+				rotation += angle
+			_:
+				_diagnostic_bad_value(diagnostics, line, "transform", value)
+				return
+	control.offset_transform_enabled = true
+	control.offset_transform_visual_only = false
+	if not control.has_meta("cascade_transform_origin_authored"):
+		control.offset_transform_pivot = Vector2.ZERO
+		control.offset_transform_pivot_ratio = Vector2(0.5, 0.5)
+	control.offset_transform_position = position
+	control.offset_transform_position_ratio = Vector2.ZERO
+	control.offset_transform_rotation = rotation
+	control.offset_transform_scale = scale
+
+
+static func _apply_transform_origin(control: Control, value: String, line: int, diagnostics: Array[Dictionary]) -> void:
+	var tokens := _split_whitespace(value.to_lower())
+	if tokens.size() == 1 and tokens[0] == "center":
+		control.set_meta("cascade_transform_origin_authored", true)
+		control.offset_transform_pivot_ratio = Vector2(0.5, 0.5)
+		return
+	if tokens.size() != 2:
+		_diagnostic_bad_value(diagnostics, line, "transform-origin", value)
+		return
+	var horizontal := {"left": 0.0, "center": 0.5, "right": 1.0}
+	var vertical := {"top": 0.0, "center": 0.5, "bottom": 1.0}
+	var x_token := str(tokens[0])
+	var y_token := str(tokens[1])
+	if not horizontal.has(x_token) or not vertical.has(y_token):
+		_diagnostic_bad_value(diagnostics, line, "transform-origin", value)
+		return
+	control.offset_transform_pivot = Vector2.ZERO
+	control.offset_transform_pivot_ratio = Vector2(horizontal[x_token], vertical[y_token])
+	control.set_meta("cascade_transform_origin_authored", true)
+
+
+static func _apply_font(control: Control, value: String, line: int, diagnostics: Array[Dictionary]) -> void:
+	var path := value.strip_edges()
+	for wrapper in ["url", "resource"]:
+		var prefix := "%s(" % wrapper
+		if path.to_lower().begins_with(prefix) and path.ends_with(")"):
+			path = path.substr(prefix.length(), path.length() - prefix.length() - 1).strip_edges()
+			break
+	if path.length() >= 2 and ((path.begins_with("\"") and path.ends_with("\"")) or (path.begins_with("'") and path.ends_with("'"))):
+		path = path.substr(1, path.length() - 2)
+	if not path.begins_with("res://"):
+		_diagnostic_bad_value(diagnostics, line, "font-source", value)
+		return
+	var resource := ResourceLoader.load(path)
+	if not resource is Font:
+		_diagnostic_bad_value(diagnostics, line, "font-source", value)
+		return
+	if _has_property(control, "font"):
+		control.set("font", resource)
+	else:
+		control.add_theme_font_override(&"font", resource)
+		control.update_minimum_size()
+
+
+static func _parse_linear_gradient(value: String, line: int, diagnostics: Array[Dictionary]) -> Dictionary:
+	var calls := _parse_function_calls(value.strip_edges())
+	if calls.size() != 1 or str(calls[0]["name"]).to_lower() != "linear-gradient":
+		_diagnostic_bad_value(diagnostics, line, "background", value)
+		return {}
+	var arguments := _split_function_arguments(str(calls[0]["arguments"]))
+	if arguments.size() != 3:
+		_diagnostic_bad_value(diagnostics, line, "background", value)
+		return {}
+	var angle := _parse_angle(arguments[0])
+	if is_nan(angle):
+		_diagnostic_bad_value(diagnostics, line, "background", value)
+		return {}
+	var diagnostic_start := diagnostics.size()
+	var from_color := _parse_color(arguments[1], line, diagnostics)
+	var to_color := _parse_color(arguments[2], line, diagnostics)
+	if diagnostics.size() != diagnostic_start:
+		return {}
+	return {"angle": angle, "from": from_color, "to": to_color}
+
+
+static func _parse_number(value: String) -> float:
+	var normalized := value.strip_edges()
+	if normalized.to_lower().begins_with("calc("):
+		var evaluated := GcssExpression.evaluate(normalized, _active_viewport_size)
+		return float(evaluated["value"]) if bool(evaluated.get("ok", false)) and evaluated.get("kind", "") == "number" else NAN
+	return normalized.to_float() if normalized.is_valid_float() else NAN
+
+
+static func _parse_angle(value: String) -> float:
+	var normalized := value.strip_edges().to_lower()
+	for suffix in ["deg", "rad", "turn"]:
+		if normalized.ends_with(suffix):
+			var magnitude := normalized.trim_suffix(suffix).strip_edges()
+			if not magnitude.is_valid_float(): return NAN
+			var number := magnitude.to_float()
+			if suffix == "deg": return deg_to_rad(number)
+			if suffix == "turn": return number * TAU
+			return number
+	return NAN
+
+
+static func _parse_function_calls(value: String) -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	var index := 0
+	while index < value.length():
+		while index < value.length() and value[index] in [" ", "\t", "\r", "\n"]: index += 1
+		var name_start := index
+		while index < value.length() and (value[index].is_valid_identifier() or value[index] == "-"): index += 1
+		if index == name_start or index >= value.length() or value[index] != "(": return []
+		var name := value.substr(name_start, index - name_start)
+		index += 1
+		var arguments_start := index
+		var depth := 1
+		while index < value.length() and depth > 0:
+			if value[index] == "(": depth += 1
+			elif value[index] == ")": depth -= 1
+			index += 1
+		if depth != 0: return []
+		result.append({"name": name, "arguments": value.substr(arguments_start, index - arguments_start - 1)})
+	return result
+
+
+static func _split_function_arguments(value: String) -> PackedStringArray:
+	var result := PackedStringArray()
+	var token := ""
+	var depth := 0
+	for character in value:
+		if character == "(": depth += 1
+		elif character == ")": depth = maxi(depth - 1, 0)
+		if character == "," and depth == 0:
+			result.append(token.strip_edges())
+			token = ""
+		else:
+			token += character
+	if not result.is_empty():
+		result.append(token.strip_edges())
+		return result
+	return _split_whitespace(value)
 
 
 static func _parse_length(value: String) -> float:

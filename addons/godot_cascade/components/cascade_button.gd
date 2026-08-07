@@ -149,7 +149,8 @@ func _draw() -> void:
 		_current_background_color(),
 		cascade_style.border_color,
 		cascade_style.border_width,
-		cascade_style.border_radius
+		cascade_style.border_radius,
+		cascade_style.background_gradient
 	)
 
 	var ring_width := focus_visible_ring_width if focus_visible_style_enabled else focus_ring_width

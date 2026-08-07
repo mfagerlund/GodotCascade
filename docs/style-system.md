@@ -23,7 +23,7 @@ Transition properties consume time values and normalize seconds/milliseconds to 
 
 ## Selectors and inheritance
 
-Type, class, ID, descendant, and direct-child (`>`) selectors participate in specificity and source order. `color`, `font-size`, and all case-sensitive `--custom` declarations inherit through the authored GXML element tree. An explicit `inherit` value requests the parent result; at the root it resolves to the component default. State custom properties form an overlay on the element's base environment.
+Type, class, ID, descendant, and direct-child (`>`) selectors participate in specificity and source order. `color`, `font-size`, `font-source`, and all case-sensitive `--custom` declarations inherit through the authored GXML element tree. An explicit `inherit` value requests the parent result; at the root it resolves to the component default. State custom properties form an overlay on the element's base environment.
 
 Custom references resolve before shorthands expand and before ordinary winner selection. The supported expansion set is padding and margin edges, solid border width/color, transition property/time, and one- or two-value gap into row/column gaps. Invalid variable-backed shorthands still reserve their conceptual longhands and carry one cached origin diagnostic. This prevents a lower longhand from reappearing when a winning shorthand is invalid.
 
@@ -44,3 +44,5 @@ A new stylesheet revision naturally uses a separate cache key, so stale values a
 ## Native theme adapter
 
 Owned exact controls draw directly from `CascadeStyle`. For native adapted controls, `ThemeAdapter` can produce a `StyleBoxFlat` and apply text overrides. Applying an adapter marks the target as adapted and records its mapped property surface, allowing `CompatibilityRegistry` to diagnose inexact or unsupported declarations.
+
+The pure flex engine owns `flex-grow`, explicitly authored `flex-shrink`, and `flex-basis`; the adapter supplies intrinsic floors and maximums. `BoxPainter` renders solid or focused two-stop linear-gradient backgrounds and preserves rounded clipping. Universal native mappings apply descendant opacity and Godot 4.7 offset transforms without changing measured rectangles. `font-source` resolves one imported project-local `Font` resource and applies it to owned drawing or the adapted native theme surface.

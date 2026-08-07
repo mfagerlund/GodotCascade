@@ -193,6 +193,7 @@ func _rebuild_popup() -> void:
 		button.text = str(option["label"])
 		button.text_alignment = HORIZONTAL_ALIGNMENT_LEFT
 		button.font_size = font_size
+		button.font = font
 		button.custom_minimum_size = Vector2(0.0, option_height)
 		button.cascade_style.padding_left = 12.0
 		button.cascade_style.padding_top = 0.0

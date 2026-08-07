@@ -21,7 +21,12 @@
     font-size: 30px;
 }
 
-.hero { height: calc(var(--hero-height) + 0px); }
+.hero {
+    height: calc(var(--hero-height) + 0px);
+    padding: 8px 12px;
+    background: linear-gradient(110deg, #162d50, #111827);
+    border-radius: 9px;
+}
 
 .layout-badge {
     position: absolute;
@@ -32,6 +37,10 @@
     padding: 5px 8px;
     color: var(--accent);
     font-size: 12px;
+    font-source: resource("res://examples/showcase/assets/cascade-mono-font.tres");
+    opacity: 0.92;
+    transform: translate(-2px, 2px) rotate(1deg);
+    transform-origin: right top;
     background: #17253a;
     border: 1px solid #315a89;
     border-radius: 6px;
@@ -82,7 +91,7 @@
     gap: 12px;
 }
 
-.status { color: var(--accent); flex-grow: 1; }
+.status { color: var(--accent); flex-grow: 1; flex-shrink: 1; flex-basis: 240px; }
 .inspected .status { color: #65d6a7; }
 .inspection-note { color: #65d6a7; font-size: 11px; }
 
@@ -94,6 +103,7 @@
     color: #f2f4f7;
     border: 1px solid #667085;
     border-radius: 7px;
+    flex-shrink: 0;
 }
 
 #inspect:hover { background: #475467; }

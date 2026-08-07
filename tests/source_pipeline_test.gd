@@ -33,6 +33,7 @@ const CascadeTextInput := preload("res://addons/godot_cascade/components/cascade
 const CascadeTextArea := preload("res://addons/godot_cascade/components/cascade_text_area.gd")
 const DebugSnapshot := preload("res://addons/godot_cascade/editor/debug_snapshot.gd")
 const CsharpBindingGenerator := preload("res://addons/godot_cascade/codegen/csharp_binding_generator.gd")
+const FocusManager := preload("res://addons/godot_cascade/runtime/focus_manager.gd")
 
 
 class TypedBindingLeaf extends RefCounted:
@@ -60,6 +61,7 @@ func _run() -> void:
 	_test_gcss_specificity()
 	_test_style_foundations()
 	_test_custom_properties_and_calc()
+	_test_advanced_style_primitives()
 	_test_responsive_and_transition_styles()
 	_test_form_controls_pipeline()
 	_test_select_pipeline()
@@ -76,6 +78,7 @@ func _run() -> void:
 	_test_parser_recovery()
 	_test_binding_resolver()
 	await _test_one_way_state_bindings()
+	await _test_focus_contracts()
 	await _test_observable_binding_context()
 	await _test_writable_binding_pipeline()
 	await _test_repeated_writable_binding_pipeline()
@@ -323,6 +326,8 @@ func _alternate_reconciler_value(property_name: String, current: Variant) -> Var
 			return StringName(str(current) + "sentinel")
 		TYPE_COLOR:
 			return Color("2185d0e8") if current != Color("2185d0e8") else Color("65d6a7")
+		TYPE_VECTOR2:
+			return current + Vector2(0.25, 0.5)
 	return current
 
 
@@ -464,6 +469,45 @@ func _test_style_foundations() -> void:
 	_expect_float("theme adapter maps content margins", native_box.content_margin_left, 8.0)
 	_expect_true("theme adapter declares adapted tier", native.get_meta("cascade_compatibility_tier") == "adapted")
 	native.free()
+
+
+func _test_advanced_style_primitives() -> void:
+	var markup := GxmlParser.parse("<Page><Row><Label id=\"sample\">Styled</Label><Label id=\"inherited\">Font</Label></Row></Page>")
+	var stylesheet := GcssParser.parse("""Page { font-source: resource(\"res://examples/showcase/assets/cascade-mono-font.tres\"); }
+#sample {
+  flex-shrink: 2;
+  flex-basis: calc(60px * 2);
+  opacity: 0.45;
+  transform: translate(8px, 3px) rotate(15deg) scale(1.2, 0.8);
+  transform-origin: left top;
+  background: linear-gradient(90deg, #112233, #445566);
+}""")
+	var build := CascadeBuilder.build(markup["root"], stylesheet["rules"], {}, Vector2(960.0, 540.0))
+	_expect_true("advanced primitives build without errors", not _has_error_diagnostics(build["diagnostics"]))
+	var sample: Control = _find_by_id(build["root"], "sample")[0]
+	var inherited: Control = _find_by_id(build["root"], "inherited")[0]
+	var style: CascadeStyle = sample.get("cascade_style")
+	_expect_float("flex-shrink declaration", style.flex_shrink, 2.0)
+	_expect_float("flex-basis calc declaration", style.flex_basis, 120.0)
+	_expect_float("opacity maps to descendant modulation", sample.modulate.a, 0.45)
+	_expect_true("transform uses container-safe offset API", sample.offset_transform_enabled and not sample.offset_transform_visual_only)
+	_expect_vector("transform translation", sample.offset_transform_position, Vector2(8.0, 3.0))
+	_expect_vector("transform scale", sample.offset_transform_scale, Vector2(1.2, 0.8))
+	_expect_float("transform rotation", sample.offset_transform_rotation, deg_to_rad(15.0))
+	_expect_vector("authored transform origin", sample.offset_transform_pivot_ratio, Vector2.ZERO)
+	_expect_true("linear gradient retains two native colors", style.background_gradient.get("from") == Color("112233") and style.background_gradient.get("to") == Color("445566"))
+	_expect_true("font-source inherits through containers", sample.get("font") is Font and inherited.get("font") is Font)
+	build["root"].free()
+
+	var invalid_styles := GcssParser.parse("""Label {
+  opacity: 2;
+  transform: skew(10deg);
+  background: linear-gradient(90deg, red);
+  font-source: resource(\"res://examples/showcase/assets/cascade-orbit.svg\");
+}""")
+	var invalid_build := CascadeBuilder.build(markup["root"], invalid_styles["rules"])
+	_expect_true("invalid advanced primitives are diagnosed", invalid_build["diagnostics"].filter(func(entry): return entry["severity"] == "error").size() >= 4)
+	invalid_build["root"].free()
 
 
 func _test_responsive_and_transition_styles() -> void:
@@ -838,6 +882,19 @@ func _test_image_pipeline() -> void:
 		_expect_true("image is marked exact", image.get_meta("cascade_compatibility_tier") == "exact")
 		image.free()
 
+	var svg_markup := GxmlParser.parse("<Image src=\"res://examples/showcase/assets/cascade-orbit.svg\" accessible-label=\"Native SVG texture\"/>")
+	var svg_stylesheet := GcssParser.parse("Image { width: 200px; height: 100px; object-fit: contain; }")
+	var svg_build := CascadeBuilder.build(svg_markup["root"], svg_stylesheet["rules"])
+	_expect_int("engine-imported SVG diagnostics", svg_build["diagnostics"].size(), 0)
+	var svg_image: Control = svg_build["root"]
+	if svg_image != null:
+		_expect_true("SVG imports through native Texture2D", svg_image.get("texture") is Texture2D)
+		_expect_vector("SVG retains imported intrinsic size", svg_image.get("texture").get_size(), Vector2(320.0, 96.0))
+		svg_image.size = Vector2(200.0, 100.0)
+		var svg_geometry: Dictionary = svg_image.call("image_geometry")
+		_expect_vector("SVG contain fit keeps aspect ratio", svg_geometry["destination"].size, Vector2(200.0, 60.0))
+		svg_image.free()
+
 	var missing_markup := GxmlParser.parse("<Image src=\"res://missing-texture.png\"/>")
 	var missing_build := CascadeBuilder.build(missing_markup["root"], [])
 	_expect_true("missing image resource is an error", _has_error_diagnostics(missing_build["diagnostics"]))
@@ -983,6 +1040,12 @@ func _test_one_way_state_bindings() -> void:
 	_expect_true("bound checked initializes", toggle.button_pressed)
 	_expect_true("bound selected value initializes", select.call("selected_value") == "low")
 	_expect_true("bound image source initializes", preview.get("texture") is Texture2D)
+	var preview_instance := preview.get_instance_id()
+	state["ui"]["image"] = "res://examples/showcase/assets/cascade-orbit.svg"
+	_expect_true("bound SVG source refreshes", document.refresh_binding_paths(PackedStringArray(["ui.image"])))
+	preview = _find_by_id(document.generated_root(), "preview")[0]
+	_expect_true("bound SVG remains a native texture", preview.get("texture") is Texture2D and preview.get("texture").get_size() == Vector2(320.0, 96.0))
+	_expect_true("bound SVG refresh preserves image identity", preview.get_instance_id() == preview_instance)
 	_expect_true("false conditional omits native branch", _find_by_id(document.generated_root(), "conditional-content").is_empty())
 	state["ui"]["include"] = true
 	_expect_true("conditional path refresh reconciles", document.refresh_binding_paths(PackedStringArray(["ui.include"])))
@@ -1025,6 +1088,75 @@ func _test_one_way_state_bindings() -> void:
 	_expect_true("conditional requires exact path syntax", _has_error_diagnostics(invalid_condition_build["diagnostics"]))
 	if invalid_condition_build["root"] != null:
 		invalid_condition_build["root"].free()
+
+
+func _test_focus_contracts() -> void:
+	var ordered_markup := GxmlParser.parse("""<Page>
+  <Button id="third">Third</Button>
+  <Button id="second" tab-index="2">Second</Button>
+  <Button id="first" tab-index="1">First</Button>
+  <Button id="pointer-only" tab-index="-1">Pointer only</Button>
+</Page>""")
+	var ordered_build := CascadeBuilder.build(ordered_markup["root"], [])
+	_expect_true("authored focus order builds", not _has_error_diagnostics(ordered_build["diagnostics"]))
+	var ordered := FocusManager.ordered_focusable(ordered_build["root"])
+	_expect_int("tab-index -1 leaves keyboard order", ordered.size(), 3)
+	if ordered.size() == 3:
+		_expect_true("positive tab order precedes source order", ordered[0].get_meta("cascade_id") == "first" and ordered[1].get_meta("cascade_id") == "second" and ordered[2].get_meta("cascade_id") == "third")
+	FocusManager.apply_navigation(ordered_build["root"], true)
+	if ordered.size() == 3:
+		_expect_true("document wrapping links last to first", ordered[2].get_node(ordered[2].focus_next) == ordered[0])
+	ordered_build["root"].free()
+
+	var invalid_markup := GxmlParser.parse("<Page><Label autofocus=\"true\">No</Label><Button autofocus=\"true\">One</Button><Button autofocus=\"true\">Two</Button></Page>")
+	var invalid_build := CascadeBuilder.build(invalid_markup["root"], [])
+	_expect_true("nonfocusable and duplicate autofocus are errors", invalid_build["diagnostics"].filter(func(entry): return entry["severity"] == "error").size() >= 2)
+	invalid_build["root"].free()
+
+	var markup_path := "user://cascade_focus_contract_test.gxml"
+	var stylesheet_path := "user://cascade_focus_contract_test.gcss"
+	var markup := """<Page>
+  <Button id="outside" autofocus="true">Outside</Button>
+  <Panel id="modal" visible="{ui.modal}" focus-trap="true">
+    <Button id="cancel" tab-index="2">Cancel</Button>
+    <Button id="confirm" tab-index="1" autofocus="true">Confirm</Button>
+  </Panel>
+</Page>"""
+	_expect_true("write focus-contract markup", _write_text(markup_path, markup))
+	_expect_true("write focus-contract stylesheet", _write_text(stylesheet_path, "Page { gap: 4px; } Panel { gap: 4px; }"))
+	var state := {"ui": {"modal": false}}
+	var document: Control = CascadeDocument.new()
+	document.load_on_ready = false
+	document.watch_sources = false
+	document.log_diagnostics_to_console = false
+	document.binding_context = state
+	document.markup_path = markup_path
+	document.stylesheet_path = stylesheet_path
+	root.add_child(document)
+	_expect_true("focus-contract document loads", document.reload_document())
+	await process_frame
+	await process_frame
+	var outside: Control = _find_by_id(document.generated_root(), "outside")[0]
+	var confirm: Control = _find_by_id(document.generated_root(), "confirm")[0]
+	_expect_true("initial document autofocus is applied", root.gui_get_focus_owner() == outside)
+	state["ui"]["modal"] = true
+	_expect_true("focus trap visibility refreshes", document.refresh_binding_paths(PackedStringArray(["ui.modal"])))
+	await process_frame
+	await process_frame
+	_expect_true("new focus trap prefers its autofocus target", root.gui_get_focus_owner() == confirm)
+	outside.grab_focus()
+	await process_frame
+	await process_frame
+	_expect_true("active trap redirects programmatic escape", root.gui_get_focus_owner() == confirm)
+	state["ui"]["modal"] = false
+	_expect_true("focus trap deactivates through binding", document.refresh_binding_paths(PackedStringArray(["ui.modal"])))
+	await process_frame
+	await process_frame
+	_expect_true("closing focus trap restores prior focus", root.gui_get_focus_owner() == outside)
+	document.queue_free()
+	await process_frame
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(markup_path))
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(stylesheet_path))
 
 
 func _test_observable_binding_context() -> void:
@@ -1569,6 +1701,11 @@ func _expect_int(label: String, actual: int, expected: int) -> void:
 
 func _expect_float(label: String, actual: float, expected: float) -> void:
 	if not is_equal_approx(actual, expected):
+		_failures.append("%s: expected %s, got %s" % [label, expected, actual])
+
+
+func _expect_vector(label: String, actual: Vector2, expected: Vector2) -> void:
+	if not actual.is_equal_approx(expected):
 		_failures.append("%s: expected %s, got %s" % [label, expected, actual])
 
 

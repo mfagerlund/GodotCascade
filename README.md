@@ -182,6 +182,7 @@ The repository currently contains several working vertical slices:
 - `CascadeImage`, an owned texture control with deterministic contain, cover, fill, and crop geometry;
 - a recoverable `.gxml` parser and native control registry;
 - a focused `.gcss` subset with type/class/ID, descendant/direct-child selectors, specificity, inheritance, source order, case-sensitive custom properties, typed `calc()`, layout values, and native pseudo states;
+- weighted flex shrink/basis, descendant opacity, container-safe translate/rotate/scale, rounded two-stop gradients, and inherited project-local Font resources;
 - `CascadeDocument`, which builds the running native UI directly from paired source files;
 - content-based source watching with automatic runtime reloads;
 - `.gxml`/`.gcss` import resources plus a docked live preview, Inspector summary, dependency/invalidation-aware layout debugger, and source navigation;
@@ -203,7 +204,7 @@ GodotCascade is not the only declarative UI project for Godot. The closest alter
 | Primary model | Focused GXML + GCSS | HTML/CSS + Vue-style directives | Compiled JSX-like GDScript + hooks | QML/XAML-like Godot .NET markup |
 | Runtime output | Native `Control` tree | Native `Control` tree | Any instantiable Godot `Node` | Built-in Godot `Control` types |
 | State updates | Typed paths, targeted invalidation, opt-in write-back | Automatic reactive store + expressions | Fiber rendering, hooks, signals, context | Generated one/two-way C# bindings |
-| Styling | Constrained cascade with custom properties, typed calculations, and deterministic box/flex/grid/table layout | Broad CSS-like surface with variables, calculations, transforms, gradients, SVG, and fonts | Godot properties, themes, state styleboxes | Godot properties through generated markup |
+| Styling | Constrained cascade with variables/calculations, flex/grid/table layout, focused transforms/gradients/fonts, and native SVG textures | Broad CSS-like surface with variables, calculations, transforms, gradients, SVG, and fonts | Godot properties, themes, state styleboxes | Godot properties through generated markup |
 | Reload model | Last-valid candidate + keyed native reconciliation | Live reactive reconciliation | Fast Refresh with hook-state preservation | Compile-time Roslyn generation |
 | Main trade-off | Small language and explicit unsupported diagnostics | Broader runtime and expression surface | React-scale framework and concepts | Requires Godot .NET |
 
@@ -214,8 +215,8 @@ Choose GodotCascade when you want a reviewable source format, native controls, C
 - automatic dependency-tracked reactivity; mutations still require an explicit full or named-path invalidation;
 - general expressions and Vue/JSX-style control flow beyond exact boolean path conditions;
 - an open vocabulary covering every built-in `Control` or arbitrary `Node`;
-- broader CSS features such as opacity, transforms, gradients, custom fonts, inline SVG, percentages, and browser-wide value functions;
-- `autofocus`, authored tab order, modal focus traps, and higher-level routing;
+- broader CSS features such as multi-stop/radial gradients, font families/weights, inline SVG, percentages, transform matrices, and browser-wide value functions;
+- higher-level navigation/routing beyond authored autofocus, tab order, and modal focus traps;
 - hooks, context, effects, Suspense, memoization, time-slicing, and declarative item-model adapters;
 - virtualized large collections;
 - VS Code/Visual Studio language tooling with completion, hover, rename, and go-to-definition.

@@ -139,7 +139,10 @@ func _layout_items(children: Array[Control]) -> Array[FlexLayoutEngine.LayoutIte
 			_child_margins(child),
 			_child_value(child, "flex_grow", 0.0),
 			_child_maximum_size(child),
-			int(_child_value(child, "align_self", 0.0)) - 1
+			int(_child_value(child, "align_self", 0.0)) - 1,
+			_child_value(child, "flex_shrink", 0.0),
+			_child_flex_basis(child),
+			_child_shrink_minimum_size(child)
 		))
 	return items
 
@@ -179,6 +182,24 @@ func _child_maximum_size(child: Control) -> Vector2:
 		child_max_width if child_max_width > 0.0 else INF,
 		child_max_height if child_max_height > 0.0 else INF
 	)
+
+
+func _child_shrink_minimum_size(child: Control) -> Vector2:
+	var intrinsic := child.get_combined_minimum_size()
+	return Vector2(
+		maxf(intrinsic.x, _child_value(child, "min_width", 0.0)),
+		maxf(intrinsic.y, _child_value(child, "min_height", 0.0))
+	)
+
+
+func _child_flex_basis(child: Control) -> float:
+	if child.has_meta("cascade_flex_basis"):
+		return float(child.get_meta("cascade_flex_basis"))
+	if _has_property(child, "cascade_style"):
+		var child_style: CascadeStyle = child.get("cascade_style")
+		if child_style != null:
+			return child_style.flex_basis
+	return -1.0
 
 
 func _child_margins(child: Control) -> Vector4:
@@ -328,7 +349,8 @@ func _draw_box() -> void:
 		cascade_background_color(),
 		cascade_style.border_color,
 		cascade_style.border_width,
-		cascade_style.border_radius
+		cascade_style.border_radius,
+		cascade_style.background_gradient
 	)
 
 

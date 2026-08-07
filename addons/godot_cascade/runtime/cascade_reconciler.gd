@@ -26,6 +26,9 @@ const COPIED_PROPERTIES: PackedStringArray = [
 	"header", "semantic_role",
 	"placeholder_text", "placeholder_color", "read_only", "secret", "max_length", "required", "validation_pattern", "validation_message",
 	"focused_background_color", "invalid_background_color", "invalid_text_color", "invalid_border_color",
+	"modulate", "offset_transform_enabled", "offset_transform_position", "offset_transform_position_ratio",
+	"offset_transform_scale", "offset_transform_rotation", "offset_transform_pivot", "offset_transform_pivot_ratio",
+	"offset_transform_visual_only",
 ]
 
 
@@ -96,7 +99,7 @@ static func _copy_properties(existing: Control, desired: Control) -> void:
 	var runtime_state := existing.call("capture_runtime_state") if existing.has_method("capture_runtime_state") else {}
 	existing.name = desired.name
 	existing.visible = desired.visible
-	for metadata_name in ["cascade_element_type", "cascade_id", "cascade_scoped_id", "cascade_component_scope", "cascade_component_name", "cascade_classes", "cascade_key", "cascade_bindings", "cascade_rebuild_bindings", "cascade_document_rebuild_bindings", "cascade_condition_binding", "cascade_collection_binding", "cascade_writable_bindings", "cascade_events", "cascade_binding_scope", "cascade_source_path", "cascade_source_line", "cascade_source_column", "cascade_transition_properties", "cascade_transition_duration", "cascade_explicit_accessible_label", "cascade_authored_accessible_description", "cascade_compatibility_tier", "cascade_adapted_properties", "cascade_table_role"]:
+	for metadata_name in ["cascade_element_type", "cascade_id", "cascade_scoped_id", "cascade_component_scope", "cascade_component_name", "cascade_classes", "cascade_key", "cascade_bindings", "cascade_rebuild_bindings", "cascade_document_rebuild_bindings", "cascade_condition_binding", "cascade_collection_binding", "cascade_writable_bindings", "cascade_events", "cascade_binding_scope", "cascade_source_path", "cascade_source_line", "cascade_source_column", "cascade_transition_properties", "cascade_transition_duration", "cascade_transform_origin_authored", "cascade_explicit_accessible_label", "cascade_authored_accessible_description", "cascade_compatibility_tier", "cascade_adapted_properties", "cascade_table_role", "cascade_tab_index", "cascade_autofocus", "cascade_focus_trap"]:
 		if desired.has_meta(metadata_name):
 			existing.set_meta(metadata_name, desired.get_meta(metadata_name))
 		elif existing.has_meta(metadata_name):

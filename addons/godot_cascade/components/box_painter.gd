@@ -36,10 +36,13 @@ static func draw_box(
 	background_color: Color,
 	border_color: Color,
 	border_width: float,
-	border_radius: Variant
+	border_radius: Variant,
+	background_gradient: Dictionary = {}
 ) -> void:
-	if background_color.a <= 0.0 and (border_color.a <= 0.0 or border_width <= 0.0):
+	if background_color.a <= 0.0 and background_gradient.is_empty() and (border_color.a <= 0.0 or border_width <= 0.0):
 		return
+	if not background_gradient.is_empty():
+		_draw_linear_gradient(canvas_item, box_rect, border_radius, background_gradient)
 
 	var style := StyleBoxFlat.new()
 	style.bg_color = background_color
@@ -54,3 +57,55 @@ static func draw_box(
 	else:
 		style.set_corner_radius_all(roundi(maxf(float(border_radius), 0.0)))
 	canvas_item.draw_style_box(style, box_rect)
+
+
+static func _draw_linear_gradient(
+	canvas_item: CanvasItem,
+	box_rect: Rect2,
+	border_radius: Variant,
+	gradient: Dictionary
+) -> void:
+	if box_rect.size.x <= 0.0 or box_rect.size.y <= 0.0:
+		return
+	var radius := float(border_radius) if not border_radius is Vector4 else 0.0
+	radius = minf(maxf(radius, 0.0), minf(box_rect.size.x, box_rect.size.y) * 0.5)
+	var points := _rounded_rect_points(box_rect, radius)
+	var colors := PackedColorArray()
+	var angle := float(gradient.get("angle", PI))
+	var direction := Vector2(sin(angle), -cos(angle)).normalized()
+	var corners := [box_rect.position, Vector2(box_rect.end.x, box_rect.position.y), box_rect.end, Vector2(box_rect.position.x, box_rect.end.y)]
+	var minimum := INF
+	var maximum := -INF
+	for corner in corners:
+		var projection := (corner as Vector2).dot(direction)
+		minimum = minf(minimum, projection)
+		maximum = maxf(maximum, projection)
+	var span := maxf(maximum - minimum, 0.001)
+	var from_color: Color = gradient.get("from", Color.TRANSPARENT)
+	var to_color: Color = gradient.get("to", Color.TRANSPARENT)
+	for point in points:
+		colors.append(from_color.lerp(to_color, clampf((point.dot(direction) - minimum) / span, 0.0, 1.0)))
+	canvas_item.draw_polygon(points, colors)
+
+
+static func _rounded_rect_points(rectangle: Rect2, radius: float) -> PackedVector2Array:
+	if radius <= 0.0:
+		return PackedVector2Array([
+			rectangle.position,
+			Vector2(rectangle.end.x, rectangle.position.y),
+			rectangle.end,
+			Vector2(rectangle.position.x, rectangle.end.y),
+		])
+	var result := PackedVector2Array()
+	var centers := [
+		Vector2(rectangle.end.x - radius, rectangle.position.y + radius),
+		Vector2(rectangle.end.x - radius, rectangle.end.y - radius),
+		Vector2(rectangle.position.x + radius, rectangle.end.y - radius),
+		Vector2(rectangle.position.x + radius, rectangle.position.y + radius),
+	]
+	for corner in 4:
+		var start_angle := -PI * 0.5 + corner * PI * 0.5
+		for step in 5:
+			var angle := start_angle + step * PI * 0.5 / 4.0
+			result.append(centers[corner] + Vector2(cos(angle), sin(angle)) * radius)
+	return result

@@ -7,8 +7,9 @@ const STYLE_PROPERTIES: PackedStringArray = [
 	"padding_left", "padding_top", "padding_right", "padding_bottom",
 	"margin_left", "margin_top", "margin_right", "margin_bottom",
 	"preferred_width", "preferred_height", "min_width", "min_height",
-	"max_width", "max_height", "flex_grow",
+	"max_width", "max_height", "flex_grow", "flex_shrink", "flex_basis",
 ]
+const IMMEDIATE_STYLE_PROPERTIES: PackedStringArray = ["background_gradient"]
 
 const PROPERTY_MAP := {
 	"background": "background_color",
@@ -31,6 +32,8 @@ const PROPERTY_MAP := {
 	"max-width": "max_width",
 	"max-height": "max_height",
 	"flex-grow": "flex_grow",
+	"flex-shrink": "flex_shrink",
+	"flex-basis": "flex_basis",
 }
 
 
@@ -40,6 +43,9 @@ static func mapped_property(property_name: String) -> String:
 
 static func apply_style(control: Control, desired: CascadeStyle) -> void:
 	var current: CascadeStyle = control.get("cascade_style")
+	for property_name in IMMEDIATE_STYLE_PROPERTIES:
+		if current != null:
+			current.set(property_name, desired.get(property_name))
 	var duration := float(control.get_meta("cascade_transition_duration", 0.0))
 	var authored: PackedStringArray = control.get_meta("cascade_transition_properties", PackedStringArray())
 	var previous: Variant = control.get_meta("cascade_transition_tween") if control.has_meta("cascade_transition_tween") else null

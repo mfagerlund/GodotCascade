@@ -64,7 +64,7 @@ func _get_minimum_size() -> Vector2:
 
 
 func _draw() -> void:
-	BoxPainter.draw_box(self, Rect2(Vector2.ZERO, size), cascade_background_color(), cascade_style.border_color, cascade_style.border_width, cascade_style.border_radius)
+	BoxPainter.draw_box(self, Rect2(Vector2.ZERO, size), cascade_background_color(), cascade_style.border_color, cascade_style.border_width, cascade_style.border_radius, cascade_style.background_gradient)
 
 
 func cascade_background_color() -> Color:

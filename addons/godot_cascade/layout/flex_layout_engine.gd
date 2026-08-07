@@ -27,6 +27,9 @@ class LayoutItem:
 	var minimum_size: Vector2
 	var margins: Vector4
 	var flex_grow: float
+	var flex_shrink: float
+	var flex_basis: float
+	var shrink_minimum_size: Vector2
 	var maximum_size: Vector2
 	var align_self: int
 
@@ -36,7 +39,10 @@ class LayoutItem:
 		item_margins := Vector4.ZERO,
 		item_flex_grow := 0.0,
 		item_maximum_size := Vector2(INF, INF),
-		item_align_self := -1
+		item_align_self := -1,
+		item_flex_shrink := 0.0,
+		item_flex_basis := -1.0,
+		item_shrink_minimum_size := Vector2.ZERO
 	) -> void:
 		minimum_size = item_minimum_size.max(Vector2.ZERO)
 		margins = Vector4(
@@ -46,6 +52,9 @@ class LayoutItem:
 			maxf(item_margins.w, 0.0)
 		)
 		flex_grow = maxf(item_flex_grow, 0.0)
+		flex_shrink = maxf(item_flex_shrink, 0.0)
+		flex_basis = item_flex_basis if item_flex_basis >= 0.0 else -1.0
+		shrink_minimum_size = item_shrink_minimum_size.max(Vector2.ZERO).min(minimum_size)
 		maximum_size = Vector2(
 			maxf(item_maximum_size.x, minimum_size.x),
 			maxf(item_maximum_size.y, minimum_size.y)
@@ -74,12 +83,12 @@ static func measure(items: Array[LayoutItem], request: LayoutRequest) -> Vector2
 			# Wrapped cross-size depends on the assigned main-axis constraint.
 			# The largest item is the stable intrinsic minimum before arrangement.
 			for item in items:
-				var footprint := _item_footprint(item)
+				var footprint := _item_measure_footprint(item, request.direction)
 				content_minimum.x = maxf(content_minimum.x, footprint.x)
 				content_minimum.y = maxf(content_minimum.y, footprint.y)
 		else:
 			for item in items:
-				var footprint := _item_footprint(item)
+				var footprint := _item_measure_footprint(item, request.direction)
 				if request.direction == DIRECTION_ROW:
 					content_minimum.x += footprint.x
 					content_minimum.y = maxf(content_minimum.y, footprint.y)
@@ -138,7 +147,7 @@ static func _build_lines(
 
 	for index in items.size():
 		var item := items[index]
-		var footprint := _item_footprint(item)
+		var footprint := _item_footprint(item, request.direction)
 		var next_main := float(current["main_size"])
 		if not current["indices"].is_empty():
 			next_main += request.gap
@@ -173,10 +182,10 @@ static func _arrange_line(
 	cross_cursor: float
 ) -> void:
 	var available_main := _main_of(content_size, request.direction)
-	var free_main := maxf(available_main - float(line["main_size"]), 0.0)
+	var free_main := available_main - float(line["main_size"])
 	var grow_total := float(line["grow_total"])
-	var growth := _grow_main_sizes(line["indices"], items, request.direction, free_main)
-	var distributable := float(growth["remaining"]) if grow_total > 0.0 else free_main
+	var growth := _resize_main_sizes(line["indices"], items, request.direction, free_main)
+	var distributable := maxf(float(growth["remaining"]) if grow_total > 0.0 else free_main, 0.0)
 	var distribution := _main_distribution(
 		distributable,
 		line["indices"].size(),
@@ -192,7 +201,7 @@ static func _arrange_line(
 		var after_cross := item.margins.w if request.direction == DIRECTION_ROW else item.margins.z
 		var child_main := float(growth["sizes"].get(
 			index,
-			_main_of(item.minimum_size, request.direction)
+			_item_base_main(item, request.direction)
 		))
 		var child_cross := _cross_of(item.minimum_size, request.direction)
 
@@ -227,7 +236,7 @@ static func _grow_main_sizes(
 	var active: Array[int] = []
 	for index in indices:
 		var item := items[index]
-		var base_size := _main_of(item.minimum_size, direction)
+		var base_size := _item_base_main(item, direction)
 		sizes[index] = base_size
 		if item.flex_grow > 0.0 and base_size < _main_of(item.maximum_size, direction):
 			active.append(index)
@@ -261,6 +270,52 @@ static func _grow_main_sizes(
 	return {"sizes": sizes, "remaining": remaining}
 
 
+static func _resize_main_sizes(
+	indices: Array,
+	items: Array[LayoutItem],
+	direction: int,
+	free_space: float
+) -> Dictionary:
+	if free_space >= 0.0:
+		return _grow_main_sizes(indices, items, direction, free_space)
+
+	var sizes := {}
+	var active: Array[int] = []
+	for index in indices:
+		var item := items[index]
+		var base_size := _item_base_main(item, direction)
+		sizes[index] = base_size
+		if item.flex_shrink > 0.0 and base_size > _item_shrink_minimum_main(item, direction):
+			active.append(index)
+
+	var deficit := -free_space
+	while deficit > 0.001 and not active.is_empty():
+		var total_weight := 0.0
+		for index in active:
+			total_weight += items[index].flex_shrink * _item_base_main(items[index], direction)
+		if total_weight <= 0.0:
+			break
+
+		var removed := 0.0
+		var next_active: Array[int] = []
+		for index in active:
+			var item := items[index]
+			var weight := item.flex_shrink * _item_base_main(item, direction)
+			var share := deficit * weight / total_weight
+			var minimum := _item_shrink_minimum_main(item, direction)
+			var capacity := maxf(float(sizes[index]) - minimum, 0.0)
+			var applied := minf(share, capacity)
+			sizes[index] = float(sizes[index]) - applied
+			removed += applied
+			if float(sizes[index]) > minimum + 0.001:
+				next_active.append(index)
+		deficit -= removed
+		active = next_active
+		if removed <= 0.001:
+			break
+	return {"sizes": sizes, "remaining": -deficit}
+
+
 static func _main_distribution(free_space: float, item_count: int, alignment: int) -> Dictionary:
 	var result := {"offset": 0.0, "between": 0.0}
 	match alignment:
@@ -282,11 +337,41 @@ static func _main_distribution(free_space: float, item_count: int, alignment: in
 	return result
 
 
-static func _item_footprint(item: LayoutItem) -> Vector2:
-	return item.minimum_size + Vector2(
+static func _item_footprint(item: LayoutItem, direction: int) -> Vector2:
+	var base_size := item.minimum_size
+	if direction == DIRECTION_ROW:
+		base_size.x = _item_base_main(item, direction)
+	else:
+		base_size.y = _item_base_main(item, direction)
+	return base_size + Vector2(
 		item.margins.x + item.margins.z,
 		item.margins.y + item.margins.w
 	)
+
+
+static func _item_measure_footprint(item: LayoutItem, direction: int) -> Vector2:
+	var footprint := _item_footprint(item, direction)
+	if item.flex_shrink <= 0.0:
+		return footprint
+	var main := _item_shrink_minimum_main(item, direction)
+	if direction == DIRECTION_ROW:
+		footprint.x = main + item.margins.x + item.margins.z
+	else:
+		footprint.y = main + item.margins.y + item.margins.w
+	return footprint
+
+
+static func _item_base_main(item: LayoutItem, direction: int) -> float:
+	var authored := item.flex_basis if item.flex_basis >= 0.0 else _main_of(item.minimum_size, direction)
+	return clampf(
+		authored,
+		_item_shrink_minimum_main(item, direction),
+		_main_of(item.maximum_size, direction)
+	)
+
+
+static func _item_shrink_minimum_main(item: LayoutItem, direction: int) -> float:
+	return _main_of(item.shrink_minimum_size, direction)
 
 
 static func _clamp_item_axis(

@@ -36,7 +36,7 @@ The logical tree represents authored structure before native construction. Eleme
 
 The style engine indexes rules by the rightmost selector before matching plausible candidates. Computed declarations own specificity, inherited text values, pseudo states, and cache keys while remaining separate from mutable Godot theme resources.
 
-The executable slice tokenizes and parses rules, matches them against the logical element tree, resolves specificity, inherited custom-property environments, source order, and ordinary inheritance in `CascadeBuilder`, and caches immutable computed declaration dictionaries. `GcssExpression` owns lazy `var()` substitution and NUMBER/LENGTH/TIME `calc()` evaluation. `DeclarationApplier` owns shorthand expansion, typed property conversion, pseudo-state mapping, and application to native controls. Application exposes the box-model shape as a mutable `CascadeStyle` resource. `CascadeBox` and owned components consume it and react to draw, measure, and arrange invalidation flags.
+The executable slice tokenizes and parses rules, matches them against the logical element tree, resolves specificity, inherited custom-property environments, source order, and ordinary inheritance in `CascadeBuilder`, and caches immutable computed declaration dictionaries. `GcssExpression` owns lazy `var()` substitution and NUMBER/LENGTH/TIME `calc()` evaluation. `DeclarationApplier` owns shorthand expansion, typed property conversion, focused gradients/transforms/fonts, pseudo-state mapping, and application to native controls. Application exposes the box-model shape as a mutable `CascadeStyle` resource. `CascadeBox` and owned components consume it and react to draw, measure, and arrange invalidation flags.
 
 Type, class, ID, combined-compound, descendant, and direct-child selectors work today. Inherited text/custom properties, case-sensitive `--name` tokens, lazy `var()` fallback, typed `calc()`, and computed-style caching are implemented. Selector lists, sibling combinators, functional selectors, and browser-wide value functions remain outside the focused grammar. Unsupported values are diagnosed rather than retained as arbitrary CSS. The exact matrix lives in [current-support.md](current-support.md).
 
@@ -58,6 +58,8 @@ Layout has two conceptual passes:
 `CascadeTable` reuses grid track resolution but owns semantic row grouping. It flattens visible cells only for one shared column/row calculation, then projects the resulting rectangles back through `TableHeader`, `TableBody`, repeated row groups, and `TableRow` containers. Cells own their box/text measurement; structural containers remain non-focusable and do not compete with authored interactive cell content.
 
 `CascadeScroll` is a narrow adapter over native `ScrollContainer`. Its minimum-size contract deliberately excludes the content child's height, allowing flex layout to allocate a bounded viewport while Godot owns wheel, touch, scrollbar, focus-following, and clipping behavior.
+
+`FocusManager` validates authored tab/autofocus/trap metadata, derives effective focusability through ancestor visibility and disabled state, and writes deterministic native neighbor paths. `CascadeDocument` reapplies that contract after reconciliation or relevant targeted bindings, redirects escape from an active modal trap through the viewport focus signal, and restores prior focus when the trap closes.
 
 ### Data binding
 
@@ -110,6 +112,8 @@ The explicit dependency table drives targeted draw, measure, and arrange invalid
 - Theme resolution remains available to ordinary/adapted native controls; exact owned components use their explicit Cascade appearance surface.
 - Arranged rectangles round their leading and trailing edges independently by default, so adjacent boundaries remain stable; containers may opt into subpixel output.
 - Overflow is explicit (`visible` or `clip`) and never inferred from a control type.
+- Opacity uses Godot modulation rather than browser group compositing; transforms use Godot 4.7 offset-transform fields and never change layout measurement.
+- SVG is an engine-imported native texture, not a DOM, and custom fonts are project-local Godot `Font` resources rather than browser family resolution.
 
 ## Threading
 

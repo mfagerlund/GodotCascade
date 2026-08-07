@@ -138,7 +138,7 @@ Panel.card > .title { }
 
 Type, class, ID, combined compounds, descendant matching, and the direct-child combinator (`>`) participate in specificity and source order. Selector lists, sibling combinators, attribute selectors, `:not()`, and other functional selectors are not supported.
 
-`color` and `font-size` inherit through the authored element tree. Authors may use the explicit `inherit` keyword; a root-level `inherit` falls back to the component default.
+`color`, `font-size`, and `font-source` inherit through the authored element tree. Authors may use the explicit `inherit` keyword; a root-level `inherit` falls back to the component default.
 
 ## Pseudo states
 
@@ -162,9 +162,11 @@ On `Slider`, a `:hover` background declaration colors the unfilled owned track w
 
 `Page`/`Row`/`Column`/`Panel`, `Grid`, and `Stack` accept `:hover` background declarations without becoming focusable or clickable. Other pseudo states on non-interactive containers remain unsupported. There is no pseudo-state animation support; reconciliation-time style transitions are documented below. Pseudo-state declarations on unsupported controls warn.
 
-### Input behavior
+### Input and authored focus behavior
 
 Owned interactive controls retain native `BaseButton` input behavior. Pointer press/release and the focused `ui_accept` action activate buttons and toggles; this covers keyboard acceptance and mapped controller buttons. Checkbox and switch activation toggles their checked state, radio buttons update their native group selection, and disabled controls ignore activation. The document wires linear next/previous focus order after reconciliation; controller directional navigation continues to use Godot's native behavior. Its accessibility audit warns about unnamed interactive controls and undescribed images.
+
+GXML accepts `tab-index`, `autofocus`, and `focus-trap="true"`. Positive tab indices run first in ascending order, then `0`/omitted controls follow source order; `-1` keeps pointer/programmatic focus but removes the control from sequential navigation. Autofocus runs only on initial mount or when a newly visible trap activates, so hot reload does not steal preserved focus. A visible trap wraps sequential navigation, redirects focus attempts outside its subtree, prefers its autofocus target, and restores the previously focused control when it closes. Duplicate autofocus targets, nonfocusable autofocus targets, invalid indices, non-container traps, and simultaneously visible sibling traps are source-located errors. Hidden ancestors and disabled controls are excluded whenever bindings recompute the contract.
 
 The text adapters delegate caret movement, selection, clipboard, undo/redo, context menus, shaping, bidi, IME, and native accessibility behavior to Godot `LineEdit`/`TextEdit`; password masking is single-line-only. GodotCascade preserves single-line text/caret/selection and multiline text/primary-caret/selection/scroll across compatible keyed reloads, and owns required/pattern validation plus adapted box styles. Call `CascadeDocument.validate()` to publish validation diagnostics before committing a form.
 
@@ -180,14 +182,19 @@ When a select popup is open, `ui_up` and `ui_down` move through enabled options,
 | Spacing | one- or two-value `gap`, one-to-four-value `padding`/`margin`, and individual gap/padding/margin edges |
 | Grid | `grid-template-columns`, `grid-template-rows`, `column-gap`, `row-gap`, `grid-column`, `grid-row` |
 | Position | `position: relative\|absolute`, `left`, `top`, `right`, `bottom` within `Stack` |
-| Size | `width`, `height`, `min-width`, `min-height`, `max-width`, `max-height`, `flex-grow` |
-| Box | `background`, `background-color`, `border`, `border-color`, `border-width`, `border-radius`, `overflow` |
-| Text | `color`, `font-size` on controls exposing the corresponding property |
+| Size | `width`, `height`, `min-width`, `min-height`, `max-width`, `max-height`, `flex-grow`, `flex-shrink`, `flex-basis: auto\|<length>` |
+| Box | solid `background`/`background-color`, two-stop `linear-gradient(<angle>, <color>, <color>)`, `border`, `border-color`, `border-width`, `border-radius`, `overflow`, `opacity: 0..1` |
+| Transform | `transform` with `translate[x\|y]()`, `rotate()`, and `scale[x\|y]()`; keyword `transform-origin` |
+| Text | `color`, `font-size`, and inherited `font-source: resource("res://…")`/`url("res://…")` |
 | Range display/input | `fill-color` on `Progress` and `Slider` |
 | Image | `object-fit: contain\|cover\|fill\|none` |
 | Transition | `transition: <property> <time>`, `transition-property`, `transition-duration` for reconciliation-time style changes |
 
-Lengths accept bare numbers, `px`, `vw`, or `vh`. The typed value layer recognizes seconds and milliseconds for transitions. Percentages, `em`/`rem`, automatic values, and browser-wide value functions are not implemented. `padding` and `margin` accept the familiar one-to-four-value form; `gap` accepts row and optional column values. `border` must be `<width> solid <color>`. Variable substitution occurs before shorthands expand and compete in the cascade.
+Lengths accept bare numbers, `px`, `vw`, or `vh`. The typed value layer recognizes seconds and milliseconds for transitions. Percentages, `em`/`rem`, automatic values outside `flex-basis: auto`, and browser-wide value functions are not implemented. `padding` and `margin` accept the familiar one-to-four-value form; `gap` accepts row and optional column values. `border` must be `<width> solid <color>`. Variable substitution occurs before shorthands expand and compete in the cascade.
+
+Flex shrink uses the CSS scaled-factor idea (`flex-shrink × base size`) with iterative minimum/maximum freezing, but defaults to `0` to preserve preview layouts; author it explicitly where shrinking is intended. `flex-basis` supplies the main-axis base and `auto` uses the measured size. Opacity maps to descendant-affecting Godot modulation; nested opacity multiplies, but this is not browser offscreen group compositing. Transforms do not affect layout and use Godot 4.7 container-safe offset transforms with matching hit testing. Supported functions are accumulated into native translate/rotate/scale fields, so arbitrary CSS transform-matrix ordering, skew, perspective, percentages, and matrices are rejected. Origins are `center` or horizontal/vertical keyword pairs.
+
+Gradients are base-state, two-color linear backgrounds drawn as rounded native polygons; stops, radial/conic gradients, and pseudo-state gradients are unsupported. `font-source` loads one project-local Godot `Font` resource. It is intentionally not CSS family lookup or `@font-face`: lists, weights, remote URLs, and runtime downloads are unsupported.
 
 ### Custom properties and typed `calc()`
 
@@ -211,14 +218,18 @@ Unsupported properties produce warnings; unsupported values for known properties
 
 ## Layout behavior
 
-- Flex rows and columns support wrapping, gaps, growth, main-axis distribution, cross-axis alignment, and `align-self`.
+- Flex rows and columns support wrapping, gaps, growth, weighted shrink, an explicit basis, main-axis distribution, cross-axis alignment, and `align-self`.
 - Grid tracks accept fixed lengths, `fr`, `auto`/`content`, and `minmax(<length>, <length-or-fr>)`; children are placed row-major unless `grid-column` or `grid-row` specifies a one-based start and optional `span`.
 - `Stack` overlays normal children across its content box. Children using `position: absolute` may use pixel `left`, `top`, `right`, and `bottom` insets; opposing insets stretch that axis.
 - Every Cascade-owned element uses the same padding, margin, border, preferred/min/max size, and overflow model.
 - Margins do not collapse.
 - Final rectangles are pixel-snapped by rounding leading and trailing edges independently.
 - `overflow` supports `visible`, `clip`, and `hidden` as an alias for clipping.
-- Percentages and flex shrink/basis shorthands are outside the current preview surface.
+- Percentages and the browser `flex` shorthand are outside the current preview surface.
+
+## SVG textures
+
+`Image src="res://art/icon.svg"` is supported when Godot imports that SVG as a native `Texture2D`/`DPITexture`. The same contain/cover/fill/none geometry, bindings, accessibility metadata, and keyed reconciliation used by raster textures apply. GodotCascade does not parse an SVG DOM: inline SVG, element selectors, animation, HTTP/data URLs, runtime recoloring, and SVG inside GCSS are unsupported. Import scale and color mapping belong to Godot's SVG import settings.
 
 ## Component support
 

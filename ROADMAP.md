@@ -254,9 +254,9 @@ The first public preview should build a small settings menu from `.gxml` and a s
 ## Phase 12 — language and editor depth
 
 - [x] Evaluate and implement focused GCSS custom properties and typed `calc()` without claiming browser compatibility ([experiment record](docs/artifacts/custom-properties-calc-experiments-2026-08-07.md))
-- [ ] Add the highest-value missing layout/style primitives: flex shrink/basis, opacity, transforms, gradients, and custom fonts
-- [ ] Define SVG support through native Godot textures rather than a browser DOM
-- [ ] Add authored autofocus, tab order, and modal focus-trap contracts
+- [x] Add the highest-value missing layout/style primitives: flex shrink/basis, opacity, transforms, gradients, and custom fonts
+- [x] Define SVG support through native Godot textures rather than a browser DOM
+- [x] Add authored autofocus, tab order, and modal focus-trap contracts
 - [ ] Provide completion, hover, formatting, go-to-definition, rename, and diagnostics in the Godot editor and VS Code
 - [x] Split `cascade_builder.gd` into construction, validation, binding, and declaration-application services first
 
