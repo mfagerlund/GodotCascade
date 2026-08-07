@@ -29,7 +29,7 @@ Every element accepts `id`, `class`, `accessible-label`, and `accessible-descrip
 
 Unknown elements are build errors unless their native factory is registered through `ComponentRegistry`. `Window` is not implemented.
 
-`Table`, table-row/cell elements, and a data-grid component are not implemented. A fixed visual matrix can be composed with `Grid`, but there is no table-specific shared column measurement across repeated rows, header semantics, sorting, selection, resizing, or virtualization.
+`Table`, table-row/cell elements, and a data-grid component are not implemented yet. A fixed visual matrix can be composed with `Grid`, but there is no table-specific shared column measurement across repeated rows, header semantics, sorting, selection, resizing, or virtualization.
 
 ## Bindings
 
@@ -64,7 +64,13 @@ Form write-back is explicit and reuses the same exact path grammar:
 
 `on-<signal>="method_name"` connects a native signal to `CascadeDocument.event_context`, an object-valued binding context, or the document itself. Authored connections are refreshed without disturbing user signal connections. See [markup and state](markup-and-state.md).
 
-Interpolation such as `"Health: {player.health}"`, converters, computed assignments, and implicit write-back from ordinary attributes are not supported.
+### Generated C# bindings
+
+A GXML document may include one non-visual `Bindings` contract for optional Godot .NET code generation. `@Name` on supported one-way and `bind-*` attributes selects a declared typed binding instead of a dynamic property path. Every generated-bound element requires a unique `id`.
+
+`Binding` declarations support a C# `type`, required getter method, and optional setter method. `Formatter` and `Parser` declarations copy CDATA bodies verbatim into the generated partial class with GXML `#line` mappings. The generated class owns native signal wiring, `RefreshGeneratedBindings()`, and reconnection through `CascadeDocument.document_reloaded`; the permanent companion partial implements the declared methods. This does not add arbitrary expression evaluation to runtime GXML. See [Bindings](bindings.md#typed-c-code-generation) for the exact syntax and command.
+
+Interpolation such as `"Health: {player.health}"`, converters in dynamic path bindings, computed assignments, and implicit write-back from ordinary attributes are not supported. Generated C# bindings provide explicit typed getters, setters, formatters, and parsers as a separate compile-time path.
 
 ## Selectors
 

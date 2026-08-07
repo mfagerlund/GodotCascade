@@ -224,7 +224,88 @@ Typical failures include:
 - a `Select` value with no matching option;
 - an unsupported `bind-*` attribute on a control.
 
-## C# integration
+## Typed C# code generation
+
+Godot .NET projects can opt into a generated, compile-time-checked binding layer. This is separate from runtime `{path}` resolution: `@Name` refers to a declared generated binding, and the generated partial calls getter and setter methods implemented in the permanent companion partial.
+
+Place one non-visual `Bindings` contract anywhere below the GXML root. Every element using a generated binding must have a unique `id`:
+
+```xml
+<Page>
+    <Bindings
+        class="SettingsBindings"
+        namespace="MyGame.UI"
+        document="CascadeDocument"
+        output="SettingsBindings.g.cs"
+    >
+        <Using namespace="System.Globalization" />
+        <Binding name="Profile" type="string" get="GetProfile" set="SetProfile" />
+        <Binding name="UiScale" type="double" get="GetUiScale" set="SetUiScale" />
+
+        <Formatter name="Percent" input="double" output="string"><![CDATA[
+return $"{value:0}%";
+        ]]></Formatter>
+
+        <Parser name="ParsePercent" input="string" output="double"><![CDATA[
+return double.TryParse(
+    value.Trim().TrimEnd('%'),
+    NumberStyles.Float,
+    CultureInfo.InvariantCulture,
+    out result
+);
+        ]]></Parser>
+    </Bindings>
+
+    <TextInput id="profile" bind-text="@Profile" />
+    <Slider id="scale" min="75" max="125" bind-value="@UiScale" />
+    <Label id="scale-label" text="@UiScale" format-text="Percent" />
+    <TextInput id="scale-entry" bind-text="@UiScale" parse-text="ParsePercent" />
+</Page>
+```
+
+Generate the disposable partial from the project root:
+
+```powershell
+godot --headless --path . --script res://addons/godot_cascade/codegen/csharp_binding_generator.gd -- res://ui/settings.gxml
+```
+
+An explicit second argument overrides the contract's `output` path. Relative output paths are resolved beside the GXML file. Generation fails on missing declarations, duplicate names or IDs, writable bindings without setters, and unknown formatters or parsers.
+
+The generated class derives from `Control` and expects its `CascadeDocumentPath`—`CascadeDocument` by default—to locate a child `CascadeDocument`. It owns `_Ready()`, connects to `document_reloaded`, reconnects native writable signals after hot reload, and exposes `RefreshGeneratedBindings()` for application-driven changes.
+
+Implement the required partial methods in the permanent file:
+
+```csharp
+using Godot;
+
+namespace MyGame.UI;
+
+public partial class SettingsBindings
+{
+    private readonly SettingsState _settings = new();
+
+    private partial string GetProfile() => _settings.Profile;
+    private partial void SetProfile(string value) => _settings.Profile = value;
+
+    private partial double GetUiScale() => _settings.UiScale;
+    private partial void SetUiScale(double value) => _settings.UiScale = value;
+
+    partial void OnGeneratedBindingsReady()
+    {
+        GD.Print("Bindings connected");
+    }
+}
+```
+
+Getter and setter signatures are emitted from the declared C# type. Missing implementations, incompatible parser results, and unsupported values therefore fail in the C# compiler instead of becoming runtime reflection failures. The optional `OnGeneratedBindingsReady()` partial hook replaces a user `_Ready()` override because the generated partial owns that lifecycle method.
+
+Formatter and parser bodies are user source copied verbatim into private static generated methods. `Formatter` receives `value` and returns its declared output type. `Parser` receives `value`, writes `result`, and returns `bool`. The generator surrounds both bodies with `#line` directives, so C# compiler diagnostics point back to the GXML file. CDATA is required so C# operators and generic syntax do not need XML escaping.
+
+The editor and runtime parser never compile or execute inline C#. Changing the binding contract, formatter, or parser requires regeneration and a normal .NET build; ordinary GXML/GCSS visual edits retain the existing live-reload behavior.
+
+The complete checked example consists of the [GXML contract](../examples/codegen/settings_bindings.gxml), [generated partial](../examples/codegen/SettingsBindings.g.cs.txt), and [user-owned partial](../examples/codegen/SettingsBindings.cs.txt). The repository uses `.txt` for the two C# samples because its own showcase project remains GDScript-only; remove that suffix in a Godot .NET project.
+
+## Dynamic C# integration
 
 Use a typed Godot `Resource` or another Godot object for C# state. Exported properties participate in Godot's property system and can therefore be resolved by GodotCascade:
 
@@ -259,7 +340,7 @@ private void SetScale(double value)
 }
 ```
 
-GodotCascade does not reflect over arbitrary plain C# objects and does not currently provide Bindot-style typed getter/setter lambdas.
+Dynamic path binding does not reflect over arbitrary plain C# objects. Use Godot-visible object properties or the generated partial-method contract above.
 
 ## Intentional limits
 
@@ -267,7 +348,7 @@ The current binding language does not support:
 
 - arbitrary expressions or method calls in GXML;
 - string interpolation;
-- converters or formatting functions;
+- converters or formatting functions in dynamic `{path}` bindings;
 - computed dependency tracking;
 - implicit write-back from ordinary attributes;
 - automatic notification after nested model mutation;
@@ -275,6 +356,6 @@ The current binding language does not support:
 - replacing a whole repeated item through `item`;
 - reflection over arbitrary C# POCO properties.
 
-Keep simple paths in GXML. Put calculations, formatting, persistence, and business decisions in GDScript or C#.
+Keep simple paths in dynamic GXML bindings. Generated C# bindings may use declared getters, setters, formatters, and parsers, but persistence and business decisions still belong in the user-owned partial.
 
 See the executable [settings showcase source](../examples/showcase/settings_menu/interface.gxml), its [document controller](../examples/showcase/settings_menu/settings_menu_document.gd), and the exact [current support reference](current-support.md).

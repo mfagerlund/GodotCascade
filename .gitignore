@@ -12,5 +12,7 @@ dist/
 *.log
 __pycache__/
 *.pyc
+bin/
+obj/
 .DS_Store
 Thumbs.db

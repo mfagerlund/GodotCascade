@@ -1,0 +1,31 @@
+<Page class="settings-codegen">
+    <Bindings
+        class="SettingsBindings"
+        namespace="CascadeShowcase"
+        document="CascadeDocument"
+        output="SettingsBindings.g.cs"
+    >
+        <Using namespace="System.Globalization" />
+        <Binding name="Profile" type="string" get="GetProfile" set="SetProfile" />
+        <Binding name="UiScale" type="double" get="GetUiScale" set="SetUiScale" />
+        <Formatter name="Percent" input="double" output="string"><![CDATA[
+return $"{value:0}%";
+        ]]></Formatter>
+        <Parser name="ParsePercent" input="string" output="double"><![CDATA[
+return double.TryParse(
+    value.Trim().TrimEnd('%'),
+    NumberStyles.Float,
+    CultureInfo.InvariantCulture,
+    out result
+);
+        ]]></Parser>
+    </Bindings>
+
+    <Column>
+        <TextInput id="profile" bind-text="@Profile" placeholder="Profile name" />
+        <Label id="profile-output" text="@Profile" />
+        <Slider id="ui-scale" min="75" max="125" bind-value="@UiScale" />
+        <Label id="ui-scale-output" text="@UiScale" format-text="Percent" />
+        <TextInput id="ui-scale-entry" bind-text="@UiScale" parse-text="ParsePercent" />
+    </Column>
+</Page>

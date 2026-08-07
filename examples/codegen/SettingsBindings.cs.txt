@@ -1,0 +1,31 @@
+using Godot;
+
+namespace CascadeShowcase
+{
+    // Rename this file to SettingsBindings.cs in a Godot .NET project.
+    // The generated partial owns _Ready(); use its optional ready hook.
+    public partial class SettingsBindings
+    {
+        private string _profile = "Rhea";
+        private double _uiScale = 105.0;
+
+        private partial string GetProfile() => _profile;
+
+        private partial void SetProfile(string value)
+        {
+            _profile = value;
+        }
+
+        private partial double GetUiScale() => _uiScale;
+
+        private partial void SetUiScale(double value)
+        {
+            _uiScale = Mathf.Clamp(value, 75.0, 125.0);
+        }
+
+        partial void OnGeneratedBindingsReady()
+        {
+            GD.Print("Typed settings bindings connected.");
+        }
+    }
+}

@@ -9,6 +9,7 @@ class Element:
 	var tag_name := ""
 	var attributes: Dictionary = {}
 	var text := ""
+	var raw_text := ""
 	var children: Array[Element] = []
 	var source_offset := 0
 	var source_line := 1
@@ -95,9 +96,17 @@ static func parse(source: String) -> Dictionary:
 				else:
 					stack.pop_back()
 
-			XMLParser.NODE_TEXT, XMLParser.NODE_CDATA:
+			XMLParser.NODE_TEXT:
 				if not stack.is_empty():
-					stack.back().text += xml.get_node_data()
+					var node_text := xml.get_node_data()
+					stack.back().text += node_text
+					stack.back().raw_text += node_text
+
+			XMLParser.NODE_CDATA:
+				if not stack.is_empty():
+					var cdata_text := _cdata_content(source, xml.get_node_offset())
+					stack.back().text += cdata_text
+					stack.back().raw_text += cdata_text
 
 		read_error = xml.read()
 
@@ -132,6 +141,17 @@ static func _normalize_text(element: Element) -> void:
 	element.text = " ".join(normalized)
 	for child in element.children:
 		_normalize_text(child)
+
+
+static func _cdata_content(source: String, offset: int) -> String:
+	var opening := source.rfind("<![CDATA[", clampi(offset, 0, source.length()))
+	if opening < 0:
+		return ""
+	var content_start := opening + 9
+	var closing := source.find("]]>", content_start)
+	if closing < 0:
+		return source.substr(content_start)
+	return source.substr(content_start, closing - content_start)
 
 
 static func _diagnostic(source: String, offset: int, message: String) -> Dictionary:

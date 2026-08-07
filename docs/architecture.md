@@ -58,6 +58,8 @@ Layout has two conceptual passes:
 
 Exact `{dot.separated.path}` attribute values are stored as metadata on the generated native control. `BindingResolver` traverses dictionaries, arrays, or Godot object properties only; it does not evaluate expressions or invoke methods. `CascadeDocument` applies bindings after initial construction and after reconciliation, so authored reloads and data refreshes share stable native instances. Assigning a context refreshes immediately, while nested state changes use the explicit `refresh_bindings()` boundary until reactive adapters are introduced.
 
+Godot .NET projects may instead declare `@Name` bindings in a non-visual GXML `Bindings` contract. `CsharpBindingGenerator` emits a disposable partial `Control` class containing node lookup, native signal wiring, refresh logic, and typed partial getter/setter declarations. The permanent companion partial implements those methods. Formatter and parser CDATA bodies are copied into private static methods with `#line` mappings; neither the editor preview nor the runtime parser executes them. `CascadeDocument.document_reloaded` lets generated wiring reconnect after structural hot reload without polling.
+
 ### Reconciler
 
 The reconciler compares the previous logical tree with the next one, then applies the smallest practical set of mutations to native nodes. It must preserve runtime state—especially focus, line-edit selection, scroll position, animation state, and user signal connections—whenever element identity is stable.

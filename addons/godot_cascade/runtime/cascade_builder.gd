@@ -86,6 +86,8 @@ static func _build_element(
 
 	for index in element.children.size():
 		var child_element = element.children[index]
+		if child_element.tag_name.to_lower() == "bindings":
+			continue
 		var child_key := "%s/%s:%s" % [key_path, index, child_element.tag_name]
 		var child_control := _build_element(child_element, rule_index, diagnostics, child_key, button_groups, binding_context, binding_scope, key_scope)
 		if child_control != null:
@@ -186,6 +188,8 @@ static func _create_control(tag_name: String, diagnostics: Array[Dictionary], at
 			return CascadeImage.new()
 		"repeat":
 			return CascadeBox.new()
+		"bindings":
+			return null
 		_:
 			if ComponentRegistry.has(tag_name):
 				var custom := ComponentRegistry.create(tag_name)
@@ -684,7 +688,9 @@ static func _apply_attributes(
 	_apply_writable_binding_attributes(control, attributes, diagnostics)
 	if control is CascadeLabel or control is CascadeButton or _is_text_input(control):
 		var raw_text := str(attributes.get("text", element_text))
-		if not control.get_meta("cascade_bindings", {}).has("text") and not _record_binding(control, "text", raw_text):
+		if raw_text.begins_with("@"):
+			pass
+		elif not control.get_meta("cascade_bindings", {}).has("text") and not _record_binding(control, "text", raw_text):
 			control.set("text", raw_text)
 	if attributes.has("accessible-label"):
 		if _has_property(control, "accessibility_name"):
@@ -715,6 +721,8 @@ static func _apply_attributes(
 			continue
 		var raw_value := str(attributes[attribute_name])
 		var property_name := "%s_value" % attribute_name if attribute_name != "value" else "value"
+		if raw_value.begins_with("@"):
+			continue
 		if _record_binding(control, property_name, raw_value):
 			continue
 		if not raw_value.is_valid_float():
@@ -750,6 +758,8 @@ static func _apply_writable_binding_attributes(control: Control, attributes: Dic
 			diagnostics.append(_diagnostic("error", "Writable binding '%s' is not supported on <%s>." % [attribute_name, control.get_meta("cascade_element_type", control.get_class())]))
 			continue
 		var raw_value := str(attributes[attribute_name])
+		if raw_value.begins_with("@"):
+			continue
 		var path := _binding_path(raw_value)
 		if path.is_empty():
 			diagnostics.append(_diagnostic("error", "Writable binding '%s' requires an exact {dot.separated.path}." % attribute_name))

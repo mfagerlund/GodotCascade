@@ -6,6 +6,7 @@ extends Control
 signal diagnostics_changed(diagnostics: Array[Dictionary])
 signal binding_value_changed(path: String, value: Variant, control: Control)
 signal validation_changed(valid: bool, diagnostics: Array[Dictionary])
+signal document_reloaded(root: Control)
 
 const GxmlParser := preload("res://addons/godot_cascade/markup/gxml_parser.gd")
 const GcssParser := preload("res://addons/godot_cascade/style/gcss_parser.gd")
@@ -139,6 +140,7 @@ func reload_document() -> bool:
 			var stamped: Dictionary = diagnostic.duplicate()
 			stamped["path"] = markup_path
 			diagnostics.append(stamped)
+	document_reloaded.emit(_generated_root)
 	_publish_diagnostics()
 	return true
 

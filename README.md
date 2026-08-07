@@ -88,7 +88,7 @@ The repository currently contains several working vertical slices:
 - `.gxml`/`.gcss` import resources plus a docked live preview, Inspector summary, layout debugger, and source navigation;
 - stable ID and structural keys that reconcile edits into the existing native tree;
 - last-valid rendering when an in-progress edit has parser or builder errors;
-- focused `{dot.separated.path}` one-way bindings plus explicit writable form bindings;
+- focused `{dot.separated.path}` one-way bindings, explicit writable form bindings, and optional typed C# partial generation;
 - keyed `Repeat` collections, `on-*` event methods, and registered custom-component lifecycle hooks;
 - three source-generated parity scenes covering layout, media, components, form controls, and bound telemetry data.
 
@@ -158,7 +158,7 @@ Writable bindings are opt-in, so existing `{path}` attributes remain one-way:
 
 Native edits assign only existing typed object, array, or Dictionary paths, emit `binding_value_changed`, and refresh dependent one-way controls. `CascadeDocument.validate()` evaluates adapted controls and publishes validation diagnostics. No expressions, converters, implicit object creation, or method calls are involved.
 
-See the [binding guide](docs/bindings.md) for the complete path grammar, supported attributes, dependent refresh behavior, repeated-item scopes, event targets, diagnostics, limits, and C# integration boundary.
+Godot .NET projects can also declare `@Name` bindings in GXML and generate a disposable partial class with typed getter/setter methods implemented in a permanent companion partial. Inline formatter and parser bodies are copied verbatim with source mappings; there is no runtime expression interpreter. See the [binding guide](docs/bindings.md) for the generation command, exact contract, dynamic path grammar, repeated scopes, events, diagnostics, and limits.
 
 ## Components and interactive states
 

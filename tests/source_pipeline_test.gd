@@ -15,6 +15,7 @@ const ThemeAdapter := preload("res://addons/godot_cascade/style/theme_adapter.gd
 const ComponentRegistry := preload("res://addons/godot_cascade/runtime/component_registry.gd")
 const CascadePanel := preload("res://addons/godot_cascade/components/cascade_panel.gd")
 const DebugSnapshot := preload("res://addons/godot_cascade/editor/debug_snapshot.gd")
+const CsharpBindingGenerator := preload("res://addons/godot_cascade/codegen/csharp_binding_generator.gd")
 
 
 class TypedBindingLeaf extends RefCounted:
@@ -38,6 +39,7 @@ func _initialize() -> void:
 
 func _run() -> void:
 	_test_gxml_parser()
+	_test_csharp_binding_generator()
 	_test_gcss_specificity()
 	_test_style_foundations()
 	_test_responsive_and_transition_styles()
@@ -179,6 +181,50 @@ func _test_gxml_parser() -> void:
 	if result["root"] != null:
 		_expect_int("GXML child count", result["root"].children.size(), 1)
 		_expect_true("GXML text normalization", result["root"].children[0].text == "Hello world")
+
+
+func _test_csharp_binding_generator() -> void:
+	var source := """<Page>
+	<Bindings class="SettingsBindings" namespace="Showcase" document="CascadeDocument">
+		<Using namespace="System.Text" />
+		<Binding name="Scale" type="double" get="GetScale" set="SetScale" />
+		<Formatter name="Percent" input="double" output="string"><![CDATA[
+return $"{value:0}%";
+		]]></Formatter>
+		<Parser name="ParsePercent" input="string" output="double"><![CDATA[
+return double.TryParse(value.TrimEnd('%'), out result);
+		]]></Parser>
+	</Bindings>
+	<Slider id="scale" min="75" max="125" bind-value="@Scale" />
+	<Label id="scale-output" text="@Scale" format-text="Percent" />
+	<TextInput id="scale-input" bind-text="@Scale" parse-text="ParsePercent" />
+</Page>"""
+	var generated := CsharpBindingGenerator.generate(source, "res://examples/settings/interface.gxml")
+	_expect_int("C# binding generator diagnostics", generated["diagnostics"].size(), 0)
+	var code: String = generated["code"]
+	_expect_true("C# binding generator emits partial getter", code.contains("private partial double GetScale();"))
+	_expect_true("C# binding generator emits partial setter", code.contains("private partial void SetScale(double value);"))
+	_expect_true("C# binding generator copies formatter code", code.contains("return $\"{value:0}%\";"))
+	_expect_true("C# binding generator copies parser code", code.contains("double.TryParse(value.TrimEnd('%'), out result)"))
+	_expect_true("C# binding generator maps source lines", code.contains("#line ") and code.contains("\"res://examples/settings/interface.gxml\""))
+	_expect_true("C# binding generator wires slider changes", code.contains("Callable.From<double>"))
+	_expect_true("C# binding generator refreshes formatted labels", code.contains("Percent(GetScale())"))
+	var example_source := FileAccess.get_file_as_string("res://examples/codegen/settings_bindings.gxml")
+	var example_generated := CsharpBindingGenerator.generate(example_source, "res://examples/codegen/settings_bindings.gxml")
+	_expect_true(
+		"tracked C# binding example is deterministic",
+		example_generated["code"] == FileAccess.get_file_as_string("res://examples/codegen/SettingsBindings.g.cs.txt")
+	)
+
+	var markup := GxmlParser.parse(source)
+	var build := CascadeBuilder.build(markup["root"], [])
+	_expect_int("generated binding metadata is non-visual", build["diagnostics"].size(), 0)
+	if build["root"] != null:
+		_expect_int("Bindings element is omitted from native tree", build["root"].get_child_count(), 3)
+		build["root"].free()
+
+	var invalid := CsharpBindingGenerator.generate("<Page><Bindings class=\"Broken\"><Binding name=\"Value\" type=\"double\" get=\"GetValue\" /></Bindings><Slider bind-value=\"@Value\" /></Page>")
+	_expect_true("generated writable binding requires id and setter", invalid["diagnostics"].size() >= 2)
 
 
 func _test_gcss_specificity() -> void:
