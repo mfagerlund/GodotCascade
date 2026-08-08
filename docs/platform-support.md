@@ -20,7 +20,9 @@ GodotCascade is a GDScript addon targeting Godot 4.7 and later 4.x maintenance r
 
 The full CI/release job runs on Ubuntu with Godot 4.7.1. A separate matrix runs the source pipeline, editor-tooling smoke, item-model, localized collection, virtualization, and side-by-side certification-fixture suites on the minimum Godot 4.7 Linux runner and current Windows/macOS runners. Tagged releases wait for both jobs.
 
-The 0.8.0 tag matrix passed for commit `373e346` in [GitHub Actions run 31224027746](https://github.com/mfagerlund/GodotCascade/actions/runs/31224027746): full Godot 4.7.1/Linux verification, Godot 4.7/Linux smoke, Godot 4.7.1/Windows smoke, and Godot 4.7.1/macOS smoke. Each downloaded official archive was checked against its published SHA-512 sum.
+The 0.8.1 tag matrix passed for commit `281948b` in [GitHub Actions run 31261237080](https://github.com/mfagerlund/GodotCascade/actions/runs/31261237080): full Godot 4.7.1/Linux verification, Godot 4.7/Linux smoke, Godot 4.7.1/Windows smoke, and Godot 4.7.1/macOS smoke. Each downloaded official archive was checked against its published SHA-512 sum. The workflow published the deterministic 135-file addon archive with SHA-256 `90e200e4111855f5cfb59ea84e6eec839a3ccf993da95becf21603f1a0a7386e` after a clean-install smoke pass.
+
+The preceding 0.8.0 tag matrix passed for commit `373e346` in [GitHub Actions run 31224027746](https://github.com/mfagerlund/GodotCascade/actions/runs/31224027746) with the same version/platform matrix.
 
 The local Windows results used SHA-512-verified official Godot 4.7 and 4.7.1 standard builds. The 500-control benchmark measures complete named operations; no reported value is a per-frame cost.
 

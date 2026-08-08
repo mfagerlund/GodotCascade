@@ -31,11 +31,11 @@ Enable three image previews. The image and thumbnail URL can be the same direct 
 ## Preflight
 
 - [x] The public repository, issues page, icon, and preview URLs resolve without repository credentials.
-- [ ] Verify the 0.8.1 release page, archive, and checksum URLs after the tag workflow publishes them.
+- [x] The 0.8.1 release page, archive, and checksum URLs resolve publicly; the published archive digest matches the verified package.
 - [x] The icon is a square 512×512 PNG, exceeding the required 128×128 minimum.
 - [x] `LICENSE` and the copy packaged under `addons/godot_cascade/` contain the matching Unlicense text and the 2026 copyright statement.
 - [x] `plugin.cfg` identifies version 0.8.1 and the release ZIP contains the complete addon directory.
 - [x] The clean-install smoke test and all eleven native Godot suites pass against the packaged addon.
 - [x] The name and plain-text description are English, describe the experimental status, and do not claim HTML/CSS compatibility.
 
-After the release-artifact check, the remaining maintainer-controlled step is to sign in at the [Godot Asset Library submission form](https://godotengine.org/asset-library/asset/submit), paste these values, and submit the entry for review. The [official submission guide](https://docs.godotengine.org/en/stable/community/asset_library/submitting_to_assetlib.html) is authoritative if the form changes.
+The remaining maintainer-controlled step is to sign in at the [Godot Asset Library submission form](https://godotengine.org/asset-library/asset/submit), paste these values, and submit the entry for review. The [official submission guide](https://docs.godotengine.org/en/stable/community/asset_library/submitting_to_assetlib.html) is authoritative if the form changes.
