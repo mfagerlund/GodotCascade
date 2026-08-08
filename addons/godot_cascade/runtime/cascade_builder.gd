@@ -39,12 +39,16 @@ const INHERITED_PROPERTIES: PackedStringArray = ["color", "font-size", "font-sou
 
 
 static func build(root_element, rules: Array, binding_context: Variant = null, viewport_size: Vector2 = Vector2.ZERO) -> Dictionary:
+	var authored_diagnostics := DocumentValidator.validate_reserved_attributes(root_element)
+	authored_diagnostics.append_array(DocumentValidator.validate_authored_root(root_element))
+	if not authored_diagnostics.is_empty():
+		return {"root": null, "diagnostics": authored_diagnostics}
 	var expansion := GxmlComponentExpander.expand(root_element)
 	var expanded_root = expansion["root"]
 	var diagnostics: Array[Dictionary] = expansion["diagnostics"]
 	if expanded_root == null:
 		return {"root": null, "diagnostics": diagnostics}
-	diagnostics.append_array(DocumentValidator.validate(expanded_root))
+	diagnostics.append_array(DocumentValidator.validate(expanded_root, true))
 	var button_groups: Dictionary = {}
 	var document_rebuild_bindings := PackedStringArray()
 	DeclarationApplier.begin_build(viewport_size)
@@ -52,7 +56,9 @@ static func build(root_element, rules: Array, binding_context: Variant = null, v
 	var root_control := _build_element(expanded_root, rule_index, diagnostics, "0", button_groups, binding_context, {}, "", document_rebuild_bindings)
 	if root_control != null:
 		root_control.set_meta("cascade_document_rebuild_bindings", document_rebuild_bindings)
-		diagnostics.append_array(FocusManager.validate(root_control))
+		# One-way visible/disabled bindings are applied by CascadeDocument. Defer
+		# their focus-state conclusions until that desired tree has resolved.
+		diagnostics.append_array(FocusManager.validate(root_control, true))
 	return {"root": root_control, "diagnostics": diagnostics}
 
 
@@ -151,7 +157,10 @@ static func _build_element(
 	control.set_meta("cascade_transition_properties", PackedStringArray())
 	control.set_meta("cascade_transition_duration", 0.0)
 	control.set_meta("cascade_explicit_accessible_label", false)
-	var compatibility_tier := "layout-only" if ComponentRegistry.has(element.tag_name) else ("adapted" if _is_text_input(control) or control is CascadeScroll else "exact")
+	var compatibility_tier := "adapted" if _is_text_input(control) or control is CascadeScroll else "exact"
+	if ComponentRegistry.has(element.tag_name):
+		var declared_tier := str(control.get_meta("cascade_compatibility_tier", "layout-only"))
+		compatibility_tier = declared_tier if declared_tier in ["exact", "adapted", "layout-only"] else "layout-only"
 	control.set_meta("cascade_compatibility_tier", compatibility_tier)
 	if _is_text_input(control):
 		control.set_meta("cascade_adapted_properties", PackedStringArray(["background", "border", "color", "font-size", "padding"]))
@@ -170,7 +179,14 @@ static func _build_element(
 		_apply_select_options(control, element, rule_index, diagnostics)
 		return control
 	if element.tag_name.to_lower() == "repeat":
-		control.set_meta("cascade_repeat_element", source_element)
+		# Retain a strong clone of the selector/inheritance ancestor chain. GXML
+		# elements point to parents weakly, so retaining only the Repeat element
+		# would orphan it after the full parsed document is released. Localized
+		# rebuilds would then lose inherited declarations, custom properties, and
+		# descendant selectors that cross the Repeat boundary.
+		var repeat_descriptor := _clone_element_with_ancestor_chain(source_element)
+		control.set_meta("cascade_repeat_element", repeat_descriptor["element"])
+		control.set_meta("cascade_repeat_ancestor_root", repeat_descriptor["root"])
 		control.set_meta("cascade_repeat_rule_index", rule_index)
 		control.set_meta("cascade_repeat_key_path", key_path)
 		control.set_meta("cascade_repeat_key_scope", key_scope)
@@ -767,7 +783,10 @@ static func _apply_attributes(
 		if raw_text.begins_with("@"):
 			pass
 		elif not control.get_meta("cascade_bindings", {}).has("text") and not BindingCompiler.record_one_way(control, "text", raw_text):
-			control.set("text", raw_text)
+			if BindingCompiler.has_invalid_binding_syntax(raw_text):
+				diagnostics.append(_control_diagnostic(control, "Text binding requires an exact {dot.separated.path} using identifier or canonical array-index segments."))
+			else:
+				control.set("text", raw_text)
 	if attributes.has("accessible-label"):
 		if _has_property(control, "accessibility_name"):
 			control.set("accessibility_name", str(attributes["accessible-label"]))
@@ -787,6 +806,14 @@ static func _apply_attributes(
 		_apply_image_attributes(control, attributes, diagnostics)
 	if not (control is CascadeProgress or control is CascadeSlider):
 		return
+	if control is CascadeSlider:
+		var authored_range_state := {}
+		for attribute_name in ["min", "max", "value"]:
+			authored_range_state[attribute_name] = {
+				"present": attributes.has(attribute_name),
+				"raw": str(attributes.get(attribute_name, "")),
+			}
+		control.set_meta("cascade_authored_slider_range_state", authored_range_state)
 	var range_values := {
 		"min_value": control.min_value,
 		"max_value": control.max_value,
@@ -861,9 +888,8 @@ static func _apply_focus_attributes(control: Control, attributes: Dictionary, di
 		if attribute_name == "autofocus":
 			control.set_meta("cascade_autofocus", true)
 		else:
-			var element_type := str(control.get_meta("cascade_element_type", "")).to_lower()
-			if element_type not in ["page", "row", "column", "panel", "stack", "grid"]:
-				diagnostics.append(_control_diagnostic(control, "Attribute 'focus-trap' requires a container element."))
+			if not control is Container:
+				diagnostics.append(_control_diagnostic(control, "Attribute 'focus-trap' requires an element backed by a native Container."))
 			else:
 				control.set_meta("cascade_focus_trap", true)
 
@@ -873,6 +899,9 @@ static func _apply_image_attributes(control: Control, attributes: Dictionary, di
 	if raw_source.begins_with("@"):
 		return
 	if BindingCompiler.record_one_way(control, "image_source", raw_source):
+		return
+	if BindingCompiler.has_invalid_binding_syntax(raw_source):
+		diagnostics.append(_control_diagnostic(control, "Image src binding requires an exact {dot.separated.path} using identifier or canonical array-index segments."))
 		return
 	var error_message := str(control.call("set_source", raw_source))
 	if not error_message.is_empty():
@@ -885,6 +914,11 @@ static func _apply_button_attributes(
 	diagnostics: Array[Dictionary],
 	button_groups: Dictionary
 ) -> void:
+	if control.toggle_mode:
+		control.set_meta("cascade_authored_checked_state", {
+			"present": attributes.has("checked"),
+			"raw": str(attributes.get("checked", "")),
+		})
 	if attributes.has("checked"):
 		if not control.toggle_mode:
 			diagnostics.append(_diagnostic("error", "Attribute 'checked' requires a toggle control."))
@@ -941,6 +975,10 @@ static func _apply_select_options(
 	rule_index: Dictionary,
 	diagnostics: Array[Dictionary]
 ) -> void:
+	control.set_meta("cascade_authored_selected_state", {
+		"present": element.attributes.has("selected"),
+		"raw": str(element.attributes.get("selected", "")),
+	})
 	var options: Array[Dictionary] = []
 	for child in element.children:
 		if child.tag_name.to_lower() != "option":
@@ -1014,6 +1052,9 @@ static func _resolve_bound_classes(
 		return {"path": "", "value": "", "bound": true}
 	var path := BindingCompiler.binding_path(raw_value)
 	if path.is_empty():
+		if BindingCompiler.has_invalid_binding_syntax(raw_value):
+			diagnostics.append(_diagnostic("error", "class binding requires an exact {dot.separated.path} using identifier or canonical array-index segments."))
+			return {"path": "", "value": "", "bound": true}
 		return {"path": "", "value": raw_value, "bound": false}
 	var first_segment := path.get_slice(".", 0)
 	var context: Variant = binding_scope if binding_scope.has(first_segment) else binding_context
@@ -1039,6 +1080,36 @@ static func _clone_element_surface(element):
 	for child in element.children:
 		clone.children.append(_clone_element_with_parent(child, clone))
 	return clone
+
+
+static func _clone_element_with_ancestor_chain(element) -> Dictionary:
+	var ancestors: Array = []
+	var cursor = element.parent_element()
+	while cursor != null:
+		ancestors.append(cursor)
+		cursor = cursor.parent_element()
+	ancestors.reverse()
+	var root_clone: Variant = null
+	var parent_clone: Variant = null
+	for ancestor in ancestors:
+		var clone := GxmlParser.Element.new(ancestor.tag_name, parent_clone)
+		clone.attributes = ancestor.attributes.duplicate(true)
+		clone.text = ancestor.text
+		clone.raw_text = ancestor.raw_text
+		clone.source_offset = ancestor.source_offset
+		clone.source_line = ancestor.source_line
+		clone.source_column = ancestor.source_column
+		if parent_clone != null:
+			parent_clone.children.append(clone)
+		else:
+			root_clone = clone
+		parent_clone = clone
+	var element_clone = _clone_element_with_parent(element, parent_clone)
+	if parent_clone != null:
+		parent_clone.children.append(element_clone)
+	else:
+		root_clone = element_clone
+	return {"root": root_clone, "element": element_clone}
 
 
 static func _clone_element_with_parent(element, parent):

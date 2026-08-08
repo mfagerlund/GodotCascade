@@ -2,9 +2,57 @@
 
 const data = require('./language-data.json');
 
-const BUILTIN_ELEMENTS = new Set(Object.keys(data.elements));
+const ELEMENT_ALIASES = new Map([['input', 'TextInput'], ['radio', 'RadioButton']]);
+const BUILTIN_ELEMENTS = new Set([...Object.keys(data.elements).map((name) => name.toLowerCase()), ...ELEMENT_ALIASES.keys()]);
+const FOCUS_TRAP_ELEMENTS = new Set((data.focusTrapElements || []).map((name) => name.toLowerCase()));
 const KNOWN_PROPERTIES = new Set(Object.keys(data.properties));
 const KNOWN_PSEUDOS = new Set(Object.keys(data.pseudoStates));
+
+function isBuiltinElement(name) {
+  return BUILTIN_ELEMENTS.has(String(name).toLowerCase());
+}
+
+function canonicalElementName(name) {
+  const normalized = String(name).toLowerCase();
+  if (ELEMENT_ALIASES.has(normalized)) return ELEMENT_ALIASES.get(normalized);
+  return Object.keys(data.elements).find((candidate) => candidate.toLowerCase() === normalized) || '';
+}
+
+function sameElementName(left, right) {
+  return String(left).toLowerCase() === String(right).toLowerCase();
+}
+
+function isAllowedAttribute(tagName, attributeName) {
+  const normalized = String(attributeName).toLowerCase();
+  if (String(attributeName) !== normalized) return false;
+  const canonical = canonicalElementName(tagName);
+  if (!canonical) return true;
+  if (normalized.startsWith('__')) return false;
+  if (!data.nonVisualElements.includes(canonical) && (/^(?:on|bind)-/.test(normalized) || data.generatedBindingAttributes.includes(normalized))) return true;
+  const common = data.nonVisualElements.includes(canonical) ? [] : (data.elementAttributes['*'] || []);
+  return [...common, ...(data.elementAttributes[canonical] || [])].includes(normalized);
+}
+
+function gxmlAttributeNames(tagName) {
+  const canonical = canonicalElementName(tagName);
+  if (!canonical) return [...(data.elementAttributes['*'] || [])];
+  const nonVisual = data.nonVisualElements.includes(canonical);
+  const names = [...new Set([
+    ...(nonVisual ? [] : (data.elementAttributes['*'] || [])),
+    ...(data.elementAttributes[canonical] || []),
+    ...(nonVisual ? [] : (data.generatedBindingAttributes || [])),
+  ])];
+  return FOCUS_TRAP_ELEMENTS.has(canonical.toLowerCase()) ? names : names.filter((name) => name !== 'focus-trap');
+}
+
+function attributeIsTrue(tag, name) {
+  const item = attribute(tag, name);
+  return Boolean(item) && ['true', '1', 'yes', 'on', name].includes(item.value.trim().toLowerCase());
+}
+
+function visibleLiteralIsTrue(value) {
+  return ['true', '1', 'yes', 'on', 'visible'].includes(String(value).trim().toLowerCase());
+}
 
 function diagnostic(start, end, message, severity = 'error', code = '') {
   return { start, end: Math.max(end, start + 1), message, severity, code };
@@ -153,7 +201,8 @@ function parseGxml(text) {
     const node = { tag, children: [], parent: stack.length ? stack[stack.length - 1] : null };
     if (node.parent) node.parent.children.push(node); else roots.push(node);
     nodes.push(node);
-    if (tag.name === 'Component') {
+    const canonicalTag = canonicalElementName(tag.name);
+    if (canonicalTag === 'Component') {
       const name = attribute(tag, 'name');
       if (name && name.value) components.set(name.value, name);
     }
@@ -164,6 +213,9 @@ function parseGxml(text) {
       if (data.booleanAttributes.includes(attr.name) && attr.value && !attr.value.startsWith('{') && !attr.value.startsWith('@') && !['true', 'false', '1', '0', 'yes', 'no', 'on', 'off', attr.name].includes(attr.value.toLowerCase())) {
         diagnostics.push(diagnostic(attr.valueStart, attr.valueEnd, `Attribute '${attr.name}' requires a boolean literal or exact binding.`, 'error', 'gxml.invalid-boolean'));
       }
+      if (attr.name.startsWith('__') || (isBuiltinElement(tag.name) && !isAllowedAttribute(tag.name, attr.name))) {
+        diagnostics.push(diagnostic(attr.nameStart, attr.nameEnd, `Unknown attribute '${attr.name}' on <${tag.name}>.`, 'error', 'gxml.unknown-attribute'));
+      }
     }
     if (!tag.selfClosing) stack.push(node);
   }
@@ -173,29 +225,155 @@ function parseGxml(text) {
     for (const root of roots.slice(1)) diagnostics.push(diagnostic(root.tag.start, root.tag.end, 'GXML documents must contain exactly one root element.', 'error', 'gxml.multiple-roots'));
   }
 
+  if (roots.length) {
+    const root = roots[0];
+    const rootCanonical = canonicalElementName(root.tag.name);
+    if (data.nonVisualElements.includes(rootCanonical)) {
+      diagnostics.push(diagnostic(root.tag.nameStart, root.tag.nameEnd, `The document root must be visual; <${root.tag.name}> is a non-visual declaration element.`, 'error', 'gxml.nonvisual-root'));
+    }
+    const rootIf = attribute(root.tag, 'if');
+    if (rootIf) diagnostics.push(diagnostic(rootIf.nameStart, rootIf.valueEnd, "The document root cannot use 'if'; bind 'visible' or put the conditional on a child element.", 'error', 'gxml.root-if'));
+  }
+
+  const componentTemplates = new Map();
+  for (const node of nodes) {
+    if (canonicalElementName(node.tag.name) !== 'Component') continue;
+    const name = attribute(node.tag, 'name');
+    const templates = node.children.filter((child) => canonicalElementName(child.tag.name) !== 'Param');
+    if (name && name.value && templates.length === 1) componentTemplates.set(name.value.toLowerCase(), templates[0]);
+  }
+  const structuralTag = (node, seen = new Set()) => {
+    const canonical = canonicalElementName(node.tag.name);
+    if (canonical) return canonical;
+    const normalized = node.tag.name.toLowerCase();
+    if (seen.has(normalized) || !componentTemplates.has(normalized)) return '';
+    const nextSeen = new Set(seen);
+    nextSeen.add(normalized);
+    return structuralTag(componentTemplates.get(normalized), nextSeen);
+  };
+  const componentSlot = (template, wantedName) => {
+    if (canonicalElementName(template.tag.name) === 'Slot' && (attribute(template.tag, 'name')?.value || '') === wantedName) return template;
+    for (const child of template.children) {
+      const found = componentSlot(child, wantedName);
+      if (found) return found;
+    }
+    return null;
+  };
+
+  const repeatFocusOffenders = new Set();
+  const idsByScope = new Map();
   for (const node of nodes) {
     const tag = node.tag;
-    if (tag.name === 'Repeat') {
+    const canonicalTag = canonicalElementName(tag.name);
+    const id = attribute(tag, 'id');
+    if (id && id.value) {
+      let scopeNode = node.parent;
+      while (scopeNode && canonicalElementName(scopeNode.tag.name) !== 'Component' && !componentTemplates.has(scopeNode.tag.name.toLowerCase())) scopeNode = scopeNode.parent;
+      let scopeName = 'document';
+      if (scopeNode && canonicalElementName(scopeNode.tag.name) === 'Component') {
+        scopeName = `template:${attribute(scopeNode.tag, 'name')?.value.toLowerCase() || `@${scopeNode.tag.start}`}`;
+      } else if (scopeNode) {
+        const invocationId = attribute(scopeNode.tag, 'id')?.value;
+        scopeName = `invocation:${invocationId || `@${scopeNode.tag.start}`}`;
+      }
+      const scopedId = `${scopeName}\u0000${id.value}`;
+      if (idsByScope.has(scopedId)) {
+        const first = idsByScope.get(scopedId);
+        diagnostics.push(diagnostic(id.valueStart, id.valueEnd, `Duplicate id '${id.value}'; first declared at source offset ${first.valueStart}.`, 'error', 'gxml.duplicate-id'));
+      } else {
+        idsByScope.set(scopedId, id);
+      }
+    }
+    if (canonicalTag === 'Repeat') {
       const items = attribute(tag, 'items');
       if (!items || !/^\{[A-Za-z_][\w]*(?:\.[A-Za-z_][\w]*|\.\d+)*\}$/.test(items.value)) {
         diagnostics.push(diagnostic(items ? items.valueStart : tag.nameStart, items ? items.valueEnd : tag.nameEnd, "Repeat 'items' must be an exact Array or CascadeItemModel binding such as '{inventory.items}'.", 'error', 'gxml.repeat-items'));
       }
       if (node.children.length !== 1) diagnostics.push(diagnostic(tag.nameStart, tag.nameEnd, 'Repeat requires exactly one child template.', 'error', 'gxml.repeat-child'));
-	  const virtual = attribute(tag, 'virtual');
-	  if (virtual && ['true', '1', 'yes', 'on', 'virtual'].includes(virtual.value.toLowerCase())) {
-		const key = attribute(tag, 'key');
-		const height = attribute(tag, 'item-height');
-		const overscan = attribute(tag, 'overscan');
-		if (!key || !key.value.trim()) diagnostics.push(diagnostic(tag.nameStart, tag.nameEnd, 'Virtual Repeat requires an explicit stable key.', 'error', 'gxml.virtual-key'));
-		if (!height || !/^\d+(?:\.\d+)?(?:px)?$/.test(height.value) || parseFloat(height.value) <= 0) diagnostics.push(diagnostic(height ? height.valueStart : tag.nameStart, height ? height.valueEnd : tag.nameEnd, "Virtual Repeat 'item-height' requires a positive pixel length.", 'error', 'gxml.virtual-height'));
-		if (overscan && (!/^\d+$/.test(overscan.value) || Number(overscan.value) < 0)) diagnostics.push(diagnostic(overscan.valueStart, overscan.valueEnd, "Virtual Repeat 'overscan' requires a non-negative integer.", 'error', 'gxml.virtual-overscan'));
-	  }
+      const virtual = attribute(tag, 'virtual');
+      if (virtual && ['true', '1', 'yes', 'on', 'virtual'].includes(virtual.value.toLowerCase())) {
+        const key = attribute(tag, 'key');
+        const height = attribute(tag, 'item-height');
+        const overscan = attribute(tag, 'overscan');
+        if (!key || !key.value.trim()) diagnostics.push(diagnostic(tag.nameStart, tag.nameEnd, 'Virtual Repeat requires an explicit stable key.', 'error', 'gxml.virtual-key'));
+        if (!height || !/^\d+(?:\.\d+)?(?:px)?$/.test(height.value) || parseFloat(height.value) <= 0) diagnostics.push(diagnostic(height ? height.valueStart : tag.nameStart, height ? height.valueEnd : tag.nameEnd, "Virtual Repeat 'item-height' requires a positive pixel length.", 'error', 'gxml.virtual-height'));
+        if (overscan && (!/^\d+$/.test(overscan.value) || Number(overscan.value) < 0)) diagnostics.push(diagnostic(overscan.valueStart, overscan.valueEnd, "Virtual Repeat 'overscan' requires a non-negative integer.", 'error', 'gxml.virtual-overscan'));
+      }
     }
-    if (tag.name === 'Select') {
-      for (const child of node.children) if (child.tag.name !== 'Option') diagnostics.push(diagnostic(child.tag.nameStart, child.tag.nameEnd, 'Select only accepts <Option> children.', 'error', 'gxml.select-child'));
+    if (canonicalTag === 'Select') {
+      for (const child of node.children) if (canonicalElementName(child.tag.name) !== 'Option') diagnostics.push(diagnostic(child.tag.nameStart, child.tag.nameEnd, 'Select only accepts <Option> children.', 'error', 'gxml.select-child'));
     }
-    if (tag.name === 'Param' && attribute(tag, 'required') && attribute(tag, 'default')) {
+    if (canonicalTag === 'Param' && attribute(tag, 'required') && attribute(tag, 'default')) {
       diagnostics.push(diagnostic(tag.nameStart, tag.nameEnd, "Param 'required' and 'default' are mutually exclusive.", 'error', 'gxml.param-default'));
+    }
+
+    const focusTrap = attribute(tag, 'focus-trap');
+    if (focusTrap && attributeIsTrue(tag, 'focus-trap') && canonicalTag && !FOCUS_TRAP_ELEMENTS.has(canonicalTag.toLowerCase())) {
+      diagnostics.push(diagnostic(focusTrap.nameStart, focusTrap.valueEnd, "Attribute 'focus-trap' requires an element backed by a native Container.", 'error', 'gxml.focus-trap-owner'));
+    }
+
+    if (canonicalTag === 'Repeat' && node.children.length) {
+      const visitTemplate = (templateNode) => {
+        const offender = ['autofocus', 'focus-trap'].map((name) => attribute(templateNode.tag, name)).find((item) => item && attributeIsTrue(templateNode.tag, item.name));
+        if (offender && !repeatFocusOffenders.has(templateNode)) {
+          repeatFocusOffenders.add(templateNode);
+          diagnostics.push(diagnostic(offender.nameStart, offender.valueEnd, 'Repeat templates cannot author autofocus or focus-trap; focus one stable control outside the collection and manage row focus from application code.', 'error', 'gxml.repeat-focus'));
+        }
+        for (const child of templateNode.children) visitTemplate(child);
+      };
+      visitTemplate(node.children[0]);
+    }
+
+    if (canonicalTag === 'Repeat' && attributeIsTrue(tag, 'virtual')) {
+      let ancestor = node.parent;
+      while (ancestor) {
+        if (canonicalElementName(ancestor.tag.name) === 'Repeat') {
+          diagnostics.push(diagnostic(tag.nameStart, tag.nameEnd, 'Virtual Repeat cannot be nested inside another Repeat.', 'error', 'gxml.virtual-nesting'));
+          break;
+        }
+        ancestor = ancestor.parent;
+      }
+      if (node.children.length) {
+        const itemRoot = node.children[0];
+        const conditional = attribute(itemRoot.tag, 'if');
+        if (conditional) diagnostics.push(diagnostic(conditional.nameStart, conditional.valueEnd, "Virtual Repeat item roots cannot use 'if'; filter the collection model instead.", 'error', 'gxml.virtual-root-if'));
+        const visible = attribute(itemRoot.tag, 'visible');
+        if (visible && !visibleLiteralIsTrue(visible.value)) {
+          diagnostics.push(diagnostic(visible.nameStart, visible.valueEnd, "Virtual Repeat item roots cannot use conditional 'visible'; filter the collection model instead. Literal visible=true is harmless, and descendants may still bind visibility.", 'error', 'gxml.virtual-root-visible'));
+        }
+      }
+    }
+
+    if (canonicalTag === 'Scroll') {
+      const contentChildren = node.children.filter((child) => canonicalElementName(child.tag.name) !== 'Bindings');
+      if (contentChildren.length !== 1) diagnostics.push(diagnostic(tag.nameStart, tag.nameEnd, '<Scroll> requires exactly one content child.', 'error', 'gxml.scroll-child'));
+    }
+
+    let structuralParent = node.parent;
+    if (structuralParent && componentTemplates.has(structuralParent.tag.name.toLowerCase())) {
+      const wantedSlot = attribute(tag, 'slot')?.value || '';
+      const placement = componentSlot(componentTemplates.get(structuralParent.tag.name.toLowerCase()), wantedSlot);
+      structuralParent = placement ? placement.parent : null;
+    }
+    while (structuralParent && canonicalElementName(structuralParent.tag.name) === 'Slot') structuralParent = structuralParent.parent;
+    if (canonicalTag !== 'Slot' && structuralParent && canonicalElementName(structuralParent.tag.name) !== 'Component') {
+      const effectiveTag = structuralTag(node);
+      const parentTag = structuralTag(structuralParent);
+      if (parentTag === 'Table' && !['TableHeader', 'TableBody', 'TableRow', 'Repeat', 'Bindings'].includes(effectiveTag)) {
+        diagnostics.push(diagnostic(tag.nameStart, tag.nameEnd, `<Table> accepts only TableHeader, TableBody, TableRow, or Repeat children; got <${tag.name}>.`, 'error', 'gxml.table-child'));
+      } else if (['TableHeader', 'TableBody'].includes(parentTag) && !['TableRow', 'Repeat'].includes(effectiveTag)) {
+        diagnostics.push(diagnostic(tag.nameStart, tag.nameEnd, `<${structuralParent.tag.name}> accepts only TableRow or Repeat children; got <${tag.name}>.`, 'error', 'gxml.table-group-child'));
+      } else if (parentTag === 'TableRow' && !['TableHeaderCell', 'TableCell'].includes(effectiveTag)) {
+        diagnostics.push(diagnostic(tag.nameStart, tag.nameEnd, `<TableRow> accepts only TableHeaderCell or TableCell children; got <${tag.name}>.`, 'error', 'gxml.table-row-child'));
+      } else if (['TableHeader', 'TableBody'].includes(effectiveTag) && parentTag !== 'Table') {
+        diagnostics.push(diagnostic(tag.nameStart, tag.nameEnd, `<${tag.name}> must be a direct child of <Table>.`, 'error', 'gxml.table-group-parent'));
+      } else if (effectiveTag === 'TableRow' && !['Table', 'TableHeader', 'TableBody', 'Repeat'].includes(parentTag)) {
+        diagnostics.push(diagnostic(tag.nameStart, tag.nameEnd, '<TableRow> must be inside Table, TableHeader, TableBody, or a repeated table group.', 'error', 'gxml.table-row-parent'));
+      } else if (['TableHeaderCell', 'TableCell'].includes(effectiveTag) && parentTag !== 'TableRow') {
+        diagnostics.push(diagnostic(tag.nameStart, tag.nameEnd, `<${tag.name}> must be a direct child of <TableRow>.`, 'error', 'gxml.table-cell-parent'));
+      } else if (effectiveTag === 'Repeat' && ['Table', 'TableHeader', 'TableBody'].includes(parentTag) && (node.children.length !== 1 || structuralTag(node.children[0]) !== 'TableRow')) {
+        diagnostics.push(diagnostic(tag.nameStart, tag.nameEnd, 'Repeat inside table structure must contain exactly one TableRow template.', 'error', 'gxml.table-repeat-template'));
+      }
     }
   }
   return { tags: scanned.tags, nodes, roots, components, diagnostics };
@@ -316,11 +494,13 @@ function collectSymbols(text, language) {
           const re = /[A-Za-z_][\w-]*/g; let match;
           while ((match = re.exec(attr.value))) symbols.push({ kind: 'class', name: match[0], start: attr.valueStart + match.index, end: attr.valueStart + match.index + match[0].length, definition: true });
         }
-        if (tag.name === 'Component' && attr.name === 'name' && attr.value) symbols.push({ kind: 'component', name: attr.value, start: attr.valueStart, end: attr.valueEnd, definition: true });
+        if (canonicalElementName(tag.name) === 'Component' && attr.name === 'name' && attr.value) symbols.push({ kind: 'component', name: attr.value, start: attr.valueStart, end: attr.valueEnd, definition: true });
       }
     }
-    const componentNames = new Set(symbols.filter((s) => s.kind === 'component').map((s) => s.name));
-    for (const symbol of symbols) if (symbol.kind === 'tag' && componentNames.has(symbol.name)) symbol.kind = 'component';
+    const componentNames = new Set(symbols.filter((s) => s.kind === 'component').map((s) => s.name.toLowerCase()));
+    for (const symbol of symbols) {
+      if (symbol.kind === 'tag' && !isBuiltinElement(symbol.name) && componentNames.has(symbol.name.toLowerCase())) symbol.kind = 'component';
+    }
   } else if (language === 'gcss') {
     const parsed = parseGcss(text);
     for (const rule of parsed.rules) {
@@ -345,9 +525,8 @@ function symbolAt(text, language, offset) {
 
 function gxmlCompletionContext(text, offset) {
   const before = text.slice(0, offset);
-  const open = before.lastIndexOf('<');
-  const close = before.lastIndexOf('>');
-  if (open <= close) return null;
+  const open = openGxmlTagStart(before);
+  if (open < 0) return null;
   const fragment = before.slice(open + 1);
   if (/^\s*\//.test(fragment)) return { kind: 'closing-tag', prefix: fragment.replace(/^\s*\//, '').trim() };
   if (/^\s*[A-Za-z0-9_.:-]*$/.test(fragment)) return { kind: 'tag', prefix: fragment.trim() };
@@ -357,6 +536,25 @@ function gxmlCompletionContext(text, offset) {
   if (quoteMatch) return { kind: 'attribute-value', tag: nameMatch[1], attribute: quoteMatch[1], prefix: quoteMatch[3] };
   const prefixMatch = fragment.match(/(?:^|\s)([A-Za-z_][\w-]*)$/);
   return { kind: 'attribute', tag: nameMatch[1], prefix: prefixMatch ? prefixMatch[1] : '' };
+}
+
+function openGxmlTagStart(text) {
+  let open = -1;
+  let quote = '';
+  let comment = false;
+  for (let index = 0; index < text.length; index++) {
+    if (comment) {
+      if (text.startsWith('-->', index)) { comment = false; index += 2; }
+      continue;
+    }
+    if (open < 0 && text.startsWith('<!--', index)) { comment = true; index += 3; continue; }
+    const ch = text[index];
+    if (open < 0) { if (ch === '<') open = index; continue; }
+    if (quote) { if (ch === quote) quote = ''; continue; }
+    if (ch === '"' || ch === "'") quote = ch;
+    else if (ch === '>') open = -1;
+  }
+  return open;
 }
 
 function gcssCompletionContext(text, offset) {
@@ -382,11 +580,13 @@ function formatGxml(text, options = {}) {
   for (const original of text.replace(/\r\n/g, '\n').split('\n')) {
     const trimmed = original.trim();
     if (!trimmed) { if (lines.length && lines[lines.length - 1] !== '') lines.push(''); continue; }
-    if (/^<\//.test(trimmed)) depth = Math.max(0, depth - 1);
+    const tags = scanGxml(trimmed).tags;
+    const leadingClose = tags.length > 0 && tags[0].closing && tags[0].start === 0;
+    if (leadingClose) depth = Math.max(0, depth - 1);
     lines.push(unit.repeat(depth) + trimmed.replace(/\s+\/>$/, ' />'));
-    const opening = (trimmed.match(/<(?!\/|!|\?)[A-Za-z][^>]*>/g) || []).filter((tag) => !/\/\s*>$/.test(tag)).length;
-    const closing = (trimmed.match(/<\/[A-Za-z][^>]*>/g) || []).length;
-    depth = Math.max(0, depth + opening - closing - (/^<\//.test(trimmed) ? -1 : 0));
+    const opening = tags.filter((tag) => !tag.closing && !tag.selfClosing).length;
+    const closing = tags.filter((tag) => tag.closing).length;
+    depth = Math.max(0, depth + opening - closing - (leadingClose ? -1 : 0));
   }
   while (lines.length && lines[lines.length - 1] === '') lines.pop();
   return lines.join('\n') + '\n';
@@ -434,6 +634,10 @@ function formatGcss(text, options = {}) {
 
 module.exports = {
   data,
+  isBuiltinElement,
+  canonicalElementName,
+  sameElementName,
+  gxmlAttributeNames,
   scanGxml,
   parseGxml,
   parseGcss,

@@ -27,6 +27,7 @@ The resulting VSIX is a release artifact for manual installation; publishing it 
 ## Exact boundaries
 
 - Definition and rename cover symbols that can be changed safely from exact source spans. Runtime binding paths and event-method names are not renamed because their owner may live in GDScript, C#, a Dictionary, or application code outside the paired sources.
+- The Godot panel limits rename to the current file. VS Code can prepare workspace-wide class, ID, and custom-property edits, but those are textual: same-spelled symbols in independent component/runtime scopes cannot be proven related. Preview the edit before applying it. Reusable-component renames stay document-local.
 - Formatting preserves meaning and declines ambiguous recovery instead of normalizing arbitrary XML/CSS.
 - Diagnostics combine parser recovery with the documented supported vocabulary; runtime applicability and data-dependent binding diagnostics still come from the live preview.
 - Godot's source panel is the supported integration surface because Godot 4.7 does not expose third-party completion/rename providers for arbitrary imported text files in the central Script Editor.

@@ -18,3 +18,8 @@ func _draw_indicator(indicator_rect: Rect2) -> void:
 	if button_pressed:
 		var dot_color := disabled_indicator_color.lightened(0.25) if disabled else checked_indicator_color
 		draw_circle(center, radius * 0.52, dot_color, true, -1.0, true)
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_ACCESSIBILITY_UPDATE:
+		AccessibilitySemantics.set_role(self, AccessibilityServer.ROLE_RADIO_BUTTON)

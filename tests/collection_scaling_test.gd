@@ -76,6 +76,8 @@ func _run() -> void:
 	await _test_radio_candidate_atomicity()
 	await _test_nested_invalid_model_recovery()
 	await _test_collection_accessibility_audit()
+	await _test_repeat_ancestor_style_retention()
+	await _test_document_reattach()
 	if _failures.is_empty():
 		print("GodotCascade collection scaling tests passed.")
 		quit(0)
@@ -236,6 +238,76 @@ func _test_nested_invalid_model_recovery() -> void:
 	_expect("empty outer accepts unresolved nested model transition", document.refresh_binding_paths(PackedStringArray(["nested_model"])))
 	_expect("first outer insertion exposing invalid nested model is atomic", outer_model.insert(0, {"id": "outer", "name": "Outer"}) and not bool(document.last_binding_trace().get("success", true)) and document.get_element_by_id("outer").get_child_count() == 0)
 	_expect("repairing newly resolved nested model recovers automatically", nested_b.remove_at(1) and bool(document.last_binding_trace().get("success", false)) and document.get_element_by_id("nested").get_child_count() == 1 and str(document.get_element_by_id("nested").get_meta("cascade_repeat_keys", PackedStringArray())[0]) == "b")
+	document.queue_free()
+	await process_frame
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(markup_path))
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(stylesheet_path))
+
+
+func _test_repeat_ancestor_style_retention() -> void:
+	var markup_path := "user://cascade_repeat_ancestor_style.gxml"
+	var stylesheet_path := "user://cascade_repeat_ancestor_style.gcss"
+	_expect("write ancestor-style markup", _write(markup_path, """<Page>
+	<Column class="list">
+		<Repeat id="styled-rows" items="{entries}" key="id">
+			<Row><Label class="row-label" text="{item.name}" /></Row>
+		</Repeat>
+	</Column>
+</Page>"""))
+	_expect("write ancestor-style stylesheet", _write(stylesheet_path, """Page { color: #ff0000; font-size: 21px; --accent: #00ff00; }
+.list .row-label { background-color: var(--accent); }"""))
+	var entries := [{"id": "a", "name": "Alpha"}]
+	var document := CascadeDocument.new()
+	document.load_on_ready = false
+	document.watch_sources = false
+	document.log_diagnostics_to_console = false
+	document.binding_context = {"entries": entries}
+	document.markup_path = markup_path
+	document.stylesheet_path = stylesheet_path
+	root.add_child(document)
+	_expect("ancestor-style document loads", document.reload_document())
+	var rows: Control = document.get_element_by_id("styled-rows")
+	var initial_label: Control = rows.get_child(0).get_child(0)
+	var initial_style: CascadeStyle = initial_label.get("cascade_style")
+	_expect("Repeat row initially receives ancestor declarations", initial_label.get("text_color") == Color("ff0000") and is_equal_approx(float(initial_label.get("font_size")), 21.0) and initial_style.background_color == Color("00ff00"))
+	entries.append({"id": "b", "name": "Beta"})
+	_expect("ancestor-style collection patch succeeds", document.refresh_binding_paths(PackedStringArray(["entries"])))
+	rows = document.get_element_by_id("styled-rows")
+	_expect("ancestor-style patch materializes new row", rows.get_child_count() == 2)
+	for row in rows.get_children():
+		var label: Control = row.get_child(0)
+		var style: CascadeStyle = label.get("cascade_style")
+		_expect("localized Repeat rebuild retains inheritance, selector ancestry, and custom properties", label.get("text_color") == Color("ff0000") and is_equal_approx(float(label.get("font_size")), 21.0) and style.background_color == Color("00ff00"))
+	document.queue_free()
+	await process_frame
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(markup_path))
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(stylesheet_path))
+
+
+func _test_document_reattach() -> void:
+	var markup_path := "user://cascade_document_reattach.gxml"
+	var stylesheet_path := "user://cascade_document_reattach.gcss"
+	_expect("write reattach markup", _write(markup_path, """<Page>
+	<Label id="reattach-status" text="{status}" />
+	<Repeat id="reattach-rows" items="{model}" key="id"><Label text="{item.name}" /></Repeat>
+</Page>"""))
+	_expect("write reattach stylesheet", _write(stylesheet_path, "Page { gap: 2px; }"))
+	var state := {"status": "Before"}
+	var model := ArrayItemModel.new([{"id": "a", "name": "Alpha"}], func(item: Dictionary): return item["id"])
+	var document := CascadeDocument.new()
+	document.load_on_ready = false
+	document.watch_sources = false
+	document.log_diagnostics_to_console = false
+	document.binding_context = {"status": state["status"], "model": model}
+	document.markup_path = markup_path
+	document.stylesheet_path = stylesheet_path
+	root.add_child(document)
+	_expect("reattach document loads", document.reload_document())
+	root.remove_child(document)
+	root.add_child(document)
+	document.binding_context["status"] = "After"
+	_expect("targeted refresh works immediately after reattach", document.refresh_binding_paths(PackedStringArray(["status"])) and document.get_element_by_id("reattach-status").get("text") == "After")
+	_expect("item-model signals reconnect after reattach", model.insert(1, {"id": "b", "name": "Beta"}) and document.get_element_by_id("reattach-rows").get_child_count() == 2)
 	document.queue_free()
 	await process_frame
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(markup_path))

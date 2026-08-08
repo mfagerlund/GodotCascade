@@ -4,8 +4,8 @@ This protocol turns the public-validation roadmap item into a reproducible produ
 
 ## Evaluator brief
 
-- Use GodotCascade 0.8.0 or the exact supplied commit with Godot 4.7.1.
-- Start from the [README installation and quickstart](../README.md#install), not from a maintainer walkthrough.
+- Use GodotCascade 0.8.1 or the exact supplied commit with Godot 4.7.1.
+- Start from the [README preview instructions and quickstart](../README.md#trying-the-preview), not from a maintainer walkthrough.
 - Spend 60–120 minutes building one real, non-showcase interface from your own project: a settings screen, inventory, dashboard, editor panel, HUD, or similarly representative surface.
 - Use GXML/GCSS and whichever binding path you would genuinely choose: typed Godot objects, `ObservableBindingContext`, `CascadeItemModel`, or generated C# partials.
 - Keep notes while working. Record commands, source or a minimal reproduction, and timings when a claim depends on runtime behavior.

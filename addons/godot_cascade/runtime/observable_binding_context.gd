@@ -3,6 +3,8 @@ extends RefCounted
 ## Wraps application state and emits explicit path invalidations without polling.
 ## The wrapped value remains a typed object, Resource, Array, or Dictionary.
 
+const BindingPath := preload("res://addons/godot_cascade/runtime/binding_path.gd")
+
 signal paths_invalidated(paths: PackedStringArray)
 
 var value: Variant
@@ -42,14 +44,4 @@ func invalidate_all() -> void:
 
 
 static func is_valid_path(path: String) -> bool:
-	var normalized := path.strip_edges()
-	if normalized.is_empty() or normalized == "*":
-		return false
-	for segment in normalized.split(".", false):
-		if segment.is_empty():
-			return false
-		if segment.is_valid_int():
-			continue
-		if not segment.is_valid_identifier():
-			return false
-	return true
+	return BindingPath.is_valid(path)

@@ -1,6 +1,6 @@
 # Public preview stability policy
 
-GodotCascade 0.8.0 is the current experimental preview targeting Godot 4.7. Source format version 1 and the documented runtime surface follow the preview guarantees below; broader API compatibility is not promised until a stable release.
+GodotCascade 0.8.1 is the current experimental preview targeting Godot 4.7. Source format version 1 and the documented runtime surface follow the preview guarantees below; broader API compatibility is not promised until a stable release.
 
 ## Preview guarantees
 

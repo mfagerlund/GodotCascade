@@ -14,7 +14,7 @@
     "RadioButton": "Owned grouped radio button.",
     "Switch": "Owned switch control.",
     "Select": "Owned selection control containing Option children.",
-    "Option": "A Select option; supports text, value, and disabled.",
+    "Option": "A Select option; supports selector identity plus text, value, and disabled.",
     "Slider": "Owned numeric slider.",
     "Progress": "Owned numeric progress indicator.",
     "TextInput": "Native LineEdit adapter, or TextEdit when multiline is true.",
@@ -45,7 +45,8 @@
     "accessible-description": "Additional accessible description.",
     "tab-index": "Focus order: -1 for programmatic focus or a non-negative order.",
     "autofocus": "Requests initial focus for this control.",
-    "focus-trap": "Traps focus inside a Page, Row, Column, Panel, Stack, or Grid.",
+    "focus-trap": "Traps focus inside an element backed by a native Godot Container, including Repeat and structural table/scroll elements.",
+    "slot": "Named insertion target on component-instance children.",
     "checked": "Checked literal or exact one-way binding for toggle controls.",
     "group": "RadioButton group name.",
     "selected": "Selected Select index/value, exact binding, or generated binding.",
@@ -78,25 +79,40 @@
     "document": "Generated binding document member name.",
     "get": "Getter method supplied by another generated-class partial.",
     "set": "Setter method supplied by another generated-class partial.",
-    "format": "Named Formatter applied to values leaving the model.",
-    "parse": "Named Parser applied to values entering the model.",
+    "format-text": "Named Formatter applied to generated text output.",
+    "parse-text": "Named Parser applied to generated writable text input.",
+    "format-checked": "Named Formatter applied to generated checked output.",
+    "parse-checked": "Named Parser applied to generated writable checked input.",
+    "format-value": "Named Formatter applied to generated numeric output.",
+    "parse-value": "Named Parser applied to generated writable numeric input.",
+    "format-selected": "Named Formatter applied to generated selection output.",
+    "parse-selected": "Named Parser applied to generated writable selection input.",
+    "format-disabled": "Named Formatter applied to generated disabled output.",
+    "format-visible": "Named Formatter applied to generated visibility output.",
+    "format-min": "Named Formatter applied to a generated minimum-range output.",
+    "format-max": "Named Formatter applied to a generated maximum-range output.",
     "input": "C# input type/name contract for a Formatter or Parser.",
-    "output": "C# output type/name contract for a Formatter or Parser."
-    ,"on-pressed": "Calls an event-context method when the native pressed signal fires."
-    ,"on-toggled": "Calls an event-context method when the native toggled signal fires."
-    ,"on-value-changed": "Calls an event-context method when a native value_changed signal fires."
-    ,"on-selection-changed": "Calls an event-context method when Select selection_changed fires."
+    "output": "C# output type/name contract for a Formatter or Parser.",
+    "on-pressed": "Calls an event-context method when the native pressed signal fires.",
+    "on-toggled": "Calls an event-context method when the native toggled signal fires.",
+    "on-value-changed": "Calls an event-context method when a native value_changed signal fires.",
+    "on-selection-changed": "Calls an event-context method when Select selection_changed fires."
   },
   "elementAttributes": {
-    "*": ["id", "class", "visible", "disabled", "accessible-label", "accessible-description", "if", "tab-index", "autofocus", "focus-trap"],
-    "Button": ["on-pressed"], "Checkbox": ["checked", "bind-checked", "on-toggled"], "RadioButton": ["checked", "bind-checked", "group", "on-toggled"], "Switch": ["checked", "bind-checked", "on-toggled"],
-    "Select": ["selected", "bind-selected", "on-selection-changed"], "Option": ["value", "disabled"],
-    "Slider": ["min", "max", "value", "step", "bind-value"], "Progress": ["min", "max", "value"],
-    "TextInput": ["text", "bind-text", "placeholder", "multiline", "read-only", "secret", "required", "pattern", "error-message", "max-length"],
+    "*": ["id", "class", "visible", "accessible-label", "accessible-description", "if", "tab-index", "autofocus", "focus-trap", "slot"],
+    "Page": [], "Row": [], "Column": [], "Panel": [], "Stack": [], "Grid": [], "Scroll": [],
+    "Label": ["text"], "Button": ["text", "disabled", "on-pressed"], "Checkbox": ["text", "disabled", "checked", "bind-checked", "on-toggled"], "RadioButton": ["text", "disabled", "checked", "bind-checked", "group", "on-toggled"], "Switch": ["text", "disabled", "checked", "bind-checked", "on-toggled"],
+    "Select": ["disabled", "selected", "bind-selected", "on-selection-changed"], "Option": ["id", "class", "text", "value", "disabled"],
+    "Slider": ["disabled", "min", "max", "value", "step", "bind-value", "on-value-changed"], "Progress": ["min", "max", "value"],
+    "TextInput": ["text", "disabled", "bind-text", "placeholder", "multiline", "read-only", "secret", "required", "pattern", "error-message", "max-length"],
     "Image": ["src"], "Repeat": ["items", "key", "virtual", "item-height", "overscan"], "Component": ["name"], "Param": ["name", "type", "required", "default"], "Slot": ["name"],
-    "Bindings": ["class", "namespace", "document", "output"], "Binding": ["name", "type", "get", "set", "format", "parse"],
+    "Table": [], "TableHeader": [], "TableBody": [], "TableRow": [], "TableHeaderCell": ["text"], "TableCell": ["text"],
+    "Bindings": ["class", "namespace", "document", "output"], "Binding": ["name", "type", "get", "set"],
     "Formatter": ["name", "input", "output"], "Parser": ["name", "input", "output"], "Using": ["namespace"]
   },
+  "nonVisualElements": ["Option", "Component", "Param", "Slot", "Bindings", "Binding", "Formatter", "Parser", "Using"],
+  "focusTrapElements": ["Page", "Row", "Column", "Panel", "Stack", "Grid", "Scroll", "Table", "TableHeader", "TableBody", "TableRow", "TableHeaderCell", "TableCell", "Repeat"],
+  "generatedBindingAttributes": ["format-text", "parse-text", "format-checked", "parse-checked", "format-value", "parse-value", "format-selected", "parse-selected", "format-disabled", "format-visible", "format-min", "format-max"],
   "booleanAttributes": ["visible", "disabled", "autofocus", "focus-trap", "checked", "read-only", "secret", "required", "multiline", "virtual"],
   "properties": {
     "display": {"description": "Enables the focused flex layout; only flex is supported.", "values": ["flex"]},
@@ -141,5 +157,5 @@
   "pseudoStates": {
     "hover": "Pointer hover state.", "pressed": "Native pressed state (HTML :active equivalent).", "checked": "Checked toggle state.", "focused": "Native focus state.", "focus-visible": "Keyboard-visible focus ring state.", "disabled": "Disabled interactive state.", "selected": "Selected option state.", "open": "Open Select state.", "invalid": "Invalid TextInput state."
   },
-  "atRules": {"media": "Top-level min-width/max-width pixel viewport query."}
+  "atRules": {"media": "Min-width/max-width pixel viewport query; nested blocks intersect enclosing ranges."}
 }

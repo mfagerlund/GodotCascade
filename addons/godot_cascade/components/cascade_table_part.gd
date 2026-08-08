@@ -5,12 +5,14 @@ extends Container
 ## CascadeTable owns descendant placement so every row shares one column calculation.
 
 const BoxPainter := preload("res://addons/godot_cascade/components/box_painter.gd")
+const AccessibilitySemantics := preload("res://addons/godot_cascade/runtime/accessibility_semantics.gd")
 
 @export_enum("header", "body", "row", "group") var semantic_role := "body":
 	set(value):
 		semantic_role = value
 		set_meta("cascade_table_role", value)
 		_request_table_layout()
+		queue_accessibility_update()
 @export var cascade_style: CascadeStyle = CascadeStyle.new():
 	set(value):
 		var next := value if value != null else CascadeStyle.new()
@@ -43,6 +45,13 @@ func _draw() -> void:
 	)
 
 
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_ACCESSIBILITY_UPDATE:
+		AccessibilitySemantics.set_table_part(self, semantic_role == "row")
+	elif what == NOTIFICATION_CHILD_ORDER_CHANGED:
+		_request_table_layout()
+
+
 func _get_minimum_size() -> Vector2:
 	var result := Vector2.ZERO
 	for child in get_children():
@@ -69,6 +78,7 @@ func _on_style_invalidated(_flags: int) -> void:
 
 
 func _on_children_changed(_child: Node) -> void:
+	queue_accessibility_update()
 	_request_table_layout.call_deferred()
 
 
@@ -78,6 +88,8 @@ func _request_table_layout() -> void:
 	var ancestor := get_parent()
 	while ancestor != null:
 		if ancestor.has_method("request_table_layout"):
+			if ancestor.has_method("request_accessibility_structure_update"):
+				ancestor.call("request_accessibility_structure_update")
 			ancestor.call("request_table_layout")
 			return
 		ancestor = ancestor.get_parent()

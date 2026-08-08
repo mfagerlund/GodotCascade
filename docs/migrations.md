@@ -1,5 +1,21 @@
 # Migration notes
 
+## 0.8.1 validation and retained-state hardening
+
+Version 0.8.1 retains source format version 1 and the documented 0.8 feature set, but its canonical schema and path parser now turn several previously silent or ambiguous cases into source errors:
+
+- Binding paths use identifiers separated by dots plus non-negative canonical Array indexes. Hyphenated Dictionary keys, negative indexes, and indexes with leading zeroes are no longer accepted as path segments; expose those values through identifier-shaped properties or a typed model. A whole attribute value of `{path}` is dynamic. Text that merely contains braces remains literal; interpolation is still unsupported.
+- Built-in elements reject unknown attributes. Registered custom components remain open to their own properties. `Option` continues to accept `id` and `class` because option selectors are supported, but irrelevant visual/common attributes remain errors.
+- A document must expand to one visual root, and that root cannot carry `if`. Move the conditional to a child below a stable visual root.
+- Generated `@Name` bindings are rejected inside reusable `Component` and `Repeat` templates because one authored ID could otherwise resolve several native controls. Use item-scoped runtime bindings inside Repeat.
+- A generated `Bindings class` is one C# identifier, not a dot-qualified name. Put namespace segments in `namespace`, and avoid C# reserved/contextual keywords.
+- Nested `@media` blocks intersect their enclosing width ranges. An empty intersection is an error instead of a rule that can never match.
+- A virtual Repeat item root cannot use `if` or a false/bound/nontrivial `visible` declaration because removing or hiding the fixed-height root invalidates the virtual geometry. Put conditions inside the stable row root.
+- `focus-trap` is accepted only on native Container-backed elements (including registered custom Containers). A full binding refresh in a trap-bearing document validates a complete candidate when `visible` or `disabled` can change, preserving atomic focus containment at a higher documented cost.
+- An unnamed semantic `Progress` now produces the same accessibility warning as an unnamed interactive control. Add `accessible-label` or visible identifying text.
+
+Compatible reloads now preserve live checkbox, radio, switch, select, and slider state when their authored state declaration is unchanged. Changing or adding the declaration intentionally reapplies it; a subsequent bound refresh still wins. Applications that relied on unrelated stylesheet/source reloads resetting uncontrolled widgets should reset them explicitly instead.
+
 ## 0.8.0 retained invalidation and certification tooling
 
 Version 0.8.0 is backward-compatible with the documented 0.7 source-format version 1 surface. Binding/dependency indexes and the narrow same-identity keyed `Array` reorder path are internal optimizations; existing sources require no changes. Structural or ambiguous collection updates retain the 0.7 candidate-reconciliation behavior. Debugger traces preserve depth-first control and dependency order.

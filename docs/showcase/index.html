@@ -679,7 +679,7 @@
                 &lt;Label id=&quot;reserve-value&quot; class=&quot;metric&quot; text=&quot;{telemetry.reserve_label}&quot; /&gt;
                 &lt;Label class=&quot;delta&quot; text=&quot;{telemetry.reserve_delta}&quot; /&gt;
             &lt;/Row&gt;
-            &lt;Progress id=&quot;reserve&quot; class=&quot;primary-progress&quot; value=&quot;{telemetry.reserve}&quot; max=&quot;100&quot; /&gt;
+            &lt;Progress id=&quot;reserve&quot; class=&quot;primary-progress&quot; value=&quot;{telemetry.reserve}&quot; max=&quot;100&quot; accessible-label=&quot;Reserve capacity&quot; /&gt;
             &lt;Label class=&quot;detail&quot;&gt;18h 42m estimated endurance at current draw&lt;/Label&gt;
         &lt;/Panel&gt;
 
@@ -689,21 +689,21 @@
                     &lt;Label class=&quot;system-name&quot;&gt;Reactor output&lt;/Label&gt;
                     &lt;Label class=&quot;system-value&quot;&gt;84%&lt;/Label&gt;
                 &lt;/Row&gt;
-                &lt;Progress class=&quot;system-progress&quot; value=&quot;{telemetry.reactor}&quot; max=&quot;100&quot; /&gt;
+                &lt;Progress class=&quot;system-progress&quot; value=&quot;{telemetry.reactor}&quot; max=&quot;100&quot; accessible-label=&quot;Reactor status&quot; /&gt;
             &lt;/Panel&gt;
             &lt;Panel class=&quot;system-card life-support&quot;&gt;
                 &lt;Row class=&quot;system-heading&quot;&gt;
                     &lt;Label class=&quot;system-name&quot;&gt;Life support&lt;/Label&gt;
                     &lt;Label class=&quot;system-value&quot;&gt;96%&lt;/Label&gt;
                 &lt;/Row&gt;
-                &lt;Progress class=&quot;system-progress&quot; value=&quot;{telemetry.life_support}&quot; max=&quot;100&quot; /&gt;
+                &lt;Progress class=&quot;system-progress&quot; value=&quot;{telemetry.life_support}&quot; max=&quot;100&quot; accessible-label=&quot;Life support status&quot; /&gt;
             &lt;/Panel&gt;
             &lt;Panel class=&quot;system-card navigation&quot;&gt;
                 &lt;Row class=&quot;system-heading&quot;&gt;
                     &lt;Label class=&quot;system-name&quot;&gt;Navigation array&lt;/Label&gt;
                     &lt;Label class=&quot;system-value&quot;&gt;63%&lt;/Label&gt;
                 &lt;/Row&gt;
-                &lt;Progress class=&quot;system-progress&quot; value=&quot;{telemetry.navigation}&quot; max=&quot;100&quot; /&gt;
+                &lt;Progress class=&quot;system-progress&quot; value=&quot;{telemetry.navigation}&quot; max=&quot;100&quot; accessible-label=&quot;Navigation status&quot; /&gt;
             &lt;/Panel&gt;
         &lt;/Column&gt;
     &lt;/Row&gt;

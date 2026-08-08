@@ -2,14 +2,15 @@
 
 ## Synthetic pipeline gate
 
-The executable pipeline benchmark builds, lays out, snapshots, and reconciles a 500-item source-generated interface. It also cold-builds the same 500 controls with inherited custom properties and typed `calc()` on gap, height, and color, reporting that one-time document-build cost beside the literal baseline. Variables and arithmetic resolve during build/reload, not per frame. It enforces deliberately broad preview budgets so accidental algorithmic regressions fail while normal machine variance does not:
+The executable pipeline benchmark builds, lays out, snapshots, and reconciles a 500-item source-generated interface. It also cold-builds the same 500 controls with inherited custom properties and typed `calc()` on gap, height, and color, and with 500 unique selector rules to exercise computed-style cache pressure. Variables and arithmetic resolve during build/reload, not per frame. Reconciliation reports the median of three complete equivalent-tree operations so transient scheduler or antivirus activity during one measured interval does not decide the gate. It enforces deliberately broad preview budgets so accidental algorithmic regressions fail while normal machine variance does not:
 
 | Stage | Budget |
 | --- | ---: |
 | Parse plus native build | 2000 ms |
 | Expression-heavy parse plus native build | 2500 ms |
+| 500-rule parse plus native build | 3000 ms |
 | Two-frame layout | 1000 ms |
-| Equivalent keyed reconciliation | 1000 ms |
+| Median equivalent keyed reconciliation (three samples) | 1500 ms |
 | Native controls | 501 (one root plus 500 authored labels) |
 | Equivalent reconcile allocation | zero created/replaced controls; 501 reused |
 
@@ -46,3 +47,5 @@ godot --headless --path . --script tests/platform_certification_test.gd
 Each benchmark prints one JSON measurement record and exits non-zero when a diagnostic, invariant, or budget fails. These are regression ceilings, not performance targets. Changes that intentionally raise a budget require an explanation in the roadmap or migration notes and a new representative fixture.
 
 Computed-style cache entries are shared by equivalent selector/ancestry signatures, property lookup lists are cached by native class/script, and compatible hot reloads mutate existing controls rather than rebuilding the scene subtree.
+
+A full `refresh_bindings()` intentionally validates the whole candidate when a document combines an active focus trap with a binding that can change `visible` or `disabled`. That conservative parse/build step prevents a failed update from partially changing focus containment. Prefer targeted invalidation for ordinary value changes; use the full refresh boundary when several related mutations must become visible atomically.

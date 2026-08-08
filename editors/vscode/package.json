@@ -18,7 +18,7 @@
   "activationEvents": ["onLanguage:gxml", "onLanguage:gcss", "onCommand:godotCascade.validateWorkspace"],
   "scripts": {
     "test": "node --test test/*.test.js",
-    "check": "node --check extension.js && node --check core.js && node --test test/*.test.js"
+    "check": "node --check extension.js && node --check core.js && node --check provider-core.js && node --test test/*.test.js"
   },
   "contributes": {
     "languages": [

@@ -2,6 +2,7 @@
 
 const vscode = require('vscode');
 const core = require('./core');
+const providerCore = require('./provider-core');
 
 const SELECTOR = [{ language: 'gxml', scheme: 'file' }, { language: 'gcss', scheme: 'file' }, { language: 'gxml', scheme: 'untitled' }, { language: 'gcss', scheme: 'untitled' }];
 
@@ -77,8 +78,7 @@ function provideGxmlCompletions(document, position) {
     return [...stack].reverse().map((name) => completion(name, `Close <${name}>.`, vscode.CompletionItemKind.Class));
   }
   if (context.kind === 'attribute') {
-    const names = new Set([...(core.data.elementAttributes['*'] || []), ...(core.data.elementAttributes[context.tag] || [])]);
-    return [...names].map((name) => completion(name, core.data.attributes[name] || 'GXML attribute.', vscode.CompletionItemKind.Property, `${name}="$1"`));
+    return core.gxmlAttributeNames(context.tag).map((name) => completion(name, core.data.attributes[name] || 'GXML attribute.', vscode.CompletionItemKind.Property, `${name}="$1"`));
   }
   if (context.kind === 'attribute-value' && core.data.booleanAttributes.includes(context.attribute)) {
     return ['true', 'false'].map((value) => completion(value, `Boolean ${value}.`, vscode.CompletionItemKind.Value));
@@ -125,7 +125,10 @@ function provideHover(document, position) {
     if (symbol.kind === 'id') return new vscode.Hover(markdown(`#${symbol.name}`, 'Stable GXML identity and GCSS ID selector.'), range(document, symbol.start, symbol.end));
     if (symbol.kind === 'custom-property') return new vscode.Hover(markdown(symbol.name, 'Case-sensitive, inherited GCSS custom property resolved with `var()`.'), range(document, symbol.start, symbol.end));
     if (symbol.kind === 'component') return new vscode.Hover(markdown(symbol.name, 'Reusable source-level GXML component.'), range(document, symbol.start, symbol.end));
-    if (symbol.kind === 'tag' && core.data.elements[symbol.name]) return new vscode.Hover(markdown(`<${symbol.name}>`, core.data.elements[symbol.name]), range(document, symbol.start, symbol.end));
+    if (symbol.kind === 'tag') {
+      const canonical = core.canonicalElementName(symbol.name);
+      if (canonical) return new vscode.Hover(markdown(`<${canonical}>`, core.data.elements[canonical]), range(document, symbol.start, symbol.end));
+    }
   }
   if (language === 'gxml') {
     const parsed = core.scanGxml(text);
@@ -147,19 +150,18 @@ function provideHover(document, position) {
   return null;
 }
 
-function matchesDefinition(target, candidate) {
-  if (target.name !== candidate.name) return false;
-  if (target.kind === 'component') return candidate.kind === 'component' && candidate.definition;
-  if (target.kind === 'tag' && !core.data.elements[target.name]) return candidate.kind === 'component' && candidate.definition;
-  return candidate.kind === target.kind && candidate.definition;
-}
-
 async function provideDefinition(document, position) {
   const target = currentSymbol(document, position);
-  if (!target || (target.kind === 'tag' && core.data.elements[target.name])) return null;
+  if (!target || (target.kind === 'tag' && core.isBuiltinElement(target.name))) return null;
   const locations = [];
+  if (target.kind === 'component' || (target.kind === 'tag' && !core.isBuiltinElement(target.name))) {
+    for (const candidate of documentSymbols(document)) {
+      if (providerCore.definitionMatches(target, candidate)) locations.push(new vscode.Location(document.uri, range(document, candidate.start, candidate.end)));
+    }
+    return locations;
+  }
   for (const source of await workspaceSources()) for (const candidate of source.symbols) {
-    if (matchesDefinition(target, candidate)) locations.push(new vscode.Location(source.uri, new vscode.Range(positionFromOffset(source.text, candidate.start), positionFromOffset(source.text, candidate.end))));
+    if (providerCore.definitionMatches(target, candidate)) locations.push(new vscode.Location(source.uri, new vscode.Range(positionFromOffset(source.text, candidate.start), positionFromOffset(source.text, candidate.end))));
   }
   return locations;
 }
@@ -170,27 +172,28 @@ function positionFromOffset(text, offset) {
   return new vscode.Position(lines.length - 1, lines[lines.length - 1].length);
 }
 
-function renameMatches(target, candidate) {
-  if (target.kind === 'component' || (target.kind === 'tag' && !core.data.elements[target.name])) return candidate.name === target.name && (candidate.kind === 'component' || candidate.kind === 'tag');
-  return candidate.kind === target.kind && candidate.name === target.name;
-}
-
 async function provideRenameEdits(document, position, newName) {
   const target = currentSymbol(document, position);
   if (!target) throw new Error('Rename is available for GXML classes, IDs, reusable components, and GCSS custom properties.');
-  if (target.kind === 'tag' && core.data.elements[target.name]) throw new Error('Built-in GXML elements cannot be renamed.');
+  if (!providerCore.isRenameableTarget(target)) throw new Error('Built-in GXML elements and reserved component names cannot be renamed.');
   const bareName = target.kind === 'custom-property' ? /^--[A-Za-z_][A-Za-z0-9_-]*$/ : /^[A-Za-z_][A-Za-z0-9_-]*$/;
   if (!bareName.test(newName)) throw new Error(`'${newName}' is not a valid ${target.kind} name.`);
+  if (providerCore.isReusableComponentTarget(target) && core.isBuiltinElement(newName)) throw new Error(`'${newName}' is reserved for a built-in GXML element.`);
   const edit = new vscode.WorkspaceEdit();
-  for (const source of await workspaceSources()) for (const candidate of source.symbols) {
-    if (renameMatches(target, candidate)) edit.replace(source.uri, new vscode.Range(positionFromOffset(source.text, candidate.start), positionFromOffset(source.text, candidate.end)), newName);
+  const documentSource = { uri: document.uri, text: document.getText(), language: languageOf(document), symbols: documentSymbols(document) };
+  const workspace = providerCore.renameScope(target) === 'workspace' ? await workspaceSources() : [];
+  const sources = providerCore.selectRenameSources(target, documentSource, workspace);
+  for (const source of sources) for (const candidate of source.symbols) {
+    if (providerCore.renameMatches(target, candidate)) {
+      edit.replace(source.uri, new vscode.Range(positionFromOffset(source.text, candidate.start), positionFromOffset(source.text, candidate.end)), newName);
+    }
   }
   return edit;
 }
 
 function prepareRename(document, position) {
   const target = currentSymbol(document, position);
-  if (!target || (target.kind === 'tag' && core.data.elements[target.name])) return null;
+  if (!providerCore.isRenameableTarget(target)) return null;
   return { range: range(document, target.start, target.end), placeholder: target.name };
 }
 

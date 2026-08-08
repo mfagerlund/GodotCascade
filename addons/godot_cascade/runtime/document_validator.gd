@@ -2,22 +2,95 @@ extends RefCounted
 
 ## Structural document validation kept separate from native-control construction.
 
+const GxmlSchema := preload("res://addons/godot_cascade/runtime/gxml_schema.gd")
 
-static func validate(root_element) -> Array[Dictionary]:
+
+static func validate(root_element, allow_internal_attributes: bool = false) -> Array[Dictionary]:
 	var diagnostics: Array[Dictionary] = []
+	_validate_document_root(root_element, diagnostics)
 	var first_occurrences: Dictionary = {}
-	_validate_element(root_element, first_occurrences, diagnostics)
+	_validate_element(root_element, first_occurrences, diagnostics, allow_internal_attributes)
 	return diagnostics
 
 
-static func _validate_element(element, first_occurrences: Dictionary, diagnostics: Array[Dictionary]) -> void:
+static func validate_authored_root(root_element) -> Array[Dictionary]:
+	var diagnostics: Array[Dictionary] = []
+	_validate_visual_document_root(root_element, diagnostics)
+	return diagnostics
+
+
+static func validate_reserved_attributes(root_element) -> Array[Dictionary]:
+	var diagnostics: Array[Dictionary] = []
+	_validate_reserved_attributes(root_element, diagnostics)
+	return diagnostics
+
+
+static func _validate_element(element, first_occurrences: Dictionary, diagnostics: Array[Dictionary], allow_internal_attributes: bool) -> void:
+	if element == null:
+		return
+	_validate_attributes(element, diagnostics, allow_internal_attributes)
+	_validate_focus_trap_owner(element, diagnostics)
 	_validate_unique_id(element, first_occurrences, diagnostics)
 	_validate_table_relation(element, diagnostics)
 	_validate_scroll_relation(element, diagnostics)
 	_validate_repeat_focus_contract(element, diagnostics)
 	_validate_virtual_repeat_nesting(element, diagnostics)
+	_validate_virtual_item_root_visibility(element, diagnostics)
 	for child in element.children:
-		_validate_element(child, first_occurrences, diagnostics)
+		_validate_element(child, first_occurrences, diagnostics, allow_internal_attributes)
+
+
+static func _validate_document_root(root_element, diagnostics: Array[Dictionary]) -> void:
+	if root_element == null:
+		return
+	_validate_visual_document_root(root_element, diagnostics)
+	if root_element.attributes.has("if"):
+		_append_element_error(diagnostics, root_element, "The document root cannot use 'if'; bind 'visible' or put the conditional on a child element.")
+
+
+static func _validate_visual_document_root(root_element, diagnostics: Array[Dictionary]) -> void:
+	if root_element == null:
+		return
+	var canonical := GxmlSchema.canonical_element(root_element.tag_name)
+	if canonical in GxmlSchema.NON_VISUAL_ELEMENTS:
+		_append_element_error(diagnostics, root_element, "The document root must be visual; <%s> is a non-visual declaration element." % root_element.tag_name)
+
+
+static func _validate_focus_trap_owner(element, diagnostics: Array[Dictionary]) -> void:
+	if not _attribute_is_true(element, "focus-trap"):
+		return
+	if GxmlSchema.is_builtin(element.tag_name) and not GxmlSchema.supports_focus_trap(element.tag_name):
+		_append_element_error(diagnostics, element, "Attribute 'focus-trap' requires an element backed by a native Container.")
+
+
+static func _validate_attributes(element, diagnostics: Array[Dictionary], allow_internal_attributes: bool) -> void:
+	if not GxmlSchema.is_builtin(element.tag_name):
+		return
+	for attribute_name_value in element.attributes:
+		var attribute_name := str(attribute_name_value)
+		if allow_internal_attributes and attribute_name.begins_with("__"):
+			continue
+		if not GxmlSchema.is_attribute_allowed(element.tag_name, attribute_name):
+			diagnostics.append({
+				"severity": "error",
+				"line": element.source_line,
+				"column": element.source_column,
+				"message": "Unknown attribute '%s' on <%s>." % [attribute_name, element.tag_name],
+			})
+
+
+static func _validate_reserved_attributes(element, diagnostics: Array[Dictionary]) -> void:
+	for attribute_name_value in element.attributes:
+		var attribute_name := str(attribute_name_value)
+		if attribute_name.begins_with("__"):
+			diagnostics.append({
+				"severity": "error",
+				"line": element.source_line,
+				"column": element.source_column,
+				"message": "Attribute '%s' is reserved for GodotCascade internals." % attribute_name,
+			})
+	for child in element.children:
+		_validate_reserved_attributes(child, diagnostics)
 
 
 static func _validate_unique_id(element, first_occurrences: Dictionary, diagnostics: Array[Dictionary]) -> void:
@@ -116,6 +189,18 @@ static func _validate_virtual_repeat_nesting(element, diagnostics: Array[Diction
 		ancestor = ancestor.parent_element()
 
 
+static func _validate_virtual_item_root_visibility(element, diagnostics: Array[Dictionary]) -> void:
+	if element.tag_name.to_lower() != "repeat" or not _attribute_is_true(element, "virtual") or element.children.is_empty():
+		return
+	var item_root = element.children[0]
+	if not item_root.attributes.has("visible"):
+		return
+	var raw_visible := str(item_root.attributes["visible"]).strip_edges().to_lower()
+	if raw_visible in ["true", "1", "yes", "on", "visible"]:
+		return
+	_append_element_error(diagnostics, item_root, "Virtual Repeat item roots cannot use conditional 'visible'; filter the collection model instead. Literal visible=true is harmless, and descendants may still bind visibility.")
+
+
 static func _attribute_is_true(element, attribute_name: String) -> bool:
 	if not element.attributes.has(attribute_name):
 		return false
@@ -124,3 +209,12 @@ static func _attribute_is_true(element, attribute_name: String) -> bool:
 
 static func _append_error(diagnostics: Array[Dictionary], message: String) -> void:
 	diagnostics.append({"severity": "error", "message": message})
+
+
+static func _append_element_error(diagnostics: Array[Dictionary], element, message: String) -> void:
+	diagnostics.append({
+		"severity": "error",
+		"line": element.source_line,
+		"column": element.source_column,
+		"message": message,
+	})

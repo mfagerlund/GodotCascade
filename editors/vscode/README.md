@@ -34,11 +34,13 @@ Tests use only Node's built-in test runner. `extension.js` requires the `vscode`
 
 - A `.gcss` `.class` or `#id` goes to a matching GXML declaration.
 - A GXML class or ID can go to its declaration and can be renamed across GXML/GCSS sources.
-- A reusable component tag goes to `<Component name="…">`; rename updates its declaration and tags.
+- A reusable component tag goes to `<Component name="…">`; definition and rename are document-local because GXML component declarations are scoped to one source document.
 - `var(--name)` goes to the matching custom-property declaration; rename updates declarations and references.
 - Built-in element names cannot be renamed.
 
-The extension searches workspace files on demand. It does not start a language server, execute project code, infer binding-context object members, or claim browser CSS compatibility. Native components registered only at runtime remain valid even though the extension cannot discover their schema.
+The extension searches workspace files on demand for classes, IDs, and custom properties. It does not start a language server, execute project code, infer binding-context object members, or claim browser CSS compatibility. Native components registered only at runtime remain valid even though the extension cannot discover their schema.
+
+Class, ID, and custom-property rename is a textual workspace operation. The extension cannot prove that two same-spelled IDs or variables belong to the same component/runtime scope, so preview the workspace edit and keep the project under source control before accepting a broad rename. Reusable-component renames remain document-local. The in-Godot source panel performs same-file renames only.
 
 ## Diagnostics
 

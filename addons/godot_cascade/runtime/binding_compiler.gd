@@ -2,6 +2,8 @@ extends RefCounted
 
 ## Compiles declarative one-way, writable, and event bindings into control metadata.
 
+const BindingPath := preload("res://addons/godot_cascade/runtime/binding_path.gd")
+
 const WRITABLE_TARGETS := {
 	"bind-text": {"property": "text", "signal": "text_changed", "types": ["textinput"]},
 	"bind-checked": {"property": "button_pressed", "signal": "toggled", "types": ["checkbox", "switch", "radiobutton", "radio"]},
@@ -80,7 +82,16 @@ static func binding_path(raw_value: String) -> String:
 	var normalized := raw_value.strip_edges()
 	if normalized.length() < 3 or not normalized.begins_with("{") or not normalized.ends_with("}"):
 		return ""
-	return normalized.substr(1, normalized.length() - 2).strip_edges()
+	return BindingPath.normalize(normalized.substr(1, normalized.length() - 2))
+
+
+static func has_binding_syntax(raw_value: String) -> bool:
+	var normalized := raw_value.strip_edges()
+	return normalized.begins_with("{") and normalized.ends_with("}")
+
+
+static func has_invalid_binding_syntax(raw_value: String) -> bool:
+	return has_binding_syntax(raw_value) and binding_path(raw_value).is_empty()
 
 
 static func _is_method_name(value: String) -> bool:

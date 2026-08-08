@@ -14,7 +14,7 @@ GodotCascade is an experimental retained-mode UI framework for Godot 4. It bring
 The goal is to make game UI faster to build and easier to maintain without embedding a browser or replacing Godot's renderer. A GodotCascade interface remains a tree of native controls, so it can continue to use Godot's signals, themes, input, rendering, and editor tooling.
 
 > [!IMPORTANT]
-> GodotCascade 0.8.0 is the current experimental preview for Godot 4.7. It adds indexed fine-grained invalidation, retained pure keyed Array reorders, a reproducible comparison with GTML, and side-by-side platform-certification tooling on top of the 0.7 scale and language-tooling work. APIs outside the documented preview references remain unstable.
+> GodotCascade 0.8.1 is the current experimental preview for Godot 4.7. It hardens parsing, validation, retained state, focus/collection atomicity, accessibility semantics, C# generation, source tooling, packaging, and certification after independent Codex and Claude review. APIs outside the documented preview references remain unstable.
 
 ## Native Godot renders
 
@@ -51,7 +51,7 @@ Markup files use the `.gxml` extension:
 <Page class="hud">
     <Label class="title" text="{player.name}" />
     <Label class="caption">Health</Label>
-    <Progress value="{player.health}" max="100" />
+    <Progress value="{player.health}" max="100" accessible-label="Player health" />
     <Button id="inspect">Inspect loadout</Button>
 </Page>
 ```
@@ -82,7 +82,7 @@ Bindings connect the interface to game state:
 
 ```xml
 <Label text="{player.name}" />
-<Progress value="{player.health}" max="100" />
+<Progress value="{player.health}" max="100" accessible-label="Player health" />
 <Button disabled="{player.busy}">Repair</Button>
 <TextInput bind-text="{player.name}" required="true" />
 ```
@@ -103,7 +103,7 @@ Its [GXML](examples/readme_quickstart/interface.gxml) declares the native contro
 <Page class="demo">
     <Label class="title" text="{player.name}" />
     <Label text="{player.status}" />
-    <Progress value="{player.health}" max="100" />
+    <Progress value="{player.health}" max="100" accessible-label="Player health" />
     <Row class="actions">
         <Label text="{player.health}" />
         <Button id="repair" on-pressed="_on_repair">Repair armor</Button>
@@ -261,7 +261,7 @@ Exact brace expressions resolve against a typed Godot object—or a Dictionary f
 
 ```xml
 <Label text="{player.name}" />
-<Progress value="{player.health}" max="100" />
+<Progress value="{player.health}" max="100" accessible-label="Player health" />
 ```
 
 ```gdscript
@@ -406,7 +406,7 @@ python tools/release/package_addon.py
 python tools/release/clean_install_smoke.py --godot path/to/godot
 ```
 
-See the [changelog](CHANGELOG.md), [0.8.0 release notes](docs/releases/0.8.0.md), [platform support matrix](docs/platform-support.md), [TextInput certification matrix](docs/text-input-certification.md), and [release process](docs/release-process.md). CI is configured to run the same headless suites and benchmarks, editor import scan, generated-showcase check, deterministic packaging step, clean-project installation smoke test, and minimum/current cross-platform smoke matrix. The support matrix records a runner as tested only after its remote job is green.
+See the [changelog](CHANGELOG.md), [0.8.1 release notes](docs/releases/0.8.1.md), [platform support matrix](docs/platform-support.md), [TextInput certification matrix](docs/text-input-certification.md), and [release process](docs/release-process.md). CI is configured to run the same headless suites and benchmarks, editor import scan, generated-showcase check, deterministic packaging step, clean-project installation smoke test, and minimum/current cross-platform smoke matrix. The support matrix records a runner as tested only after its remote job is green.
 
 ## Architecture
 

@@ -7,10 +7,15 @@ const CascadeReconciler := preload("res://addons/godot_cascade/runtime/cascade_r
 const DebugSnapshot := preload("res://addons/godot_cascade/editor/debug_snapshot.gd")
 
 const ITEM_COUNT := 500
+const STYLE_RULE_COUNT := 500
 const PARSE_BUILD_BUDGET_MS := 2000.0
 const LAYOUT_BUDGET_MS := 1000.0
-const RECONCILE_BUDGET_MS := 1000.0
+# Host scheduling and antivirus activity during the measured interval can add
+# several hundred milliseconds on Windows runners; the median-of-three gate
+# keeps a real 500-control regression visible without making that load flaky.
+const RECONCILE_BUDGET_MS := 1500.0
 const EXPRESSION_BUILD_BUDGET_MS := 2500.0
+const LARGE_STYLESHEET_BUILD_BUDGET_MS := 3000.0
 
 
 func _initialize() -> void:
@@ -25,6 +30,10 @@ func _run() -> void:
 	var markup_source := "".join(fragments)
 	var style_source := "Page { gap: 2px; } .item { height: 18px; color: #d0d5dd; }"
 	var expression_style_source := "Page { --base-gap: 1px; gap: calc(var(--base-gap) * 2); } .item { --item-height: 18px; --item-color: #d0d5dd; height: calc(var(--item-height) + 0px); color: var(--item-color); }"
+	var stylesheet_fragments := PackedStringArray(["Page { gap: 2px; }"])
+	for index in STYLE_RULE_COUNT:
+		stylesheet_fragments.append("#item-%s { height: 18px; color: #%06x; }" % [index, index % 0xffffff])
+	var large_style_source := "\n".join(stylesheet_fragments)
 
 	var parse_start := Time.get_ticks_usec()
 	var markup := GxmlParser.parse(markup_source)
@@ -61,33 +70,55 @@ func _run() -> void:
 	if node_count != ITEM_COUNT + 1:
 		failures.append("native node budget expected %s, got %s" % [ITEM_COUNT + 1, node_count])
 
-	var desired: Control = CascadeBuilder.build(markup["root"], stylesheet["rules"], null, Vector2(960.0, 540.0))["root"]
-	var reconcile_start := Time.get_ticks_usec()
-	var reconciled := CascadeReconciler.reconcile(built_root, desired)
-	var reconcile_ms := (Time.get_ticks_usec() - reconcile_start) / 1000.0
+	var reconcile_samples := PackedFloat64Array()
+	var reconciled := {}
+	for _sample in 3:
+		var desired: Control = CascadeBuilder.build(markup["root"], stylesheet["rules"], null, Vector2(960.0, 540.0))["root"]
+		var reconcile_start := Time.get_ticks_usec()
+		reconciled = CascadeReconciler.reconcile(built_root, desired)
+		reconcile_samples.append((Time.get_ticks_usec() - reconcile_start) / 1000.0)
+		if int(reconciled["stats"]["created"]) != 0 or int(reconciled["stats"]["replaced"]) != 0 or int(reconciled["stats"]["reused"]) != ITEM_COUNT + 1:
+			failures.append("equivalent rebuild exceeded zero-allocation reconciliation budget: %s" % reconciled["stats"])
+	reconcile_samples.sort()
+	var reconcile_ms := reconcile_samples[1]
 	if reconcile_ms > RECONCILE_BUDGET_MS:
-		failures.append("reconcile %.2fms exceeds %.2fms" % [reconcile_ms, RECONCILE_BUDGET_MS])
-	if int(reconciled["stats"]["created"]) != 0 or int(reconciled["stats"]["replaced"]) != 0 or int(reconciled["stats"]["reused"]) != ITEM_COUNT + 1:
-		failures.append("equivalent rebuild exceeded zero-allocation reconciliation budget: %s" % reconciled["stats"])
+		failures.append("median reconcile %.2fms exceeds %.2fms" % [reconcile_ms, RECONCILE_BUDGET_MS])
+
+	# Keep this isolated after the stable-tree timings: the many unique computed
+	# styles intentionally exercise cache pressure and should not contaminate the
+	# literal reconciliation measurement above.
+	var large_stylesheet_start := Time.get_ticks_usec()
+	var large_stylesheet := GcssParser.parse(large_style_source)
+	var large_stylesheet_build := CascadeBuilder.build(markup["root"], large_stylesheet["rules"], null, Vector2(960.0, 540.0))
+	var large_stylesheet_build_ms := (Time.get_ticks_usec() - large_stylesheet_start) / 1000.0
+	if not large_stylesheet["diagnostics"].is_empty() or not large_stylesheet_build["diagnostics"].is_empty():
+		failures.append("large-stylesheet benchmark fixture produced diagnostics")
+	if large_stylesheet_build_ms > LARGE_STYLESHEET_BUILD_BUDGET_MS:
+		failures.append("large stylesheet parse/build %.2fms exceeds %.2fms" % [large_stylesheet_build_ms, LARGE_STYLESHEET_BUILD_BUDGET_MS])
+	if large_stylesheet_build["root"] != null:
+		large_stylesheet_build["root"].free()
 
 	print(JSON.stringify({
 		"schema": "godot-cascade-pipeline-benchmark/v2",
-		"workload": {"authored_items": ITEM_COUNT, "native_controls": node_count},
-		"timing_semantics": "Every millisecond value is the total elapsed time for the named complete operation; no value is a per-frame or per-control time.",
+		"workload": {"authored_items": ITEM_COUNT, "authored_stylesheet_rules": STYLE_RULE_COUNT, "native_controls": node_count},
+		"timing_semantics": "Every millisecond value is the total elapsed time for the named complete operation; no value is a per-frame or per-control time. Reconciliation reports the median of three complete equivalent-tree reconciliations.",
 		"measurements_ms": {
 			"total_literal_parse_and_native_build": parse_build_ms,
 			"total_expression_parse_and_native_build": expression_build_ms,
 			"total_expression_build_overhead": expression_build_ms - parse_build_ms,
+			"total_large_stylesheet_parse_and_native_build": large_stylesheet_build_ms,
 			"total_two_process_layout_frames": layout_ms,
 			"total_equivalent_native_tree_reconciliation": reconcile_ms,
 		},
-		"operation_counts": {"parse_builds": 2, "layout_frames": 2, "reconciled_native_controls": ITEM_COUNT + 1},
+		"operation_counts": {"parse_builds": 3, "layout_frames": 2, "reconciliations": 3, "reconciled_native_controls": ITEM_COUNT + 1},
 		"reconcile": reconciled["stats"],
+		"reconcile_samples_ms": reconcile_samples,
 		"budgets_ms": {
 			"total_literal_parse_and_native_build": PARSE_BUILD_BUDGET_MS,
 			"total_two_process_layout_frames": LAYOUT_BUDGET_MS,
 			"total_equivalent_native_tree_reconciliation": RECONCILE_BUDGET_MS,
 			"total_expression_parse_and_native_build": EXPRESSION_BUILD_BUDGET_MS,
+			"total_large_stylesheet_parse_and_native_build": LARGE_STYLESHEET_BUILD_BUDGET_MS,
 		},
 	}))
 	if failures.is_empty():

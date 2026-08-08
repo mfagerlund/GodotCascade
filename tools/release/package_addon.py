@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import re
+import subprocess
 import zipfile
 from pathlib import Path
 
@@ -30,8 +31,14 @@ def package(output_dir: Path) -> tuple[Path, Path]:
     output_dir.mkdir(parents=True, exist_ok=True)
     archive = output_dir / f"godot-cascade-{version}.zip"
     checksum = archive.with_suffix(archive.suffix + ".sha256")
+    tracked = subprocess.run(
+        ["git", "ls-files", "-z", "--", ADDON_ROOT.relative_to(ROOT).as_posix()],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+    ).stdout.decode("utf-8").split("\0")
     candidates = sorted(
-        (path for path in ADDON_ROOT.rglob("*") if path.is_file()),
+        (ROOT / path for path in tracked if path and (ROOT / path).is_file()),
         key=lambda path: path.relative_to(ROOT).as_posix(),
     )
     included = [
@@ -56,7 +63,8 @@ def package(output_dir: Path) -> tuple[Path, Path]:
 
     digest = hashlib.sha256(archive.read_bytes()).hexdigest()
     checksum.write_text(f"{digest}  {archive.name}\n", encoding="utf-8", newline="\n")
-    print(f"Packaged {archive.relative_to(ROOT)} ({len(included)} files)")
+    display_path = archive.relative_to(ROOT) if archive.is_relative_to(ROOT) else archive
+    print(f"Packaged {display_path} ({len(included)} files)")
     print(f"SHA-256 {digest}")
     return archive, checksum
 

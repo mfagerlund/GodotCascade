@@ -4,15 +4,16 @@ extends RefCounted
 ## arrays, and Godot objects without exposing method calls or expression evaluation.
 
 const PropertyCache := preload("res://addons/godot_cascade/runtime/property_cache.gd")
+const BindingPath := preload("res://addons/godot_cascade/runtime/binding_path.gd")
 
 
 static func resolve(context: Variant, path: String) -> Dictionary:
-	var normalized := path.strip_edges()
+	var normalized := BindingPath.normalize(path)
 	if normalized.is_empty():
-		return {"found": false, "value": null, "message": "Binding path is empty."}
+		return {"found": false, "value": null, "message": "Binding path is empty or invalid."}
 
 	var current: Variant = context
-	for segment in normalized.split(".", false):
+	for segment in normalized.split(".", true):
 		var result := _read_segment(current, segment)
 		if not result["found"]:
 			return {
@@ -26,10 +27,10 @@ static func resolve(context: Variant, path: String) -> Dictionary:
 
 ## Assigns an exact dot-separated path without evaluating expressions or calling methods.
 static func assign(context: Variant, path: String, value: Variant) -> Dictionary:
-	var normalized := path.strip_edges()
-	var segments := normalized.split(".", false)
-	if segments.is_empty():
-		return {"written": false, "message": "Binding path is empty."}
+	var normalized := BindingPath.normalize(path)
+	if normalized.is_empty():
+		return {"written": false, "message": "Binding path is empty or invalid."}
+	var segments := normalized.split(".", true)
 	var current: Variant = context
 	for index in segments.size() - 1:
 		var segment := str(segments[index])
@@ -84,4 +85,6 @@ static func _read_segment(source: Variant, segment: String) -> Dictionary:
 
 
 static func _has_property(target: Object, property_name: String) -> bool:
-	return PropertyCache.has(target, property_name)
+	# Only scripts that override `_get_property_list()` can change shape per
+	# instance. Ordinary Resource/Node state keeps the hot cached lookup.
+	return PropertyCache.has_uncached(target, property_name) if PropertyCache.has_dynamic_property_list(target) else PropertyCache.has(target, property_name)

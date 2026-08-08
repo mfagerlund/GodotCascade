@@ -26,6 +26,7 @@ const CascadeTableCell := preload("res://addons/godot_cascade/components/cascade
 const CompatibilityRegistry := preload("res://addons/godot_cascade/runtime/compatibility_registry.gd")
 const TransitionManager := preload("res://addons/godot_cascade/runtime/transition_manager.gd")
 const AccessibilityAudit := preload("res://addons/godot_cascade/runtime/accessibility_audit.gd")
+const AccessibilitySemantics := preload("res://addons/godot_cascade/runtime/accessibility_semantics.gd")
 
 var _failures: Array[String] = []
 
@@ -301,6 +302,24 @@ func _test_native_table_layout() -> void:
 	_expect_true("table cells remain outside keyboard focus order", body_cells[0].focus_mode == Control.FOCUS_NONE)
 	_expect_true("authored table cell controls retain keyboard focus", cell_action.focus_mode == Control.FOCUS_ALL and cell_action.size.x > 0.0)
 	_expect_true("table cell exposes native accessibility description", body_cells[0].accessibility_description == "Table cell")
+	var initial_semantics := AccessibilitySemantics.refresh_table_metadata(table)
+	_expect_true("table accessibility snapshot includes header and body", initial_semantics["row_count"] == 2 and initial_semantics["column_count"] == 3)
+	var moved_row := CascadeTablePart.new()
+	moved_row.name = "MovedRow"
+	moved_row.semantic_role = "row"
+	var moved_cells: Array[Control] = []
+	for value in ["Nova", "Pilot", "900"]:
+		var moved_cell := CascadeTableCell.new()
+		moved_cell.text = value
+		moved_row.add_child(moved_cell)
+		moved_cells.append(moved_cell)
+	body.add_child(moved_row)
+	await process_frame
+	body.move_child(moved_row, 0)
+	await process_frame
+	await process_frame
+	_expect_true("table reorder refreshes global row metadata", int(moved_row.get_meta("cascade_accessibility_row_index", -1)) == 1 and int(body_row.get_meta("cascade_accessibility_row_index", -1)) == 2)
+	_expect_true("table reorder refreshes cell position metadata", int(moved_cells[2].get_meta("cascade_accessibility_row_index", -1)) == 1 and int(moved_cells[2].get_meta("cascade_accessibility_column_index", -1)) == 2)
 	table.queue_free()
 
 
@@ -531,6 +550,12 @@ func _test_accessibility_navigation_audit() -> void:
 	second.accessibility_name = ""
 	var diagnostics := AccessibilityAudit.audit(container)
 	_expect_true("missing accessible name is diagnosed", diagnostics.size() == 1 and diagnostics[0]["severity"] == "warning")
+	var progress := CascadeProgress.new()
+	progress.name = "Progress"
+	container.add_child(progress)
+	_expect_true("owned semantic progress requires an accessible name", AccessibilityAudit.audit(container).any(func(diagnostic): return "requires visible text or accessible-label" in diagnostic["message"] and "Progress" in diagnostic["message"]))
+	progress.accessibility_name = "Download progress"
+	_expect_true("named semantic progress passes its accessibility audit", AccessibilityAudit.audit(container).filter(func(diagnostic): return "Progress" in diagnostic["message"]).is_empty())
 	container.queue_free()
 
 
@@ -610,7 +635,7 @@ func _test_owned_select() -> void:
 	_expect_true("CascadeSelect opens native popup", select.is_open())
 	_expect_true("open select reports open state", select.cascade_visual_state() == "open")
 	var popup := select.get_node("_Popup") as PopupPanel
-	var option_buttons := popup.get_node("_Options").get_children()
+	var option_buttons := popup.get_node("_OptionsScroll/_Options").get_children()
 	_expect_true("select option rows honor compact authored height", option_buttons.all(func(button): return button.get_combined_minimum_size().y <= select.option_height))
 	_expect_true("select option rows do not inherit closed-control borders", option_buttons.all(func(button): return button.get("cascade_style").border_width == 0.0))
 	_send_action("ui_down", true)
@@ -627,6 +652,25 @@ func _test_owned_select() -> void:
 	_send_action("ui_accept", false)
 	await process_frame
 	_expect_true("select navigation skips disabled option", select.selected_value() == "high")
+	var many_options: Array[Dictionary] = []
+	for index in 40:
+		many_options.append({"label": "Option %s" % index, "value": str(index)})
+	select.options = many_options
+	select.position = Vector2(8.0, root.get_viewport().get_visible_rect().size.y - select.size.y - 4.0)
+	select.open_popup()
+	await process_frame
+	_expect_true("large select popup is height bounded", popup.size.y <= 320)
+	_expect_true("select near viewport bottom opens on-screen", popup.position.y >= 0 and popup.position.y + popup.size.y <= root.get_viewport().get_visible_rect().size.y)
+	select.options = [{"label": "Only", "value": "only"}]
+	select.selected_index = 0
+	select.open_popup()
+	await process_frame
+	_expect_true("select shrinking options rebuilds to the new exact count", popup.get_node("_OptionsScroll/_Options").get_child_count() == 1)
+	select.options = []
+	select.open_popup()
+	await process_frame
+	_expect_true("select clearing options removes stale popup rows", popup.get_node("_OptionsScroll/_Options").get_child_count() == 0)
+	_expect_true("empty select cannot open", not select.is_open())
 	select.queue_free()
 
 

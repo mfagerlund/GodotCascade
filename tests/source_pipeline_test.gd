@@ -34,6 +34,8 @@ const CascadeTextArea := preload("res://addons/godot_cascade/components/cascade_
 const DebugSnapshot := preload("res://addons/godot_cascade/editor/debug_snapshot.gd")
 const CsharpBindingGenerator := preload("res://addons/godot_cascade/codegen/csharp_binding_generator.gd")
 const FocusManager := preload("res://addons/godot_cascade/runtime/focus_manager.gd")
+const TransitionManager := preload("res://addons/godot_cascade/runtime/transition_manager.gd")
+const GxmlSchema := preload("res://addons/godot_cascade/runtime/gxml_schema.gd")
 
 
 class TypedBindingLeaf extends RefCounted:
@@ -44,10 +46,35 @@ class TypedBindingRoot extends RefCounted:
 	var child := TypedBindingLeaf.new()
 
 
+class DynamicBindingObject extends RefCounted:
+	var expose_dynamic := false
+	var dynamic_value := "dynamic"
+
+	func _get_property_list() -> Array[Dictionary]:
+		var properties: Array[Dictionary] = []
+		if expose_dynamic:
+			properties.append({"name": &"runtime_value", "type": TYPE_STRING, "usage": PROPERTY_USAGE_DEFAULT})
+		return properties
+
+	func _get(property: StringName) -> Variant:
+		return dynamic_value if property == &"runtime_value" and expose_dynamic else null
+
+	func _set(property: StringName, value: Variant) -> bool:
+		if property != &"runtime_value" or not expose_dynamic:
+			return false
+		dynamic_value = str(value)
+		return true
+
+
+class DerivedDynamicBindingObject extends DynamicBindingObject:
+	pass
+
+
 var _failures: Array[String] = []
 var _custom_mounts := 0
 var _custom_updates := 0
 var _custom_unmounts := 0
+var _custom_mounts_inside_tree := true
 var _phase3_events := 0
 
 
@@ -85,6 +112,8 @@ func _run() -> void:
 	await _test_retained_array_safety()
 	await _test_markup_state_features()
 	await _test_reusable_gxml_components()
+	await _test_controlled_state_reload()
+	await _test_slider_reload_state()
 	await _test_identity_preserving_reload()
 	root.size = Vector2i(960, 540)
 	var document := GENERATED_SCENE.instantiate()
@@ -235,6 +264,17 @@ func _test_gxml_parser() -> void:
 
 
 func _test_reconciler_property_copy_parity() -> void:
+	_expect_true("transition contract applies overflow immediately", "overflow" in TransitionManager.IMMEDIATE_STYLE_PROPERTIES)
+	_expect_true("transition contract applies align_self immediately", "align_self" in TransitionManager.IMMEDIATE_STYLE_PROPERTIES)
+	var style_properties := PackedStringArray()
+	for property_info in CascadeStyle.new().get_property_list():
+		if int(property_info.get("usage", 0)) & PROPERTY_USAGE_SCRIPT_VARIABLE:
+			style_properties.append(str(property_info["name"]))
+	style_properties.sort()
+	var transition_properties := TransitionManager.STYLE_PROPERTIES.duplicate()
+	transition_properties.append_array(TransitionManager.IMMEDIATE_STYLE_PROPERTIES)
+	transition_properties.sort()
+	_expect_true("transition property coverage matches every CascadeStyle script variable", transition_properties == style_properties)
 	var prototypes: Array[Control] = [
 		CascadeBox.new(),
 		CascadeGrid.new(),
@@ -348,11 +388,14 @@ func _test_csharp_binding_generator() -> void:
 		<Formatter name="Percent" input="double" output="string"><![CDATA[
 return $"{value:0}%";
 		]]></Formatter>
+		<Formatter name="RangeOffset" input="double" output="double"><![CDATA[
+return value + 1.0;
+		]]></Formatter>
 		<Parser name="ParsePercent" input="string" output="double"><![CDATA[
 return double.TryParse(value.TrimEnd('%'), out result);
 		]]></Parser>
 	</Bindings>
-	<Slider id="scale" min="75" max="125" bind-value="@Scale" />
+	<Slider id="scale" min="@Scale" format-min="RangeOffset" max="@Scale" format-max="RangeOffset" bind-value="@Scale" />
 	<Label id="scale-output" text="@Scale" format-text="Percent" />
 	<TextInput id="scale-input" bind-text="@Scale" parse-text="ParsePercent" />
 	<Button id="save" disabled="@Busy">Save</Button>
@@ -368,8 +411,15 @@ return double.TryParse(value.TrimEnd('%'), out result);
 	_expect_true("C# binding generator maps source lines", code.contains("#line ") and code.contains("\"res://examples/settings/interface.gxml\""))
 	_expect_true("C# binding generator wires slider changes", code.contains("Callable.From<double>"))
 	_expect_true("C# binding generator refreshes formatted labels", code.contains("Percent(GetScale())"))
+	_expect_true("C# binding generator formats generated minimum and maximum", code.contains("Set(\"min_value\", RangeOffset(GetScale()))") and code.contains("Set(\"max_value\", RangeOffset(GetScale()))"))
 	_expect_true("C# binding generator supports disabled state", code.contains("Set(\"disabled\", GetBusy())"))
 	_expect_true("C# binding generator supports visibility", code.contains("Set(\"visible\", GetBusy())"))
+	_expect_true("C# binding refresh guard resets through finally", code.contains("try\n") and code.contains("finally\n") and code.contains("_applyingGeneratedBindings = false;"))
+	for generated_attribute in CsharpBindingGenerator.ONE_WAY_ATTRIBUTES:
+		_expect_true("every generated one-way target has a schema formatter: %s" % generated_attribute, "format-%s" % generated_attribute in GxmlSchema.GENERATED_BINDING_ATTRIBUTES)
+	for generated_attribute in CsharpBindingGenerator.WRITABLE_ATTRIBUTES:
+		var authored_property := str(generated_attribute).trim_prefix("bind-")
+		_expect_true("every generated writable target has a schema parser: %s" % generated_attribute, "parse-%s" % authored_property in GxmlSchema.GENERATED_BINDING_ATTRIBUTES)
 	var example_source := FileAccess.get_file_as_string("res://examples/codegen/settings_bindings.gxml")
 	var example_generated := CsharpBindingGenerator.generate(example_source, "res://examples/codegen/settings_bindings.gxml")
 	_expect_true(
@@ -388,6 +438,30 @@ return double.TryParse(value.TrimEnd('%'), out result);
 	_expect_true("generated writable binding requires id and setter", invalid["diagnostics"].size() >= 2)
 	var component_binding := CsharpBindingGenerator.generate("<Page><Component name=\"ValueCard\"><Label id=\"value\" text=\"@Value\"/></Component><ValueCard/><Bindings class=\"Broken\"><Binding name=\"Value\" type=\"string\" get=\"GetValue\" /></Bindings></Page>")
 	_expect_true("generated bindings inside reusable components are rejected", component_binding["diagnostics"].any(func(diagnostic): return "reusable GXML components" in diagnostic.get("message", "")))
+	var repeat_binding := CsharpBindingGenerator.generate("<Page><Bindings class=\"RepeatBindings\"><Binding name=\"Value\" type=\"string\" get=\"GetValue\" /></Bindings><Repeat items=\"{items}\"><Label id=\"row-value\" text=\"@Value\" /></Repeat></Page>")
+	_expect_true("generated bindings inside Repeat are rejected", repeat_binding["diagnostics"].any(func(diagnostic): return "inside <Repeat>" in diagnostic.get("message", "")))
+	var invalid_class := CsharpBindingGenerator.generate("<Page><Bindings class=\"Namespace.GeneratedBindings\"><Binding name=\"Value\" type=\"string\" get=\"GetValue\" /></Bindings><Label id=\"value\" text=\"@Value\" /></Page>")
+	_expect_true("generated class rejects qualified names", invalid_class["diagnostics"].any(func(diagnostic): return "class" in diagnostic.get("message", "")))
+	var keyword_contract := CsharpBindingGenerator.generate("<Page><Bindings class=\"class\"><Binding name=\"event\" type=\"string\" get=\"return\" /></Bindings><Label id=\"status.value\" text=\"@event\" /></Page>")
+	_expect_true("generated identifiers reject C# keywords", keyword_contract["diagnostics"].size() >= 2)
+	for contextual_keyword in ["file", "required", "record", "scoped"]:
+		var contextual_contract := CsharpBindingGenerator.generate("<Page><Bindings class=\"%s\"><Binding name=\"Value\" type=\"string\" get=\"GetValue\" /></Bindings><Label id=\"value\" text=\"@Value\" /></Page>" % contextual_keyword)
+		_expect_true("generated class rejects contextual keyword '%s'" % contextual_keyword, not contextual_contract["diagnostics"].is_empty())
+	var member_collision := CsharpBindingGenerator.generate("<Page><Bindings class=\"Control\"><Binding name=\"Value\" type=\"string\" get=\"RefreshGeneratedBindings\" /></Bindings><Label id=\"value\" text=\"@Value\" /></Page>")
+	_expect_true("generated class and members reject generator-owned collisions", member_collision["diagnostics"].size() >= 2)
+	var enclosing_type_collision := CsharpBindingGenerator.generate("<Page><Bindings class=\"SettingsBindings\"><Binding name=\"Value\" type=\"string\" get=\"SettingsBindings\" /></Bindings><Label id=\"value\" text=\"@Value\" /></Page>")
+	_expect_true("generated members cannot reuse their enclosing C# type name", enclosing_type_collision["diagnostics"].any(func(diagnostic): return "SettingsBindings" in diagnostic.get("message", "")))
+	var punctuated_id := CsharpBindingGenerator.generate("<Page><Bindings class=\"SafeBindings\"><Binding name=\"Value\" type=\"string\" get=\"GetValue\" set=\"SetValue\" /></Bindings><TextInput id=\"profile.name/value\" bind-text=\"@Value\" /></Page>")
+	_expect_int("generated handler accepts and sanitizes general GXML ids", punctuated_id["diagnostics"].size(), 0)
+	_expect_true("generated handler contains only valid identifier characters", punctuated_id["code"].contains("OnGeneratedProfileNameValueText0Changed"))
+	var escaped_id := CsharpBindingGenerator.generate("<Page><Bindings class=\"EscapedBindings\"><Binding name=\"Value\" type=\"string\" get=\"GetValue\" /></Bindings><Label id=\"line&#10;break\" text=\"@Value\" /></Page>")
+	_expect_int("generated C# accepts control characters in authored ids", escaped_id["diagnostics"].size(), 0)
+	_expect_true("generated C# string literals escape authored newlines", escaped_id["code"].contains("line\\nbreak") and not escaped_id["code"].contains("\"line\nbreak\""))
+	var unicode_newline_id := CsharpBindingGenerator.generate("<Page><Bindings class=\"UnicodeEscapedBindings\"><Binding name=\"Value\" type=\"string\" get=\"GetValue\" /></Bindings><Label id=\"line&#x2028;break\" text=\"@Value\" /></Page>")
+	_expect_int("generated C# accepts Unicode newline characters in authored ids", unicode_newline_id["diagnostics"].size(), 0)
+	_expect_true("generated C# string literals escape Unicode line separators", unicode_newline_id["code"].contains("line\\u2028break"))
+	var repeat_surface := CsharpBindingGenerator.generate("<Page><Bindings class=\"RepeatSurfaceBindings\"><Binding name=\"ShowRows\" type=\"bool\" get=\"GetShowRows\" /></Bindings><Repeat id=\"rows\" items=\"{items}\" visible=\"@ShowRows\"><Label text=\"{item.label}\" /></Repeat></Page>")
+	_expect_int("generated binding on Repeat surface remains supported", repeat_surface["diagnostics"].size(), 0)
 
 
 func _test_gcss_specificity() -> void:
@@ -443,6 +517,12 @@ func _test_style_foundations() -> void:
 		second_build["root"].free()
 	var invalidated := ComputedStyleCache.invalidate_class("title")
 	_expect_true("class invalidation targets dependent computed styles", invalidated > 0)
+	ComputedStyleCache.clear()
+	for index in ComputedStyleCache.MAX_ENTRIES + 8:
+		ComputedStyleCache.put("bounded-%s" % index, {"value": index}, PackedStringArray())
+	var bounded_entries := int(ComputedStyleCache.stats()["entries"])
+	_expect_true("computed-style cache has an amortized process-wide entry bound", bounded_entries <= ComputedStyleCache.MAX_ENTRIES and bounded_entries >= ComputedStyleCache.MAX_ENTRIES * 3 / 4)
+	ComputedStyleCache.clear()
 
 	var gap_markup := GxmlParser.parse("<Page><Row id=\"row\"/><Column id=\"column\"/></Page>")
 	var gap_styles := GcssParser.parse("#row { gap: 7px 13px; column-gap: 20px; } #column { gap: 7px 13px; }")
@@ -474,6 +554,14 @@ func _test_style_foundations() -> void:
 
 
 func _test_advanced_style_primitives() -> void:
+	var quoted_boundaries := GcssParser.parse("Page { font-source: resource(\"res://fonts/a;b}.tres\"); --comment: resource(\"res://fonts/a/*literal*/.tres\"); --payload: fn(a;b}); color: #ffffff; } Label { opacity: 1; }")
+	_expect_int("quoted and parenthesized GCSS boundaries parse without diagnostics", quoted_boundaries["diagnostics"].size(), 0)
+	_expect_int("quoted closing brace does not end a GCSS rule", quoted_boundaries["rules"].size(), 2)
+	if quoted_boundaries["rules"].size() == 2:
+		_expect_true("quoted semicolon and brace remain in font-source", quoted_boundaries["rules"][0].declarations.get("font-source", "") == "resource(\"res://fonts/a;b}.tres\")")
+		_expect_true("comment markers inside quoted values remain literal", quoted_boundaries["rules"][0].declarations.get("--comment", "") == "resource(\"res://fonts/a/*literal*/.tres\")")
+		_expect_true("parenthesized semicolon and brace remain in custom value", quoted_boundaries["rules"][0].declarations.get("--payload", "") == "fn(a;b})")
+		_expect_true("declarations and following rules survive complex values", quoted_boundaries["rules"][0].declarations.has("color") and quoted_boundaries["rules"][1].declarations.get("opacity", "") == "1")
 	var markup := GxmlParser.parse("<Page><Row><Label id=\"sample\">Styled</Label><Label id=\"inherited\">Font</Label></Row></Page>")
 	var stylesheet := GcssParser.parse("""Page { font-source: resource(\"res://examples/showcase/assets/cascade-mono-font.tres\"); }
 #sample {
@@ -534,6 +622,26 @@ func _test_responsive_and_transition_styles() -> void:
 		_expect_float("wide viewport unit resolves", wide.get("cascade_style").preferred_width, 500.0)
 		_expect_true("wide media rule wins background", wide.get("cascade_style").background_color == Color("4da3ff"))
 		wide_build["root"].free()
+	var nested_media := GcssParser.parse("@media (min-width: 600px) { @media (max-width: 900px) { Panel { width: 80vw; } } }")
+	_expect_int("nested media intersection parses without diagnostics", nested_media["diagnostics"].size(), 0)
+	if nested_media["rules"].size() == 1:
+		_expect_float("nested media keeps outer minimum", nested_media["rules"][0].min_viewport_width, 600.0)
+		_expect_float("nested media keeps inner maximum", nested_media["rules"][0].max_viewport_width, 900.0)
+	var impossible_media := GcssParser.parse("@media (min-width: 901px) { @media (max-width: 900px) { Panel { width: 80vw; } Label { color: white; } } }")
+	var impossible_media_errors: Array = impossible_media["diagnostics"].filter(func(diagnostic): return diagnostic.get("severity", "error") == "error")
+	_expect_true("non-overlapping nested media is diagnosed once per impossible block", impossible_media_errors.size() == 1 and impossible_media["rules"].is_empty())
+	var located_nested_media := GcssParser.parse("""@media (min-width: 600px) {
+  @media (max-width: 900px) {
+    Panel {
+      unknown-nested: 1;
+    }
+  }
+}""")
+	var located_nested_build := CascadeBuilder.build(GxmlParser.parse("<Panel />")["root"], located_nested_media["rules"], null, Vector2(800.0, 600.0))
+	var nested_warning: Array = located_nested_build["diagnostics"].filter(func(diagnostic): return "unknown-nested" in diagnostic.get("message", ""))
+	_expect_true("nested media declaration diagnostics retain outer source location", nested_warning.size() == 1 and int(nested_warning[0].get("line", 0)) == 4 and int(nested_warning[0].get("column", 0)) == 7)
+	if located_nested_build["root"] != null:
+		located_nested_build["root"].free()
 
 
 func _test_custom_properties_and_calc() -> void:
@@ -682,13 +790,15 @@ func _test_form_controls_pipeline() -> void:
 
 func _test_select_pipeline() -> void:
 	var markup := GxmlParser.parse("""<Page><Select id="quality" selected="high" accessible-label="Graphics quality">
-		<Option value="low">Low</Option>
+		<Option id="low-option" class="quiet" value="low">Low</Option>
 		<Option value="medium" disabled="true">Medium</Option>
-		<Option value="high">High</Option>
+		<Option id="high-option" class="premium" value="high">High</Option>
 	</Select></Page>""")
 	var stylesheet := GcssParser.parse("""Select:open { background: #234567; }
 		Option { background: #101828; color: #dddddd; }
 		Option:hover { background: #222222; }
+		.premium { background: #192a44; }
+		#high-option:hover { background: #2f6da1; }
 		Option:selected { background: #345678; color: #ffffff; }
 		Option:disabled { color: #777777; }""")
 	var build := CascadeBuilder.build(markup["root"], stylesheet["rules"])
@@ -706,7 +816,17 @@ func _test_select_pipeline() -> void:
 	_expect_int("select GXML option count", options.size(), 3)
 	_expect_true("select disabled option metadata", options[1]["disabled"])
 	_expect_true("selected option background style", options[2]["selected_background_color"] == Color("345678"))
+	_expect_true("Option class selector styles its native option row", options[2]["background_color"] == Color("192a44"))
+	_expect_true("Option id selector styles its native hover state", options[2]["hover_background_color"] == Color("2f6da1"))
+	select.call("select_value", "low")
+	_expect_true("explicit select accessibility label stays fixed after selection", select.get("text") == "Low" and select.get("accessibility_name") == "Graphics quality")
 	built_root.free()
+	var implicit_build := CascadeBuilder.build(GxmlParser.parse("<Select selected=\"high\"><Option value=\"low\">Low</Option><Option value=\"high\">High</Option></Select>")["root"], [])
+	var implicit_select: Control = implicit_build["root"]
+	_expect_true("implicit select accessibility name starts from selected text", implicit_select.get("accessibility_name") == "High")
+	implicit_select.call("select_value", "low")
+	_expect_true("implicit select accessibility name follows selected text", implicit_select.get("text") == "Low" and implicit_select.get("accessibility_name") == "Low")
+	implicit_select.free()
 
 
 func _test_slider_pipeline() -> void:
@@ -905,6 +1025,38 @@ func _test_image_pipeline() -> void:
 
 
 func _test_review_regressions() -> void:
+	var conditional_root := CascadeBuilder.build(GxmlParser.parse("<Page if=\"{show}\"><Label>Hidden</Label></Page>")["root"], [], {"show": false})
+	_expect_true("conditional document root is a source-located error", conditional_root["root"] == null and conditional_root["diagnostics"].any(func(entry): return entry.get("line", 0) == 1 and "document root cannot use 'if'" in entry.get("message", "")))
+
+	var visible_root := CascadeBuilder.build(GxmlParser.parse("<Page visible=\"{show}\"><Label>Hidden</Label></Page>")["root"], [], {"show": false})
+	_expect_true("bound visibility remains valid on the document root", visible_root["root"] != null and not _has_error_diagnostics(visible_root["diagnostics"]))
+	if visible_root["root"] != null:
+		visible_root["root"].free()
+
+	# This intentionally unusual shape proves the post-expansion invariant: the
+	# root invocation's `if` is forwarded to its Page template before validation.
+	var component_root_source := "<RootCard if=\"{show}\"><Component name=\"RootCard\"><Page><Slot /></Page></Component></RootCard>"
+	var component_root := CascadeBuilder.build(GxmlParser.parse(component_root_source)["root"], [], {"show": false})
+	_expect_true("root component invocation cannot hide its expanded template root", component_root["root"] == null and component_root["diagnostics"].any(func(entry): return "document root cannot use 'if'" in entry.get("message", "")))
+
+	for non_visual_source in ["<Bindings class=\"ScreenBindings\" />", "<Component name=\"OnlyDefinition\"><Panel /></Component>"]:
+		var non_visual_build := CascadeBuilder.build(GxmlParser.parse(non_visual_source)["root"], [])
+		_expect_true("null build root always has a structural error: %s" % non_visual_source, non_visual_build["root"] == null and _has_error_diagnostics(non_visual_build["diagnostics"]))
+
+	for invalid_trap_source in [
+		"<Page>\n<Button focus-trap=\"true\">No</Button></Page>",
+		"<Page>\n<Label focus-trap=\"true\">No</Label></Page>",
+		"<Page>\n<Slider focus-trap=\"true\" /></Page>",
+	]:
+		var invalid_trap_build := CascadeBuilder.build(GxmlParser.parse(invalid_trap_source)["root"], [])
+		_expect_true("non-Container focus trap is a source-located error", invalid_trap_build["diagnostics"].any(func(entry): return entry.get("line", 0) > 0 and entry.get("column", 0) > 0 and "native Container" in entry.get("message", "")))
+		if invalid_trap_build["root"] != null:
+			invalid_trap_build["root"].free()
+	var disabled_trap := CascadeBuilder.build(GxmlParser.parse("<Button focus-trap=\"off\">Harmless</Button>")["root"], [])
+	_expect_true("false focus trap remains harmless on a non-Container", disabled_trap["root"] != null and not _has_error_diagnostics(disabled_trap["diagnostics"]))
+	if disabled_trap["root"] != null:
+		disabled_trap["root"].free()
+
 	var magenta_markup := GxmlParser.parse("<Label id=\"color\">Magenta</Label>")
 	var magenta_stylesheet := GcssParser.parse("#color { color: #f0f; }")
 	var magenta_build := CascadeBuilder.build(magenta_markup["root"], magenta_stylesheet["rules"])
@@ -969,6 +1121,18 @@ func _test_review_regressions() -> void:
 	if recovered_build["root"] != null:
 		recovered_build["root"].free()
 
+	var unknown_attribute_markup := GxmlParser.parse("<Button disabeld=\"true\">Typo</Button>")
+	var unknown_attribute_build := CascadeBuilder.build(unknown_attribute_markup["root"], [])
+	_expect_true("unknown built-in GXML attributes are errors", unknown_attribute_build["diagnostics"].any(func(diagnostic): return "Unknown attribute 'disabeld'" in diagnostic.get("message", "")))
+	if unknown_attribute_build["root"] != null:
+		unknown_attribute_build["root"].free()
+	var wrong_case_attribute_build := CascadeBuilder.build(GxmlParser.parse("<Button Disabled=\"true\">Case</Button>")["root"], [])
+	_expect_true("wrong-case built-in GXML attributes are errors", wrong_case_attribute_build["diagnostics"].any(func(diagnostic): return "Unknown attribute 'Disabled'" in diagnostic.get("message", "")))
+	if wrong_case_attribute_build["root"] != null:
+		wrong_case_attribute_build["root"].free()
+	var reserved_attribute_build := CascadeBuilder.build(GxmlParser.parse("<Page __component_scope=\"spoofed\"><Repeat items=\"{items}\" key=\"id\" virtual=\"true\" item-height=\"24\" __virtual_scroll_offset=\"900\"><Label /></Repeat></Page>")["root"], [], {"items": []})
+	_expect_true("authored internal GXML attributes are rejected before expansion", reserved_attribute_build["root"] == null and reserved_attribute_build["diagnostics"].size() == 2 and reserved_attribute_build["diagnostics"].all(func(diagnostic): return "reserved for GodotCascade internals" in diagnostic.get("message", "")))
+
 
 func _test_parser_recovery() -> void:
 	var malformed_markup := GxmlParser.parse("<Page><Label>broken</Page>")
@@ -994,6 +1158,31 @@ func _test_binding_resolver() -> void:
 	_expect_true("binding assigns existing array index", array_write["written"] and context["player"]["inventory"][1] == "atlas")
 	var missing_write := BindingResolver.assign(context, "player.health", 10)
 	_expect_true("binding refuses to invent missing path", not missing_write["written"])
+	for invalid_path in ["player..name", ".player.name", "player.name.", "player-name", "player.inventory.01", "player.inventory.-1"]:
+		_expect_true("binding path grammar rejects '%s'" % invalid_path, not ObservableBindingContext.is_valid_path(invalid_path) and not BindingResolver.resolve(context, invalid_path)["found"])
+	var dynamic := DynamicBindingObject.new()
+	_expect_true("hidden dynamic property does not resolve", not BindingResolver.resolve(dynamic, "runtime_value")["found"])
+	dynamic.expose_dynamic = true
+	dynamic.notify_property_list_changed()
+	_expect_true("dynamic property resolves after instance property-list change", BindingResolver.resolve(dynamic, "runtime_value")["value"] == "dynamic")
+	_expect_true("dynamic property remains writable after property-list change", BindingResolver.assign(dynamic, "runtime_value", "updated")["written"] and dynamic.dynamic_value == "updated")
+	var derived_dynamic := DerivedDynamicBindingObject.new()
+	_expect_true("inherited dynamic property list starts hidden", not BindingResolver.resolve(derived_dynamic, "runtime_value")["found"])
+	derived_dynamic.expose_dynamic = true
+	derived_dynamic.notify_property_list_changed()
+	_expect_true("inherited dynamic property-list method bypasses stale property caching", BindingResolver.resolve(derived_dynamic, "runtime_value")["value"] == "dynamic")
+	var malformed_markup := GxmlParser.parse("<Page><Label id=\"text\" text=\"{settings.master-volume}\"/><Label id=\"class\" class=\"{settings..theme}\"/><Image id=\"image\" src=\"{assets.icon.01}\"/></Page>")
+	var malformed_build := CascadeBuilder.build(malformed_markup["root"], [], {"settings": {"master-volume": "0.7"}})
+	_expect_int("malformed authored bindings produce one diagnostic each", malformed_build["diagnostics"].filter(func(d): return d.get("severity", "error") == "error").size(), 3)
+	if malformed_build["root"] != null:
+		_expect_true("malformed text binding never renders literal braces", _find_by_id(malformed_build["root"], "text")[0].get("text") == "")
+		malformed_build["root"].free()
+	var literal_braces_markup := GxmlParser.parse("<Page><Label id=\"opening\" text=\"Reset to defaults {\"/><Label id=\"closing\" text=\"Result }\"/><Label id=\"classed\" class=\"note{\">Okay</Label></Page>")
+	var literal_braces_build := CascadeBuilder.build(literal_braces_markup["root"], [])
+	_expect_true("single literal braces are not mistaken for bindings", not _has_error_diagnostics(literal_braces_build["diagnostics"]))
+	if literal_braces_build["root"] != null:
+		_expect_true("single literal braces render unchanged", _find_by_id(literal_braces_build["root"], "opening")[0].get("text") == "Reset to defaults {" and _find_by_id(literal_braces_build["root"], "closing")[0].get("text") == "Result }")
+		literal_braces_build["root"].free()
 
 
 func _test_one_way_state_bindings() -> void:
@@ -1085,6 +1274,81 @@ func _test_one_way_state_bindings() -> void:
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(markup_path))
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(stylesheet_path))
 
+	var bound_markup_path := "user://cascade_bound_focus_contract_test.gxml"
+	var bound_stylesheet_path := "user://cascade_bound_focus_contract_test.gcss"
+	var bound_markup := """<Page>
+	  <Panel id="first-trap" visible="{ui.first_visible}">
+	    <Panel focus-trap="true"><Button id="only-action" disabled="{ui.busy}">Only action</Button></Panel>
+	  </Panel>
+	  <Panel id="second-trap" visible="{ui.second_visible}">
+	    <Panel focus-trap="true"><Button id="second-action" disabled="{ui.busy}">Second action</Button></Panel>
+	  </Panel>
+</Page>"""
+	_expect_true("write bound focus-contract markup", _write_text(bound_markup_path, bound_markup))
+	_expect_true("write bound focus-contract stylesheet", _write_text(bound_stylesheet_path, "Page { gap: 4px; }"))
+	var bound_state := {"ui": {"first_visible": true, "second_visible": false, "busy": false}}
+	var bound_observable := ObservableBindingContext.new(bound_state)
+	var bound_document: Control = CascadeDocument.new()
+	bound_document.load_on_ready = false
+	bound_document.watch_sources = false
+	bound_document.log_diagnostics_to_console = false
+	bound_document.binding_context = bound_observable
+	bound_document.markup_path = bound_markup_path
+	bound_document.stylesheet_path = bound_stylesheet_path
+	root.add_child(bound_document)
+	var bound_loaded: bool = bound_document.reload_document()
+	_expect_true("bound mutually exclusive focus traps load after state resolution (%s)" % [bound_document.diagnostics], bound_loaded)
+	var live_action: BaseButton = _find_by_id(bound_document.generated_root(), "only-action")[0]
+	bound_state["ui"]["busy"] = true
+	_expect_true("binding cannot commit a zero-focusable active trap", not bound_document.refresh_binding_paths(PackedStringArray(["ui.busy"])))
+	_expect_true("rejected bound focus state retains the prior live control", not live_action.disabled and live_action.get_instance_id() == _find_by_id(bound_document.generated_root(), "only-action")[0].get_instance_id())
+	bound_state["ui"]["busy"] = false
+	bound_state["ui"]["second_visible"] = true
+	_expect_true("binding cannot commit two visible sibling traps", not bound_document.refresh_binding_paths(PackedStringArray(["ui.busy", "ui.second_visible"])))
+	_expect_true("rejected sibling trap state remains atomic", not _find_by_id(bound_document.generated_root(), "second-trap")[0].visible)
+	bound_state["ui"]["first_visible"] = false
+	_expect_true("mutually exclusive bound trap switch commits", bound_document.refresh_binding_paths(PackedStringArray(["ui.first_visible", "ui.second_visible"])))
+	_expect_true("resolved bound trap switch activates only the second trap", not _find_by_id(bound_document.generated_root(), "first-trap")[0].visible and _find_by_id(bound_document.generated_root(), "second-trap")[0].visible)
+	bound_state["ui"]["first_visible"] = true
+	_expect_true("full refresh cannot commit two visible sibling traps", not bound_document.refresh_bindings())
+	_expect_true("rejected full refresh retains mutually exclusive live traps", not _find_by_id(bound_document.generated_root(), "first-trap")[0].visible)
+	bound_state["ui"]["first_visible"] = false
+	bound_state["ui"]["busy"] = true
+	var live_second_action: BaseButton = _find_by_id(bound_document.generated_root(), "second-action")[0]
+	bound_observable.invalidate_all()
+	_expect_true("observable invalidate-all rejects a zero-focusable active trap", not bool(bound_document.last_binding_trace().get("success", true)))
+	_expect_true("rejected invalidate-all retains prior live focus state", not live_second_action.disabled and live_second_action.get_instance_id() == _find_by_id(bound_document.generated_root(), "second-action")[0].get_instance_id())
+	bound_document.queue_free()
+	await process_frame
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(bound_markup_path))
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(bound_stylesheet_path))
+
+	ComponentRegistry.register("RuntimeTrap", _make_runtime_trap)
+	var collection_focus_markup_path := "user://cascade_collection_focus_contract_test.gxml"
+	var collection_focus_stylesheet_path := "user://cascade_collection_focus_contract_test.gcss"
+	_expect_true("write collection focus-contract markup", _write_text(collection_focus_markup_path, "<Page><Panel focus-trap=\"true\"><Button>Outside</Button></Panel><Repeat items=\"{items}\" key=\"id\"><RuntimeTrap class=\"runtime-trap\" /></Repeat></Page>"))
+	_expect_true("write collection focus-contract stylesheet", _write_text(collection_focus_stylesheet_path, "Page { gap: 4px; }"))
+	var collection_focus_state := {"items": []}
+	var collection_focus_document: Control = CascadeDocument.new()
+	collection_focus_document.load_on_ready = false
+	collection_focus_document.watch_sources = false
+	collection_focus_document.log_diagnostics_to_console = false
+	collection_focus_document.binding_context = collection_focus_state
+	collection_focus_document.markup_path = collection_focus_markup_path
+	collection_focus_document.stylesheet_path = collection_focus_stylesheet_path
+	root.add_child(collection_focus_document)
+	_expect_true("empty repeated native focus component loads beside one active trap", collection_focus_document.reload_document())
+	collection_focus_state["items"] = [{"id": "one"}]
+	_expect_true("collection patch rejects a native trap introduced inside Repeat", not collection_focus_document.refresh_binding_paths(PackedStringArray(["items"])))
+	_expect_true("rejected collection focus contract preserves the empty live Repeat", _find_by_class(collection_focus_document.generated_root(), "runtime-trap").is_empty())
+	var runtime_trap_trace: Dictionary = collection_focus_document.last_binding_trace()
+	_expect_true("candidate-introduced Repeat trap is diagnosed without a document candidate", collection_focus_document.diagnostics.any(func(entry): return "Repeat templates cannot introduce a focus trap" in entry.get("message", "")) and runtime_trap_trace.get("strategy", "") == "collection_patch" and int(runtime_trap_trace.get("reconcile_stats", {}).get("full_document_candidates", -1)) == 0)
+	collection_focus_document.queue_free()
+	await process_frame
+	ComponentRegistry.unregister("RuntimeTrap")
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(collection_focus_markup_path))
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(collection_focus_stylesheet_path))
+
 	var invalid_condition := GxmlParser.parse("<Page><Label if=\"ui.show\">Invalid</Label></Page>")
 	var invalid_condition_build := CascadeBuilder.build(invalid_condition["root"], [], {"ui": {"show": true}})
 	_expect_true("conditional requires exact path syntax", _has_error_diagnostics(invalid_condition_build["diagnostics"]))
@@ -1093,6 +1357,44 @@ func _test_one_way_state_bindings() -> void:
 
 
 func _test_focus_contracts() -> void:
+	for hidden_autofocus_source in [
+		"<Page><Button visible=\"false\" autofocus=\"true\">Hidden</Button></Page>",
+		"<Page><Panel visible=\"false\"><Button autofocus=\"true\">Hidden ancestor</Button></Panel></Page>",
+	]:
+		var hidden_autofocus_build := CascadeBuilder.build(GxmlParser.parse(hidden_autofocus_source)["root"], [])
+		_expect_true("literal effectively hidden autofocus is rejected", hidden_autofocus_build["diagnostics"].any(func(entry): return "effectively visible" in entry.get("message", "")))
+		if hidden_autofocus_build["root"] != null:
+			hidden_autofocus_build["root"].free()
+	var excluded_autofocus_build := CascadeBuilder.build(GxmlParser.parse("<Page><Button id=\"programmatic\" tab-index=\"-1\" autofocus=\"true\">Programmatic</Button></Page>")["root"], [])
+	_expect_true("tab-index -1 remains eligible for autofocus", excluded_autofocus_build["root"] != null and not _has_error_diagnostics(excluded_autofocus_build["diagnostics"]) and FocusManager.ordered_focusable(excluded_autofocus_build["root"]).is_empty() and FocusManager.autofocus_target(excluded_autofocus_build["root"]) == _find_by_id(excluded_autofocus_build["root"], "programmatic")[0])
+	if excluded_autofocus_build["root"] != null:
+		excluded_autofocus_build["root"].free()
+
+	var hidden_autofocus_path := "user://cascade_bound_hidden_autofocus.gxml"
+	var hidden_autofocus_style_path := "user://cascade_bound_hidden_autofocus.gcss"
+	_expect_true("write bound hidden autofocus markup", _write_text(hidden_autofocus_path, "<Page><Panel visible=\"{shown}\"><Button autofocus=\"true\">Bound hidden</Button></Panel></Page>"))
+	_expect_true("write bound hidden autofocus style", _write_text(hidden_autofocus_style_path, "Page { gap: 0px; }"))
+	var hidden_autofocus_document: Control = CascadeDocument.new()
+	hidden_autofocus_document.load_on_ready = false
+	hidden_autofocus_document.watch_sources = false
+	hidden_autofocus_document.log_diagnostics_to_console = false
+	hidden_autofocus_document.binding_context = {"shown": false}
+	hidden_autofocus_document.markup_path = hidden_autofocus_path
+	hidden_autofocus_document.stylesheet_path = hidden_autofocus_style_path
+	root.add_child(hidden_autofocus_document)
+	_expect_true("resolved bound-hidden autofocus is rejected atomically", not hidden_autofocus_document.reload_document() and hidden_autofocus_document.generated_root() == null and hidden_autofocus_document.diagnostics.any(func(entry): return "effectively visible" in entry.get("message", "")))
+	hidden_autofocus_document.queue_free()
+	await process_frame
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(hidden_autofocus_path))
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(hidden_autofocus_style_path))
+
+	ComponentRegistry.register("CustomFocusContainer", _make_focus_container)
+	var custom_trap_build := CascadeBuilder.build(GxmlParser.parse("<CustomFocusContainer focus-trap=\"true\"><Button>Inside</Button></CustomFocusContainer>")["root"], [])
+	_expect_true("registered custom native Container can own a focus trap", custom_trap_build["root"] != null and not _has_error_diagnostics(custom_trap_build["diagnostics"]) and custom_trap_build["root"].get_meta("cascade_focus_trap", false))
+	if custom_trap_build["root"] != null:
+		custom_trap_build["root"].free()
+	ComponentRegistry.unregister("CustomFocusContainer")
+
 	var ordered_markup := GxmlParser.parse("""<Page>
   <Button id="third">Third</Button>
   <Button id="second" tab-index="2">Second</Button>
@@ -1105,10 +1407,70 @@ func _test_focus_contracts() -> void:
 	_expect_int("tab-index -1 leaves keyboard order", ordered.size(), 3)
 	if ordered.size() == 3:
 		_expect_true("positive tab order precedes source order", ordered[0].get_meta("cascade_id") == "first" and ordered[1].get_meta("cascade_id") == "second" and ordered[2].get_meta("cascade_id") == "third")
+		ordered[0].focus_neighbor_right = ordered[0].get_path_to(ordered[2])
 	FocusManager.apply_navigation(ordered_build["root"], true)
 	if ordered.size() == 3:
 		_expect_true("document wrapping links last to first", ordered[2].get_node(ordered[2].focus_next) == ordered[0])
+		_expect_true("document wrapping preserves authored directional navigation", ordered[0].get_node(ordered[0].focus_neighbor_right) == ordered[2] and ordered.slice(1).all(func(control): return control.focus_neighbor_left.is_empty() and control.focus_neighbor_top.is_empty() and control.focus_neighbor_right.is_empty() and control.focus_neighbor_bottom.is_empty()))
 	ordered_build["root"].free()
+
+	var single_trap_markup := GxmlParser.parse("<Panel focus-trap=\"true\"><Button id=\"only\">Only</Button></Panel>")
+	var single_trap_build := CascadeBuilder.build(single_trap_markup["root"], [])
+	_expect_true("single-control focus trap builds", not _has_error_diagnostics(single_trap_build["diagnostics"]))
+	if single_trap_build["root"] != null:
+		FocusManager.apply_navigation(single_trap_build["root"])
+		var only: Control = _find_by_id(single_trap_build["root"], "only")[0]
+		_expect_true("single-control focus trap wraps to itself", only.get_node(only.focus_next) == only and only.get_node(only.focus_previous) == only)
+		single_trap_build["root"].free()
+
+	for trap_source in [
+		"<Panel focus-trap=\"true\"><Label>None</Label></Panel>",
+		"<Panel focus-trap=\"true\"><Button disabled=\"true\" autofocus=\"true\">Disabled</Button></Panel>",
+	]:
+		var trap_build := CascadeBuilder.build(GxmlParser.parse(trap_source)["root"], [])
+		_expect_true("invalid empty or disabled focus trap is rejected", _has_error_diagnostics(trap_build["diagnostics"]))
+		if trap_build["root"] != null:
+			trap_build["root"].free()
+
+	var trapped_repeat_markup_path := "user://cascade_trapped_repeat_contract_test.gxml"
+	var trapped_repeat_stylesheet_path := "user://cascade_trapped_repeat_contract_test.gcss"
+	_expect_true("write trapped Repeat markup", _write_text(trapped_repeat_markup_path, "<Page><Panel focus-trap=\"true\"><Repeat id=\"actions\" items=\"{items}\" key=\"id\"><Button text=\"{item.label}\" disabled=\"{item.disabled}\" /></Repeat></Panel></Page>"))
+	_expect_true("write trapped Repeat stylesheet", _write_text(trapped_repeat_stylesheet_path, "Page { gap: 4px; }"))
+	var trapped_item := {"id": "one", "label": "One", "disabled": false}
+	var trapped_repeat_state := {"items": [trapped_item]}
+	var trapped_repeat_document: Control = CascadeDocument.new()
+	trapped_repeat_document.load_on_ready = false
+	trapped_repeat_document.watch_sources = false
+	trapped_repeat_document.log_diagnostics_to_console = false
+	trapped_repeat_document.binding_context = trapped_repeat_state
+	trapped_repeat_document.markup_path = trapped_repeat_markup_path
+	trapped_repeat_document.stylesheet_path = trapped_repeat_stylesheet_path
+	root.add_child(trapped_repeat_document)
+	_expect_true("focus trap with one repeated action loads", trapped_repeat_document.reload_document())
+	var trapped_repeat: Control = _find_by_id(trapped_repeat_document.generated_root(), "actions")[0]
+	var retained_action: Control = trapped_repeat.get_child(0)
+	var retained_action_id := retained_action.get_instance_id()
+	trapped_item["disabled"] = true
+	_expect_true("same-key collection mutation cannot disable an ancestor trap's final focusable", not trapped_repeat_document.refresh_binding_paths(PackedStringArray(["items"])))
+	trapped_repeat = _find_by_id(trapped_repeat_document.generated_root(), "actions")[0]
+	_expect_true("rejected same-key focus mutation preserves live enabled identity", trapped_repeat.get_child(0).get_instance_id() == retained_action_id and not trapped_repeat.get_child(0).get("disabled"))
+	trapped_item["disabled"] = false
+	trapped_item["label"] = "One active"
+	_expect_true("valid same-key trapped collection mutation succeeds", trapped_repeat_document.refresh_binding_paths(PackedStringArray(["items"])))
+	trapped_repeat = _find_by_id(trapped_repeat_document.generated_root(), "actions")[0]
+	_expect_true("valid same-key trapped mutation retains identity", trapped_repeat.get_child(0).get_instance_id() == retained_action_id and trapped_repeat.get_child(0).get("text") == "One active")
+	trapped_repeat_state["items"] = []
+	_expect_true("collection cannot remove an ancestor trap's final focusable", not trapped_repeat_document.refresh_binding_paths(PackedStringArray(["items"])))
+	trapped_repeat = _find_by_id(trapped_repeat_document.generated_root(), "actions")[0]
+	_expect_true("rejected trapped collection update preserves the live row identity", trapped_repeat.get_child_count() == 1 and trapped_repeat.get_child(0).get_instance_id() == retained_action_id)
+	trapped_repeat_state["items"] = [{"id": "one", "label": "One updated", "disabled": false}, {"id": "two", "label": "Two", "disabled": false}]
+	_expect_true("nonempty trapped collection update succeeds through full validation", trapped_repeat_document.refresh_binding_paths(PackedStringArray(["items"])))
+	trapped_repeat = _find_by_id(trapped_repeat_document.generated_root(), "actions")[0]
+	_expect_true("valid trapped collection update retains keyed identity", trapped_repeat.get_child_count() == 2 and trapped_repeat.get_child(0).get_instance_id() == retained_action_id and trapped_repeat.get_child(0).get("text") == "One updated")
+	trapped_repeat_document.queue_free()
+	await process_frame
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(trapped_repeat_markup_path))
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(trapped_repeat_stylesheet_path))
 
 	var invalid_markup := GxmlParser.parse("<Page><Label autofocus=\"true\">No</Label><Button autofocus=\"true\">One</Button><Button autofocus=\"true\">Two</Button></Page>")
 	var invalid_build := CascadeBuilder.build(invalid_markup["root"], [])
@@ -1118,7 +1480,8 @@ func _test_focus_contracts() -> void:
 	var markup_path := "user://cascade_focus_contract_test.gxml"
 	var stylesheet_path := "user://cascade_focus_contract_test.gcss"
 	var markup := """<Page>
-  <Button id="outside" autofocus="true">Outside</Button>
+  <Button id="outside" visible="{ui.outside_visible}" disabled="{ui.outside_disabled}">Outside</Button>
+  <Button id="fallback">Fallback</Button>
   <Panel id="modal" visible="{ui.modal}" focus-trap="true">
     <Button id="cancel" tab-index="2">Cancel</Button>
     <Button id="confirm" tab-index="1" autofocus="true">Confirm</Button>
@@ -1126,7 +1489,7 @@ func _test_focus_contracts() -> void:
 </Page>"""
 	_expect_true("write focus-contract markup", _write_text(markup_path, markup))
 	_expect_true("write focus-contract stylesheet", _write_text(stylesheet_path, "Page { gap: 4px; } Panel { gap: 4px; }"))
-	var state := {"ui": {"modal": false}}
+	var state := {"ui": {"modal": false, "outside_visible": true, "outside_disabled": false}}
 	var document: Control = CascadeDocument.new()
 	document.load_on_ready = false
 	document.watch_sources = false
@@ -1135,17 +1498,22 @@ func _test_focus_contracts() -> void:
 	document.markup_path = markup_path
 	document.stylesheet_path = stylesheet_path
 	root.add_child(document)
-	_expect_true("focus-contract document loads", document.reload_document())
+	var focus_loaded: bool = document.reload_document()
+	_expect_true("focus-contract document loads (%s)" % [document.diagnostics], focus_loaded)
 	await process_frame
 	await process_frame
 	var outside: Control = _find_by_id(document.generated_root(), "outside")[0]
 	var confirm: Control = _find_by_id(document.generated_root(), "confirm")[0]
-	_expect_true("initial document autofocus is applied", root.gui_get_focus_owner() == outside)
+	var cancel: Control = _find_by_id(document.generated_root(), "cancel")[0]
+	outside.grab_focus()
+	await process_frame
+	_expect_true("pre-trap focus target is active", root.gui_get_focus_owner() == outside)
 	state["ui"]["modal"] = true
 	_expect_true("focus trap visibility refreshes", document.refresh_binding_paths(PackedStringArray(["ui.modal"])))
 	await process_frame
 	await process_frame
 	_expect_true("new focus trap prefers its autofocus target", root.gui_get_focus_owner() == confirm)
+	_expect_true("focus trap contains directional navigation", confirm.get_node(confirm.focus_neighbor_left) == cancel and confirm.get_node(confirm.focus_neighbor_right) == cancel)
 	outside.grab_focus()
 	await process_frame
 	await process_frame
@@ -1155,6 +1523,51 @@ func _test_focus_contracts() -> void:
 	await process_frame
 	await process_frame
 	_expect_true("closing focus trap restores prior focus", root.gui_get_focus_owner() == outside)
+	state["ui"]["modal"] = true
+	_expect_true("focus trap reopens before hidden restoration test", document.refresh_binding_paths(PackedStringArray(["ui.modal"])))
+	await process_frame
+	await process_frame
+	state["ui"]["outside_visible"] = false
+	state["ui"]["modal"] = false
+	_expect_true("focus trap closes after saved target becomes hidden", document.refresh_binding_paths(PackedStringArray(["ui.outside_visible", "ui.modal"])))
+	await process_frame
+	await process_frame
+	var fallback: Control = _find_by_id(document.generated_root(), "fallback")[0]
+	_expect_true("hidden pre-trap target falls back to first eligible control", root.gui_get_focus_owner() == fallback)
+	state["ui"]["outside_visible"] = true
+	_expect_true("pre-trap target can be restored for disabled restoration test", document.refresh_binding_paths(PackedStringArray(["ui.outside_visible"])))
+	await process_frame
+	outside = _find_by_id(document.generated_root(), "outside")[0]
+	outside.grab_focus()
+	state["ui"]["modal"] = true
+	_expect_true("focus trap reopens before disabled restoration test", document.refresh_binding_paths(PackedStringArray(["ui.modal"])))
+	await process_frame
+	await process_frame
+	state["ui"]["outside_disabled"] = true
+	state["ui"]["modal"] = false
+	_expect_true("focus trap closes after saved target becomes disabled", document.refresh_binding_paths(PackedStringArray(["ui.outside_disabled", "ui.modal"])))
+	await process_frame
+	await process_frame
+	fallback = _find_by_id(document.generated_root(), "fallback")[0]
+	_expect_true("disabled pre-trap target falls back to first eligible control", root.gui_get_focus_owner() == fallback)
+	state["ui"]["outside_disabled"] = false
+	_expect_true("repair in-document target before external restoration", document.refresh_binding_paths(PackedStringArray(["ui.outside_disabled"])))
+	var viewport_sibling := Button.new()
+	viewport_sibling.text = "Viewport sibling"
+	root.add_child(viewport_sibling)
+	viewport_sibling.grab_focus()
+	await process_frame
+	state["ui"]["modal"] = true
+	_expect_true("trap opens from a plain viewport sibling", document.refresh_binding_paths(PackedStringArray(["ui.modal"])))
+	await process_frame
+	await process_frame
+	state["ui"]["modal"] = false
+	_expect_true("trap closes back toward plain viewport sibling", document.refresh_binding_paths(PackedStringArray(["ui.modal"])))
+	await process_frame
+	await process_frame
+	_expect_true("closing trap restores eligible focus outside CascadeDocument", root.gui_get_focus_owner() == viewport_sibling)
+	root.remove_child(viewport_sibling)
+	viewport_sibling.free()
 	document.queue_free()
 	await process_frame
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(markup_path))
@@ -1454,6 +1867,7 @@ func _test_markup_state_features() -> void:
 	_custom_mounts = 0
 	_custom_updates = 0
 	_custom_unmounts = 0
+	_custom_mounts_inside_tree = true
 	_phase3_events = 0
 	ComponentRegistry.register(
 		"TestCard",
@@ -1495,6 +1909,9 @@ func _test_markup_state_features() -> void:
 	root.add_child(document)
 	_expect_true("phase-three document loads", document.reload_document())
 	_expect_int("custom component mounts once", _custom_mounts, 1)
+	_expect_true("custom component mount callback observes an in-tree control", _custom_mounts_inside_tree)
+	var custom_control: Control = _find_by_id(document.generated_root(), "custom")[0]
+	_expect_true("custom component preserves factory compatibility metadata", custom_control.get_meta("cascade_compatibility_tier") == "adapted" and "color" in custom_control.get_meta("cascade_adapted_properties", PackedStringArray()))
 	var rows: Control = _find_by_id(document.generated_root(), "rows")[0]
 	_expect_int("repeat expands collection", rows.get_child_count(), 2)
 	var beta_row: Control = rows.get_child(1)
@@ -1518,9 +1935,21 @@ func _test_markup_state_features() -> void:
 	(rows.get_child(0).get_child(1) as BaseButton).emit_signal("pressed")
 	_expect_int("event refresh avoids duplicate connection", _phase3_events, 2)
 
+	var reentry_publications := [0]
+	document.diagnostics_changed.connect(func(_current): reentry_publications[0] += 1)
+	document.diagnostics.append({"severity": "warning", "path": "writable-binding", "message": "stale re-entry fixture"})
+	root.remove_child(document)
+	_expect_int("custom component unmounts on document tree exit", _custom_unmounts, 1)
+	root.add_child(document)
+	await process_frame
+	await process_frame
+	_expect_int("custom component remounts once after generated root enters tree", _custom_mounts, 2)
+	_expect_true("re-entry mount callback still observes an in-tree control", _custom_mounts_inside_tree)
+	_expect_true("re-entry writable diagnostic filtering is published", not document.diagnostics.any(func(entry): return entry.get("path", "") == "writable-binding") and reentry_publications[0] > 0)
+
 	_expect_true("write custom removal markup", _write_text(markup_path, without_custom))
 	_expect_true("custom removal reloads", document.poll_sources())
-	_expect_int("custom component unmounts before removal", _custom_unmounts, 1)
+	_expect_int("custom component unmounts before removal", _custom_unmounts, 2)
 	document.queue_free()
 	await process_frame
 	ComponentRegistry.unregister("TestCard")
@@ -1533,11 +1962,28 @@ func _test_markup_state_features() -> void:
 
 
 func _make_test_card() -> Control:
-	return CascadePanel.new()
+	var control := MarginContainer.new()
+	control.set_meta("cascade_compatibility_tier", "adapted")
+	control.set_meta("cascade_adapted_properties", PackedStringArray(["color"]))
+	return control
+
+
+func _make_runtime_trap() -> Control:
+	var trap := CascadePanel.new()
+	trap.set_meta("cascade_focus_trap", true)
+	var action := CascadeButton.new()
+	action.text = "Runtime action"
+	trap.add_child(action)
+	return trap
+
+
+func _make_focus_container() -> Control:
+	return VBoxContainer.new()
 
 
 func _on_test_card_mount(_control: Control) -> void:
 	_custom_mounts += 1
+	_custom_mounts_inside_tree = _custom_mounts_inside_tree and _control.is_inside_tree()
 
 
 func _on_test_card_update(_control: Control) -> void:
@@ -1724,6 +2170,104 @@ func _test_identity_preserving_reload() -> void:
 
 	root.remove_child(document)
 	document.free()
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(markup_path))
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(stylesheet_path))
+
+
+func _test_controlled_state_reload() -> void:
+	var markup_path := "user://cascade_controlled_state_reload.gxml"
+	var stylesheet_path := "user://cascade_controlled_state_reload.gcss"
+	var initial_markup := "<Page class=\"v1\"><Checkbox id=\"check\" checked=\"false\">Check</Checkbox><Switch id=\"switch\" checked=\"false\">Switch</Switch><RadioButton id=\"radio-a\" group=\"mode\" checked=\"true\">A</RadioButton><RadioButton id=\"radio-b\" group=\"mode\" checked=\"false\">B</RadioButton><Select id=\"select\" selected=\"low\"><Option value=\"low\">Low</Option><Option value=\"high\">High</Option></Select></Page>"
+	var unchanged_authored_markup := initial_markup.replace("class=\"v1\"", "class=\"v2\"")
+	var changed_markup := "<Page class=\"v3\"><Checkbox id=\"check\" checked=\"true\">Check</Checkbox><Switch id=\"switch\" checked=\"true\">Switch</Switch><RadioButton id=\"radio-a\" group=\"mode\" checked=\"false\">A</RadioButton><RadioButton id=\"radio-b\" group=\"mode\" checked=\"true\">B</RadioButton><Select id=\"select\" selected=\"high\"><Option value=\"low\">Low</Option><Option value=\"high\">High</Option></Select></Page>"
+	var removed_markup := "<Page class=\"v4\"><Checkbox id=\"check\">Check</Checkbox><Switch id=\"switch\">Switch</Switch><RadioButton id=\"radio-a\" group=\"mode\">A</RadioButton><RadioButton id=\"radio-b\" group=\"mode\">B</RadioButton><Select id=\"select\"><Option value=\"low\">Low</Option><Option value=\"high\">High</Option></Select></Page>"
+	_expect_true("write controlled-state markup", _write_text(markup_path, initial_markup))
+	_expect_true("write controlled-state stylesheet", _write_text(stylesheet_path, "Page { gap: 2px; }"))
+	var document: Control = CascadeDocument.new()
+	document.load_on_ready = false
+	document.watch_sources = false
+	document.log_diagnostics_to_console = false
+	document.markup_path = markup_path
+	document.stylesheet_path = stylesheet_path
+	root.add_child(document)
+	_expect_true("controlled-state fixture loads", document.reload_document())
+	var check: BaseButton = document.get_element_by_id("check")
+	var switch: BaseButton = document.get_element_by_id("switch")
+	var radio_a: BaseButton = document.get_element_by_id("radio-a")
+	var radio_b: BaseButton = document.get_element_by_id("radio-b")
+	var select: Control = document.get_element_by_id("select")
+	check.button_pressed = true
+	switch.button_pressed = true
+	radio_b.button_pressed = true
+	select.set("selected_index", 1)
+	_expect_true("write unchanged controlled declarations", _write_text(markup_path, unchanged_authored_markup))
+	_expect_true("unchanged authored state reload succeeds", document.poll_sources())
+	_expect_true("unchanged authored toggle and select declarations preserve runtime state", check.button_pressed and switch.button_pressed and radio_b.button_pressed and not radio_a.button_pressed and int(select.get("selected_index")) == 1)
+	check.button_pressed = false
+	switch.button_pressed = false
+	radio_a.button_pressed = true
+	select.set("selected_index", 0)
+	_expect_true("write changed controlled declarations", _write_text(markup_path, changed_markup))
+	_expect_true("changed authored state reload succeeds", document.poll_sources())
+	_expect_true("changed authored checkbox declaration reapplies", check.button_pressed)
+	_expect_true("changed authored switch declaration reapplies", switch.button_pressed)
+	_expect_true("changed authored radio declarations reapply", radio_b.button_pressed and not radio_a.button_pressed)
+	_expect_true("changed authored Select declaration reapplies", int(select.get("selected_index")) == 1)
+	_expect_true("write removed controlled declarations", _write_text(markup_path, removed_markup))
+	_expect_true("removed authored state reload succeeds", document.poll_sources())
+	_expect_true("removed authored toggle declarations return to native defaults", not check.button_pressed and not switch.button_pressed and not radio_a.button_pressed and not radio_b.button_pressed)
+	_expect_true("removed authored Select declaration returns to its default", int(select.get("selected_index")) == 0)
+	document.queue_free()
+	await process_frame
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(markup_path))
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(stylesheet_path))
+
+
+func _test_slider_reload_state() -> void:
+	var markup_path := "user://cascade_slider_state_reload.gxml"
+	var stylesheet_path := "user://cascade_slider_state_reload.gcss"
+	var initial_markup := "<Page class=\"v1\"><Slider id=\"slider\" min=\"0\" max=\"100\" value=\"25\" /><Progress id=\"progress\" min=\"0\" max=\"100\" value=\"25\" /></Page>"
+	var unrelated_markup := initial_markup.replace("class=\"v1\"", "class=\"v2\"")
+	var bounds_markup := "<Page class=\"v3\"><Slider id=\"slider\" min=\"10\" max=\"50\" value=\"25\" /><Progress id=\"progress\" min=\"10\" max=\"50\" value=\"40\" /></Page>"
+	var value_markup := bounds_markup.replace("value=\"25\" /><Progress", "value=\"40\" /><Progress").replace("class=\"v3\"", "class=\"v4\"")
+	var bound_markup := "<Page class=\"v5\"><Slider id=\"slider\" min=\"0\" max=\"100\" value=\"{slider_value}\" /><Progress id=\"progress\" min=\"0\" max=\"100\" value=\"25\" /></Page>"
+	var bound_unrelated_markup := bound_markup.replace("class=\"v5\"", "class=\"v6\"")
+	_expect_true("write slider-state markup", _write_text(markup_path, initial_markup))
+	_expect_true("write slider-state stylesheet", _write_text(stylesheet_path, "Page { gap: 2px; }"))
+	var document: Control = CascadeDocument.new()
+	document.load_on_ready = false
+	document.watch_sources = false
+	document.log_diagnostics_to_console = false
+	document.binding_context = {"slider_value": 33.0}
+	document.markup_path = markup_path
+	document.stylesheet_path = stylesheet_path
+	root.add_child(document)
+	_expect_true("slider-state fixture loads", document.reload_document())
+	var slider: Control = document.get_element_by_id("slider")
+	var progress: Control = document.get_element_by_id("progress")
+	var slider_id := slider.get_instance_id()
+	slider.set("value", 70.0)
+	progress.set("value", 70.0)
+	_expect_true("write unrelated slider reload", _write_text(markup_path, unrelated_markup))
+	_expect_true("unrelated slider reload succeeds", document.poll_sources())
+	_expect_true("unchanged authored Slider declarations preserve live value", slider.get_instance_id() == slider_id and is_equal_approx(float(slider.get("value")), 70.0))
+	_expect_true("Progress remains declarative on unrelated reload", is_equal_approx(float(progress.get("value")), 25.0))
+	_expect_true("write changed slider bounds", _write_text(markup_path, bounds_markup))
+	_expect_true("changed Slider bounds reload succeeds", document.poll_sources())
+	_expect_true("changed Slider bounds apply while unchanged value preserves and clamps live state", is_equal_approx(float(slider.get("min_value")), 10.0) and is_equal_approx(float(slider.get("max_value")), 50.0) and is_equal_approx(float(slider.get("value")), 50.0))
+	slider.set("value", 15.0)
+	_expect_true("write changed slider value", _write_text(markup_path, value_markup))
+	_expect_true("changed Slider value reload succeeds", document.poll_sources())
+	_expect_true("changed authored Slider value reapplies", is_equal_approx(float(slider.get("value")), 40.0))
+	_expect_true("write bound slider value", _write_text(markup_path, bound_markup))
+	_expect_true("bound Slider value reload succeeds", document.poll_sources())
+	_expect_true("new Slider binding applies after reconciliation", is_equal_approx(float(slider.get("value")), 33.0))
+	slider.set("value", 75.0)
+	_expect_true("write unrelated bound-slider reload", _write_text(markup_path, bound_unrelated_markup))
+	_expect_true("unrelated bound Slider reload succeeds", document.poll_sources())
+	_expect_true("bound refresh wins after compatible Slider state preservation", is_equal_approx(float(slider.get("value")), 33.0))
+	document.queue_free()
+	await process_frame
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(markup_path))
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(stylesheet_path))
 

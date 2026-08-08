@@ -9,7 +9,7 @@ const STYLE_PROPERTIES: PackedStringArray = [
 	"preferred_width", "preferred_height", "min_width", "min_height",
 	"max_width", "max_height", "flex_grow", "flex_shrink", "flex_basis",
 ]
-const IMMEDIATE_STYLE_PROPERTIES: PackedStringArray = ["background_gradient"]
+const IMMEDIATE_STYLE_PROPERTIES: PackedStringArray = ["background_gradient", "overflow", "align_self"]
 
 const PROPERTY_MAP := {
 	"background": "background_color",

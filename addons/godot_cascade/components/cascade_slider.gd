@@ -5,6 +5,7 @@ extends Range
 
 const BoxPainter := preload("res://addons/godot_cascade/components/box_painter.gd")
 const FocusVisibilityTracker := preload("res://addons/godot_cascade/components/focus_visibility_tracker.gd")
+const AccessibilitySemantics := preload("res://addons/godot_cascade/runtime/accessibility_semantics.gd")
 
 @export_group("Computed Style")
 @export var cascade_style: CascadeStyle = CascadeStyle.new():
@@ -70,6 +71,7 @@ var disabled := false:
 		disabled = next
 		mouse_filter = Control.MOUSE_FILTER_IGNORE if disabled else Control.MOUSE_FILTER_STOP
 		queue_redraw()
+		queue_accessibility_update()
 var _dragging := false
 var _hovered := false
 var _focus_tracker: RefCounted
@@ -183,3 +185,10 @@ func _on_mouse_entered() -> void:
 func _on_mouse_exited() -> void:
 	_hovered = false
 	queue_redraw()
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_ACCESSIBILITY_UPDATE:
+		var element := AccessibilitySemantics.set_numeric(self, AccessibilityServer.ROLE_SLIDER, value, min_value, max_value, step)
+		if element.is_valid():
+			AccessibilityServer.update_set_flag(element, AccessibilityServer.FLAG_DISABLED, disabled)

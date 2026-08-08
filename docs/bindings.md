@@ -47,7 +47,7 @@ func _ready() -> void:
     super()
 ```
 
-A path such as `profile` walks the context one segment at a time. Models may contain other typed Godot objects and arrays, so `settings.profile` and `players.0.name` are also valid when those segments exist. Object segments must name Godot-visible properties and array segments must be numeric indexes.
+A path such as `profile` walks the context one segment at a time. Models may contain other typed Godot objects and arrays, so `settings.profile` and `players.0.name` are also valid when those segments exist. Object and dictionary segments use Godot identifier syntax. Array segments are canonical non-negative decimal indexes: `0` is valid, while leading-zero forms such as `01` and negative forms such as `-1` are rejected. Hyphenated dictionary keys are therefore not binding-path segments; expose an identifier-shaped property or normalized key instead.
 
 `Dictionary` contexts remain supported for parsed JSON, external data, and quick prototypes. Dictionary keys may be `String` or `StringName`; they are not required for ordinary application models.
 
@@ -60,11 +60,13 @@ An entire supported attribute value may be an exact brace-wrapped path:
 ```xml
 <Label text="{profile}" />
 <Button text="{status}" />
-<Progress min="0" max="125" value="{scale}" />
+<Progress min="0" max="125" value="{scale}" accessible-label="UI scale" />
 <Slider min="75" max="125" value="{scale}" />
 <Button disabled="{saving}">Save</Button>
 <Select selected="{quality}">…</Select>
 ```
+
+Both outer braces are required before a value is treated as binding syntax. A lone `{` or `}` remains ordinary literal text.
 
 The current one-way surface is:
 
@@ -290,7 +292,7 @@ Typical failures include:
 
 ## Typed C# code generation
 
-Godot .NET projects can opt into a generated, compile-time-checked binding layer. This is separate from runtime `{path}` resolution: `@Name` refers to a declared generated binding, and the generated partial calls getter and setter methods implemented in the permanent companion partial.
+Godot .NET projects can opt into a generated, strongly typed binding contract. This is separate from runtime `{path}` resolution: `@Name` refers to a declared generated binding, and the generated partial calls getter and setter methods implemented in the permanent companion partial.
 
 Place one non-visual `Bindings` contract anywhere below the GXML root. Every element using a generated binding must have a unique `id`:
 
@@ -339,6 +341,8 @@ The generated class derives from `Control` and expects its `CascadeDocumentPath`
 
 Generated one-way `@Name` targets currently cover `text`, `min`, `max`, `value`, `checked`, `selected`, `visible`, and `disabled`. Runtime `{path}` additionally supports bound `class` and `Image.src`; those two require runtime resource loading or selector rematching and are intentionally not generated C# targets.
 
+Every generated one-way target accepts its matching named formatter: `format-text`, `format-min`, `format-max`, `format-value`, `format-checked`, `format-selected`, `format-visible`, and `format-disabled`. Writable targets accept the matching parser where write-back exists: `parse-text`, `parse-value`, `parse-checked`, and `parse-selected`. Minimum and maximum range bindings are one-way, so `parse-min` and `parse-max` are intentionally unsupported.
+
 Implement the required partial methods in the permanent file:
 
 ```csharp
@@ -363,9 +367,13 @@ public partial class SettingsBindings
 }
 ```
 
-Getter and setter signatures are emitted from the declared C# type. Missing implementations, incompatible parser results, and unsupported values therefore fail in the C# compiler instead of becoming runtime reflection failures. The optional `OnGeneratedBindingsReady()` partial hook replaces a user `_Ready()` override because the generated partial owns that lifecycle method.
+Getter and setter signatures are emitted from the declared C# type, and formatter/parser bodies are ordinary generated C#. Missing partial-method implementations and incompatible formatter/parser code therefore fail in the C# compiler. Control lookup and native target assignment still use Godot's dynamic `Call`/`Set` APIs, so a target that is incompatible with its native control is diagnosed at runtime rather than by the C# compiler. The optional `OnGeneratedBindingsReady()` partial hook replaces a user `_Ready()` override because the generated partial owns that lifecycle method.
 
 Formatter and parser bodies are user source copied verbatim into private static generated methods. `Formatter` receives `value` and returns its declared output type. `Parser` receives `value`, writes `result`, and returns `bool`. The generator surrounds both bodies with `#line` directives, so C# compiler diagnostics point back to the GXML file. CDATA is required so C# operators and generic syntax do not need XML escaping.
+
+Treat every GXML file that contains a typed `Bindings` contract as trusted source code. The generator does not sandbox, interpret, or security-review `Formatter` and `Parser` CDATA: it deliberately transcribes those bodies into the compiled C# partial. The same trust boundary applies to authored `on-*` method names, which call methods on the explicitly supplied event context at runtime. Do not generate bindings from downloaded or user-editable GXML, and review generated `.g.cs` output in the same way as any other generated source before compiling it.
+
+Generated bindings are rejected inside reusable `Component` templates and `Repeat` templates. Those constructs can create several native controls for one authored element, while a generated stable `id` lookup intentionally resolves one control. Use item-scoped runtime paths such as `{item.value}` inside repeats.
 
 The editor and runtime parser never compile or execute inline C#. Changing the binding contract, formatter, or parser requires regeneration and a normal .NET build; ordinary GXML/GCSS visual edits retain the existing live-reload behavior.
 

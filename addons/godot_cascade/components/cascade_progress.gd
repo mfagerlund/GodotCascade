@@ -5,6 +5,7 @@ extends Control
 ## The value surface follows Godot's Range naming without inheriting themed drawing.
 
 const BoxPainter := preload("res://addons/godot_cascade/components/box_painter.gd")
+const AccessibilitySemantics := preload("res://addons/godot_cascade/runtime/accessibility_semantics.gd")
 
 @export_group("Value")
 @export var min_value := 0.0:
@@ -14,15 +15,18 @@ const BoxPainter := preload("res://addons/godot_cascade/components/box_painter.g
 			max_value = min_value
 		value = clampf(value, min_value, max_value)
 		queue_redraw()
+		queue_accessibility_update()
 @export var max_value := 100.0:
 	set(next):
 		max_value = maxf(next, min_value)
 		value = clampf(value, min_value, max_value)
 		queue_redraw()
+		queue_accessibility_update()
 @export var value := 0.0:
 	set(next):
 		value = clampf(next, min_value, max_value)
 		queue_redraw()
+		queue_accessibility_update()
 
 @export_group("Computed Style")
 @export var cascade_style: CascadeStyle = CascadeStyle.new():
@@ -47,10 +51,16 @@ const BoxPainter := preload("res://addons/godot_cascade/components/box_painter.g
 
 
 func _init() -> void:
+	set_meta("cascade_accessibility_role", "progress")
 	cascade_style.preferred_height = 14.0
 	cascade_style.background_color = Color("273142")
 	cascade_style.border_radius = 999.0
 	cascade_style.overflow = CascadeStyle.Overflow.CLIP
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_ACCESSIBILITY_UPDATE:
+		AccessibilitySemantics.set_numeric(self, AccessibilityServer.ROLE_PROGRESS_INDICATOR, value, min_value, max_value)
 
 
 func _ready() -> void:

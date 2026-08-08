@@ -22,10 +22,10 @@ return double.TryParse(
     </Bindings>
 
     <Column>
-        <TextInput id="profile" bind-text="@Profile" placeholder="Profile name" />
+        <TextInput id="profile" bind-text="@Profile" placeholder="Profile name" accessible-label="Profile name" />
         <Label id="profile-output" text="@Profile" />
-        <Slider id="ui-scale" min="75" max="125" bind-value="@UiScale" />
+        <Slider id="ui-scale" min="75" max="125" bind-value="@UiScale" accessible-label="UI scale" />
         <Label id="ui-scale-output" text="@UiScale" format-text="Percent" />
-        <TextInput id="ui-scale-entry" bind-text="@UiScale" parse-text="ParsePercent" />
+        <TextInput id="ui-scale-entry" bind-text="@UiScale" parse-text="ParsePercent" accessible-label="UI scale percentage" />
     </Column>
 </Page>

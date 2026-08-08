@@ -38,13 +38,14 @@ class Element:
 
 static func parse(source: String) -> Dictionary:
 	var diagnostics: Array[Dictionary] = []
+	var line_starts := _line_starts(source)
 	var byte_to_character := _utf8_byte_to_character_offsets(source)
 	var xml := XMLParser.new()
 	var open_error := xml.open_buffer(source.to_utf8_buffer())
 	if open_error != OK:
 		return {
 			"root": null,
-			"diagnostics": [_diagnostic(source, 0, "Could not open GXML source.")],
+			"diagnostics": [_diagnostic(source, 0, "Could not open GXML source.", line_starts)],
 		}
 
 	var root_element: Element
@@ -56,7 +57,7 @@ static func parse(source: String) -> Dictionary:
 				var parent: Element = stack.back() if not stack.is_empty() else null
 				var element := Element.new(xml.get_node_name(), parent)
 				element.source_offset = _character_offset(byte_to_character, xml.get_node_offset())
-				var location := _diagnostic(source, element.source_offset, "")
+				var location := _diagnostic(source, element.source_offset, "", line_starts)
 				element.source_line = location["line"]
 				element.source_column = location["column"]
 				for index in xml.get_attribute_count():
@@ -70,7 +71,8 @@ static func parse(source: String) -> Dictionary:
 					diagnostics.append(_diagnostic(
 						source,
 						_character_offset(byte_to_character, xml.get_node_offset()),
-						"GXML documents must contain exactly one root element."
+						"GXML documents must contain exactly one root element.",
+						line_starts
 					))
 
 				if not xml.is_empty():
@@ -82,13 +84,15 @@ static func parse(source: String) -> Dictionary:
 					diagnostics.append(_diagnostic(
 						source,
 						_character_offset(byte_to_character, xml.get_node_offset()),
-						"Unexpected closing tag </%s>." % closing_name
+						"Unexpected closing tag </%s>." % closing_name,
+						line_starts
 					))
 				elif stack.back().tag_name != closing_name:
 					diagnostics.append(_diagnostic(
 						source,
 						_character_offset(byte_to_character, xml.get_node_offset()),
-						"Expected </%s> before </%s>." % [stack.back().tag_name, closing_name]
+						"Expected </%s> before </%s>." % [stack.back().tag_name, closing_name],
+						line_starts
 					))
 					while not stack.is_empty() and stack.back().tag_name != closing_name:
 						stack.pop_back()
@@ -115,16 +119,18 @@ static func parse(source: String) -> Dictionary:
 		diagnostics.append(_diagnostic(
 			source,
 			_character_offset(byte_to_character, xml.get_node_offset()),
-			"Malformed GXML near byte %s (error %s)." % [xml.get_node_offset(), read_error]
+			"Malformed GXML near byte %s (error %s)." % [xml.get_node_offset(), read_error],
+			line_starts
 		))
 	if not stack.is_empty():
 		diagnostics.append(_diagnostic(
 			source,
 			source.length(),
-			"Unclosed element <%s>." % stack.back().tag_name
+			"Unclosed element <%s>." % stack.back().tag_name,
+			line_starts
 		))
 	if root_element == null:
-		diagnostics.append(_diagnostic(source, 0, "GXML document contains no root element."))
+		diagnostics.append(_diagnostic(source, 0, "GXML document contains no root element.", line_starts))
 
 	_normalize_text(root_element)
 	return {"root": root_element, "diagnostics": diagnostics}
@@ -175,13 +181,30 @@ static func _cdata_content(source: String, offset: int) -> String:
 	return source.substr(content_start, closing - content_start)
 
 
-static func _diagnostic(source: String, offset: int, message: String) -> Dictionary:
+static func _line_starts(source: String) -> PackedInt32Array:
+	var result := PackedInt32Array([0])
+	var cursor := source.find("\n")
+	while cursor >= 0:
+		result.append(cursor + 1)
+		cursor = source.find("\n", cursor + 1)
+	return result
+
+
+static func _diagnostic(source: String, offset: int, message: String, line_starts: PackedInt32Array = PackedInt32Array()) -> Dictionary:
 	var safe_offset := clampi(offset, 0, source.length())
-	var prefix := source.substr(0, safe_offset)
-	var last_newline := prefix.rfind("\n")
+	var starts := line_starts if not line_starts.is_empty() else _line_starts(source)
+	var low := 0
+	var high := starts.size()
+	while low < high:
+		var middle := (low + high) >> 1
+		if starts[middle] <= safe_offset:
+			low = middle + 1
+		else:
+			high = middle
+	var line_index := maxi(low - 1, 0)
 	return {
 		"severity": "error",
-		"line": prefix.count("\n") + 1,
-		"column": safe_offset + 1 if last_newline < 0 else safe_offset - last_newline,
+		"line": line_index + 1,
+		"column": safe_offset - starts[line_index] + 1,
 		"message": message,
 	}

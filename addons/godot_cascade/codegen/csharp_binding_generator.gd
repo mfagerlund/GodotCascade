@@ -3,6 +3,7 @@ extends SceneTree
 ## Generates a typed C# partial binding class from a GXML <Bindings> contract.
 
 const GxmlParser := preload("res://addons/godot_cascade/markup/gxml_parser.gd")
+const GxmlSchema := preload("res://addons/godot_cascade/runtime/gxml_schema.gd")
 
 const WRITABLE_ATTRIBUTES := {
 	"bind-text": {"property": "text", "signal": "text_changed", "native_type": "string"},
@@ -19,6 +20,41 @@ const ONE_WAY_ATTRIBUTES := {
 	"min": "min_value",
 	"max": "max_value",
 	"value": "value",
+}
+const CSHARP_KEYWORDS := {
+	"abstract": true, "as": true, "base": true, "bool": true, "break": true,
+	"byte": true, "case": true, "catch": true, "char": true, "checked": true,
+	"class": true, "const": true, "continue": true, "decimal": true, "default": true,
+	"delegate": true, "do": true, "double": true, "else": true, "enum": true,
+	"event": true, "explicit": true, "extern": true, "false": true, "finally": true,
+	"fixed": true, "float": true, "for": true, "foreach": true, "goto": true,
+	"if": true, "implicit": true, "in": true, "int": true, "interface": true,
+	"internal": true, "is": true, "lock": true, "long": true, "namespace": true,
+	"new": true, "null": true, "object": true, "operator": true, "out": true,
+	"override": true, "params": true, "private": true, "protected": true, "public": true,
+	"readonly": true, "ref": true, "return": true, "sbyte": true, "sealed": true,
+	"short": true, "sizeof": true, "stackalloc": true, "static": true, "string": true,
+	"struct": true, "switch": true, "this": true, "throw": true, "true": true,
+	"try": true, "typeof": true, "uint": true, "ulong": true, "unchecked": true,
+	"unsafe": true, "ushort": true, "using": true, "virtual": true, "void": true,
+	"volatile": true, "while": true,
+	# Contextual keywords that are illegal in generated type/member declaration
+	# positions or make the resulting partial ambiguous across C# versions.
+	"add": true, "alias": true, "and": true, "ascending": true, "args": true,
+	"async": true, "await": true, "by": true, "descending": true, "dynamic": true,
+	"equals": true, "file": true, "from": true, "get": true, "global": true,
+	"group": true, "init": true, "into": true, "join": true, "let": true,
+	"managed": true, "nameof": true, "nint": true, "not": true, "notnull": true,
+	"nuint": true, "on": true, "or": true, "orderby": true, "partial": true,
+	"record": true, "remove": true, "required": true, "scoped": true, "select": true,
+	"set": true, "unmanaged": true, "value": true, "var": true, "when": true,
+	"where": true, "with": true, "yield": true,
+}
+const GENERATED_MEMBER_NAMES := {
+	"CascadeDocumentPath": true, "_cascadeDocument": true, "_applyingGeneratedBindings": true,
+	"_Ready": true, "OnGeneratedBindingsReady": true, "OnCascadeDocumentReloaded": true,
+	"RebindGeneratedControls": true, "RefreshGeneratedBindings": true,
+	"FindGeneratedControl": true, "FindGeneratedControlIn": true,
 }
 
 
@@ -40,7 +76,7 @@ static func generate(source: String, source_path := "interface.gxml") -> Diction
 	var generated_class: String = str(contract.attributes.get("class", "")).strip_edges()
 	var namespace_name: String = str(contract.attributes.get("namespace", "")).strip_edges()
 	var document_path: String = str(contract.attributes.get("document", "CascadeDocument")).strip_edges()
-	if not _is_qualified_identifier(generated_class):
+	if not _is_identifier(generated_class):
 		diagnostics.append(_diagnostic(contract, "Bindings 'class' must be a valid C# identifier."))
 	if not namespace_name.is_empty() and not _is_qualified_identifier(namespace_name):
 		diagnostics.append(_diagnostic(contract, "Bindings 'namespace' must contain valid dot-separated C# identifiers."))
@@ -51,7 +87,8 @@ static func generate(source: String, source_path := "interface.gxml") -> Diction
 	var usages: Array[Dictionary] = []
 	var seen_ids: Dictionary = {}
 	var component_names := _component_names(root)
-	_collect_usages(root, definitions, usages, seen_ids, diagnostics, false, component_names)
+	_collect_usages(root, definitions, usages, seen_ids, diagnostics, false, false, component_names)
+	_validate_generated_names(generated_class, definitions, diagnostics)
 	if usages.is_empty():
 		diagnostics.append(_diagnostic(contract, "Bindings contract has no @Binding usages."))
 	if _has_errors(diagnostics):
@@ -115,6 +152,7 @@ static func _collect_usages(
 	seen_ids: Dictionary,
 	diagnostics: Array[Dictionary],
 	inside_component_template: bool = false,
+	inside_repeat: bool = false,
 	component_names: Dictionary = {}
 ) -> void:
 	if element.tag_name.to_lower() == "bindings":
@@ -122,6 +160,7 @@ static func _collect_usages(
 	var tag_name: String = element.tag_name.to_lower()
 	var is_component_definition := tag_name == "component"
 	var is_component_invocation := component_names.has(tag_name)
+	var is_repeat := tag_name == "repeat"
 	for attribute_name in element.attributes:
 		var normalized: String = str(attribute_name).to_lower()
 		var raw_value: String = str(element.attributes[attribute_name]).strip_edges()
@@ -130,6 +169,9 @@ static func _collect_usages(
 		var binding_name: String = raw_value.trim_prefix("@").strip_edges()
 		if inside_component_template or is_component_definition or is_component_invocation:
 			diagnostics.append(_diagnostic(element, "Generated binding '@%s' is not supported inside or as an argument to reusable GXML components; use a runtime {path} binding." % binding_name))
+			continue
+		if inside_repeat:
+			diagnostics.append(_diagnostic(element, "Generated binding '@%s' is not supported inside <Repeat>; generated ids resolve to only one native control. Use an item-scoped runtime {path} binding." % binding_name))
 			continue
 		var property_name := ""
 		var writable := false
@@ -164,8 +206,10 @@ static func _collect_usages(
 			diagnostics.append(_diagnostic(element, "Writable '@%s' requires a setter in its <Binding> declaration." % binding_name))
 			continue
 		var authored_property: String = normalized.trim_prefix("bind-")
-		format_name = str(element.attributes.get("format-%s" % authored_property, "")).strip_edges()
-		parser_name = str(element.attributes.get("parse-%s" % authored_property, "")).strip_edges()
+		var format_attribute := "format-%s" % authored_property
+		var parser_attribute := "parse-%s" % authored_property
+		format_name = str(element.attributes.get(format_attribute, "")).strip_edges() if format_attribute in GxmlSchema.GENERATED_BINDING_ATTRIBUTES else ""
+		parser_name = str(element.attributes.get(parser_attribute, "")).strip_edges() if parser_attribute in GxmlSchema.GENERATED_BINDING_ATTRIBUTES else ""
 		if not format_name.is_empty() and not definitions["formatters"].has(format_name):
 			diagnostics.append(_diagnostic(element, "Unknown formatter '%s'." % format_name))
 		if not parser_name.is_empty() and not definitions["parsers"].has(parser_name):
@@ -182,7 +226,7 @@ static func _collect_usages(
 			"multiline": str(element.attributes.get("multiline", "false")).to_lower() in ["true", "1", "yes", "on"],
 		})
 	for child in element.children:
-		_collect_usages(child, definitions, usages, seen_ids, diagnostics, inside_component_template or is_component_definition, component_names)
+		_collect_usages(child, definitions, usages, seen_ids, diagnostics, inside_component_template or is_component_definition, inside_repeat or is_repeat, component_names)
 
 
 static func _component_names(root) -> Dictionary:
@@ -194,6 +238,29 @@ static func _component_names(root) -> Dictionary:
 		if not name.is_empty():
 			names[name] = true
 	return names
+
+
+static func _validate_generated_names(generated_class: String, definitions: Dictionary, diagnostics: Array[Dictionary]) -> void:
+	if generated_class == "Control":
+		diagnostics.append({"severity": "error", "line": 1, "column": 1, "message": "Bindings class 'Control' would inherit from itself."})
+	var declared: Dictionary = GENERATED_MEMBER_NAMES.duplicate()
+	declared[generated_class] = true
+	for binding in definitions["bindings"].values():
+		for field in ["get", "set"]:
+			var member_name := str(binding[field])
+			if member_name.is_empty():
+				continue
+			if declared.has(member_name) or member_name.begins_with("OnGenerated"):
+				diagnostics.append(_diagnostic(binding["element"], "Generated binding member '%s' collides with generator-owned code." % member_name))
+			else:
+				declared[member_name] = true
+	for bucket_name in ["formatters", "parsers"]:
+		for definition in definitions[bucket_name].values():
+			var member_name := str(definition["name"])
+			if declared.has(member_name) or member_name.begins_with("OnGenerated"):
+				diagnostics.append(_diagnostic(definition["element"], "Generated method '%s' collides with another generated member." % member_name))
+			else:
+				declared[member_name] = true
 
 
 static func _render_code(generated_class: String, namespace_name: String, document_path: String, source_path: String, definitions: Dictionary, usages: Array[Dictionary]) -> String:
@@ -268,22 +335,28 @@ static func _render_code(generated_class: String, namespace_name: String, docume
 	lines.append("%spublic void RefreshGeneratedBindings()" % body_indent)
 	lines.append("%s{" % body_indent)
 	lines.append("%s    _applyingGeneratedBindings = true;" % body_indent)
+	lines.append("%s    try" % body_indent)
+	lines.append("%s    {" % body_indent)
 	for index in usages.size():
 		var usage: Dictionary = usages[index]
 		var binding: Dictionary = definitions["bindings"][usage["binding"]]
 		var control_name: String = "bound%s" % index
-		lines.append("%s    var %s = FindGeneratedControl(%s);" % [body_indent, control_name, _csharp_string(usage["id"])])
-		lines.append("%s    if (%s != null)" % [body_indent, control_name])
+		lines.append("%s        var %s = FindGeneratedControl(%s);" % [body_indent, control_name, _csharp_string(usage["id"])])
+		lines.append("%s        if (%s != null)" % [body_indent, control_name])
 		var value_expression: String = "%s()" % binding["get"]
 		if not str(usage["formatter"]).is_empty():
 			value_expression = "%s(%s)" % [usage["formatter"], value_expression]
 		elif usage["property"] == "text":
 			value_expression = "Convert.ToString(%s, CultureInfo.InvariantCulture) ?? string.Empty" % value_expression
 		if usage["property"] == "selected_value":
-			lines.append("%s        %s.Call(\"select_value\", %s);" % [body_indent, control_name, value_expression])
+			lines.append("%s            %s.Call(\"select_value\", %s);" % [body_indent, control_name, value_expression])
 		else:
-			lines.append("%s        %s.Set(%s, %s);" % [body_indent, control_name, _csharp_string(usage["property"]), value_expression])
-	lines.append("%s    _applyingGeneratedBindings = false;" % body_indent)
+			lines.append("%s            %s.Set(%s, %s);" % [body_indent, control_name, _csharp_string(usage["property"]), value_expression])
+	lines.append("%s    }" % body_indent)
+	lines.append("%s    finally" % body_indent)
+	lines.append("%s    {" % body_indent)
+	lines.append("%s        _applyingGeneratedBindings = false;" % body_indent)
+	lines.append("%s    }" % body_indent)
 	lines.append("%s}" % body_indent)
 	lines.append("")
 	writable_index = 0
@@ -374,14 +447,19 @@ static func _find_contracts(element, result: Array) -> void:
 
 static func _pascal_case(value: String) -> String:
 	var result := ""
-	for part in value.replace("_", "-").split("-", false):
+	var normalized := ""
+	for character in value:
+		var lower := character.to_lower()
+		var alpha_numeric := (lower >= "a" and lower <= "z") or (character >= "0" and character <= "9")
+		normalized += character if alpha_numeric else "-"
+	for part in normalized.split("-", false):
 		if not part.is_empty():
 			result += part.substr(0, 1).to_upper() + part.substr(1)
-	return result
+	return result if not result.is_empty() else "Control"
 
 
 static func _is_identifier(value: String) -> bool:
-	if value.is_empty():
+	if value.is_empty() or CSHARP_KEYWORDS.has(value):
 		return false
 	for index in value.length():
 		var character := value[index]
@@ -402,7 +480,18 @@ static func _is_qualified_identifier(value: String) -> bool:
 
 
 static func _csharp_string(value: String) -> String:
-	return "\"%s\"" % value.replace("\\", "\\\\").replace("\"", "\\\"")
+	var escaped := ""
+	for character in value:
+		match character:
+			"\\": escaped += "\\\\"
+			"\"": escaped += "\\\""
+			"\r": escaped += "\\r"
+			"\n": escaped += "\\n"
+			"\t": escaped += "\\t"
+			_:
+				var codepoint := character.unicode_at(0)
+				escaped += "\\u%04x" % codepoint if codepoint < 32 or codepoint == 127 or codepoint in [0x85, 0x2028, 0x2029] else character
+	return "\"%s\"" % escaped
 
 
 static func _diagnostic(element, message: String) -> Dictionary:

@@ -5,6 +5,7 @@ extends RefCounted
 const PropertyCache := preload("res://addons/godot_cascade/runtime/property_cache.gd")
 const ComponentRegistry := preload("res://addons/godot_cascade/runtime/component_registry.gd")
 const TransitionManager := preload("res://addons/godot_cascade/runtime/transition_manager.gd")
+const AccessibilitySemantics := preload("res://addons/godot_cascade/runtime/accessibility_semantics.gd")
 
 const COPIED_PROPERTIES: PackedStringArray = [
 	"direction", "wrap", "gap", "line_gap", "justify_content", "align_items", "pixel_snap",
@@ -97,9 +98,18 @@ static func _reconcile_children(existing: Control, desired: Control, stats: Dict
 
 static func _copy_properties(existing: Control, desired: Control) -> void:
 	var runtime_state := existing.call("capture_runtime_state") if existing.has_method("capture_runtime_state") else {}
+	var authored_checked_changed := _metadata_changed(existing, desired, "cascade_authored_checked_state")
+	var desired_checked: bool = bool((desired as BaseButton).button_pressed) if desired is BaseButton else false
+	var authored_selected_changed := _metadata_changed(existing, desired, "cascade_authored_selected_state")
+	var desired_selected: int = int(desired.get("selected_index")) if _has_property(desired, "selected_index") else -1
+	var authored_slider_value_changed := _metadata_field_changed(existing, desired, "cascade_authored_slider_range_state", "value")
+	var table_semantics_changed: bool = (
+		_metadata_changed(existing, desired, "cascade_repeat_index")
+		or _metadata_changed(existing, desired, "cascade_virtual_model_count")
+	)
 	existing.name = desired.name
 	existing.visible = desired.visible
-	for metadata_name in ["cascade_element_type", "cascade_id", "cascade_scoped_id", "cascade_component_scope", "cascade_component_name", "cascade_classes", "cascade_key", "cascade_bindings", "cascade_rebuild_bindings", "cascade_document_rebuild_bindings", "cascade_condition_binding", "cascade_collection_binding", "cascade_collection_model", "cascade_collection_is_array", "cascade_array_key_cache_valid", "cascade_collection_transaction_valid", "cascade_repeat_keys", "cascade_repeat_index", "cascade_writable_bindings", "cascade_events", "cascade_binding_scope", "cascade_source_path", "cascade_source_line", "cascade_source_column", "cascade_transition_properties", "cascade_transition_duration", "cascade_transform_origin_authored", "cascade_explicit_accessible_label", "cascade_authored_accessible_description", "cascade_compatibility_tier", "cascade_adapted_properties", "cascade_table_role", "cascade_radio_group_name", "cascade_tab_index", "cascade_autofocus", "cascade_focus_trap", "cascade_repeat_element", "cascade_repeat_rule_index", "cascade_repeat_key_path", "cascade_repeat_key_scope", "cascade_virtual", "cascade_virtual_item_height", "cascade_virtual_item_extent", "cascade_virtual_overscan", "cascade_virtual_model_count", "cascade_virtual_first_index", "cascade_virtual_end_index", "cascade_virtual_scroll_offset", "cascade_virtual_viewport_extent", "cascade_virtual_pinned_index", "cascade_virtual_pinned_key", "cascade_virtual_realized_count", "cascade_virtual_spacer", "cascade_virtual_start_index", "cascade_virtual_count"]:
+	for metadata_name in ["cascade_element_type", "cascade_id", "cascade_scoped_id", "cascade_component_scope", "cascade_component_name", "cascade_classes", "cascade_key", "cascade_bindings", "cascade_rebuild_bindings", "cascade_document_rebuild_bindings", "cascade_condition_binding", "cascade_collection_binding", "cascade_collection_model", "cascade_collection_is_array", "cascade_array_key_cache_valid", "cascade_collection_transaction_valid", "cascade_repeat_keys", "cascade_repeat_index", "cascade_writable_bindings", "cascade_events", "cascade_binding_scope", "cascade_source_path", "cascade_source_line", "cascade_source_column", "cascade_transition_properties", "cascade_transition_duration", "cascade_transform_origin_authored", "cascade_explicit_accessible_label", "cascade_authored_accessible_description", "cascade_authored_checked_state", "cascade_authored_selected_state", "cascade_authored_slider_range_state", "cascade_compatibility_tier", "cascade_adapted_properties", "cascade_table_role", "cascade_radio_group_name", "cascade_tab_index", "cascade_autofocus", "cascade_focus_trap", "cascade_repeat_element", "cascade_repeat_ancestor_root", "cascade_repeat_rule_index", "cascade_repeat_key_path", "cascade_repeat_key_scope", "cascade_virtual", "cascade_virtual_item_height", "cascade_virtual_item_extent", "cascade_virtual_overscan", "cascade_virtual_model_count", "cascade_virtual_first_index", "cascade_virtual_end_index", "cascade_virtual_scroll_offset", "cascade_virtual_viewport_extent", "cascade_virtual_pinned_index", "cascade_virtual_pinned_key", "cascade_virtual_realized_count", "cascade_virtual_spacer", "cascade_virtual_start_index", "cascade_virtual_count"]:
 		if desired.has_meta(metadata_name):
 			existing.set_meta(metadata_name, desired.get_meta(metadata_name))
 		elif existing.has_meta(metadata_name):
@@ -119,7 +129,10 @@ static func _copy_properties(existing: Control, desired: Control) -> void:
 		var desired_style: CascadeStyle = desired.get("cascade_style")
 		TransitionManager.apply_style(existing, desired_style)
 	if existing.has_method("set_range_values") and desired.has_method("set_range_values"):
-		existing.call("set_range_values", desired.get("min_value"), desired.get("max_value"), desired.get("value"))
+		var reconciled_value: Variant = desired.get("value")
+		if desired.has_meta("cascade_authored_slider_range_state") and not authored_slider_value_changed:
+			reconciled_value = existing.get("value")
+		existing.call("set_range_values", desired.get("min_value"), desired.get("max_value"), reconciled_value)
 
 	for property_name in COPIED_PROPERTIES:
 		if property_name in ["min_value", "max_value", "value"] and existing.has_method("set_range_values"):
@@ -128,6 +141,28 @@ static func _copy_properties(existing: Control, desired: Control) -> void:
 			existing.set(property_name, desired.get(property_name))
 	if not runtime_state.is_empty() and existing.has_method("restore_runtime_state"):
 		existing.call("restore_runtime_state", runtime_state)
+	if authored_checked_changed and existing is BaseButton:
+		(existing as BaseButton).button_pressed = desired_checked
+	if authored_selected_changed and _has_property(existing, "selected_index"):
+		existing.set("selected_index", desired_selected)
+	if table_semantics_changed:
+		AccessibilitySemantics.queue_table_updates(existing)
+
+
+static func _metadata_changed(existing: Control, desired: Control, metadata_name: StringName) -> bool:
+	if existing.has_meta(metadata_name) != desired.has_meta(metadata_name):
+		return true
+	return existing.has_meta(metadata_name) and existing.get_meta(metadata_name) != desired.get_meta(metadata_name)
+
+
+static func _metadata_field_changed(existing: Control, desired: Control, metadata_name: StringName, field_name: String) -> bool:
+	if existing.has_meta(metadata_name) != desired.has_meta(metadata_name):
+		return true
+	if not desired.has_meta(metadata_name):
+		return false
+	var existing_state: Dictionary = existing.get_meta(metadata_name, {})
+	var desired_state: Dictionary = desired.get_meta(metadata_name, {})
+	return existing_state.get(field_name, {}) != desired_state.get(field_name, {})
 
 
 static func _compatible(existing: Control, desired: Control) -> bool:

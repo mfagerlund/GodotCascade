@@ -3,6 +3,7 @@ extends SceneTree
 const CascadeDocument := preload("res://addons/godot_cascade/runtime/cascade_document.gd")
 const ArrayItemModel := preload("res://addons/godot_cascade/runtime/array_item_model.gd")
 const CollectionChange := preload("res://addons/godot_cascade/runtime/collection_change.gd")
+const AccessibilitySemantics := preload("res://addons/godot_cascade/runtime/accessibility_semantics.gd")
 
 var _failures: Array[String] = []
 
@@ -17,11 +18,13 @@ func _run() -> void:
 		items.append({"id": "item-%05d" % index, "name": "Item %05d" % index})
 	var model := ArrayItemModel.new(items, func(item: Dictionary): return item["id"])
 	await _test_virtual_list(model)
+	await _test_virtual_list_inside_focus_trap(model)
 	await _test_virtual_table(model)
 	await _test_virtual_model_deltas(items)
 	await _test_virtual_array(items.duplicate(true))
 	await _test_moving_virtual_origin(model)
 	await _test_bound_virtual_contracts()
+	await _test_virtual_descendant_visibility()
 	await _test_writeback_virtual_contract()
 	await _test_invalid_model_transition()
 	await _test_malformed_delta_blocks_scroll()
@@ -117,6 +120,65 @@ func _test_virtual_list(model: ArrayItemModel) -> void:
 	await _dispose_document(document, paths)
 
 
+func _test_virtual_list_inside_focus_trap(model: ArrayItemModel) -> void:
+	var paths := _write_pair("virtual_trapped_list", """<Page>
+	<Scroll id="trapped-viewport">
+		<Repeat id="trapped-rows" focus-trap="true" items="{model}" key="id" virtual="true" item-height="44" overscan="2">
+			<Button text="{item.name}" />
+		</Repeat>
+	</Scroll>
+</Page>""", "Page { width: 400px; height: 240px; } #trapped-viewport { width: 400px; height: 240px; } #trapped-rows { gap: 0px; }")
+	var document := await _load_document(paths, model)
+	_expect("virtual list inside focus trap loads", document.generated_root() != null)
+	if document.generated_root() != null:
+		var document_root_id := document.generated_root().get_instance_id()
+		var repeat: Control = document.get_element_by_id("trapped-rows")
+		var repeat_id := repeat.get_instance_id()
+		var scroll: ScrollContainer = document.get_element_by_id("trapped-viewport")
+		scroll.set_v_scroll(220_000)
+		await _frames(3)
+		repeat = document.get_element_by_id("trapped-rows")
+		var middle := _realized_rows(repeat)
+		_expect("Repeat-owned trapped virtual midpoint remains localized and bounded", middle.size() <= 16 and middle.any(func(row: Control): return int(row.get_meta("cascade_repeat_index", -1)) in range(4998, 5013)))
+		_expect("trapped virtual scroll preserves document and Repeat identity", document.generated_root().get_instance_id() == document_root_id and repeat.get_instance_id() == repeat_id)
+		_expect("trapped virtual scroll retains internal offset", float(repeat.get_meta("cascade_virtual_scroll_offset", -1.0)) > 219_000.0)
+		var trace := document.last_binding_trace()
+		_expect("trapped virtual scroll uses bounded window reconciliation", trace.get("strategy", "") == "virtual_window" and int(trace.get("reconcile_stats", {}).get("full_document_candidates", -1)) == 0)
+	await _dispose_document(document, paths)
+
+	var invalidation_model := ArrayItemModel.new([{"id": "one", "name": "One"}], func(item: Dictionary): return item["id"])
+	var invalidation_paths := _write_pair("trapped_model_invalidation", "<Page><Panel focus-trap=\"true\"><Repeat id=\"guarded-rows\" items=\"{model}\" key=\"id\"><Button text=\"{item.name}\" /></Repeat></Panel></Page>", "Page { gap: 0px; }")
+	var invalidation_document := await _load_document(invalidation_paths, invalidation_model)
+	var guarded_repeat: Control = invalidation_document.get_element_by_id("guarded-rows")
+	var guarded_row_id := guarded_repeat.get_child(0).get_instance_id()
+	invalidation_model.clear()
+	await _frames(3)
+	guarded_repeat = invalidation_document.get_element_by_id("guarded-rows")
+	var invalid_trace := invalidation_document.last_binding_trace()
+	_expect("trapped ItemModel invalidation is rejected by full focus validation", not bool(invalid_trace.get("success", true)) and guarded_repeat.get_child_count() == 1 and guarded_repeat.get_child(0).get_instance_id() == guarded_row_id)
+	_expect("trapped ItemModel trace reports its actual focus reconciliation (%s)" % [invalid_trace], invalid_trace.get("strategy", "") == "reconcile" and invalid_trace.get("reason", "") == "focus_contract" and int(invalid_trace.get("reconcile_stats", {}).get("full_document_candidates", 0)) == 1)
+	invalidation_model.reset([{"id": "one", "name": "One active"}, {"id": "two", "name": "Two"}])
+	await _frames(3)
+	guarded_repeat = invalidation_document.get_element_by_id("guarded-rows")
+	var recovery_trace := invalidation_document.last_binding_trace()
+	_expect("repaired trapped ItemModel recovers through full validation (%s)" % [recovery_trace], bool(recovery_trace.get("success", false)) and recovery_trace.get("strategy", "") == "reconcile" and recovery_trace.get("reason", "") == "focus_contract" and int(recovery_trace.get("reconcile_stats", {}).get("full_document_candidates", 0)) == 1 and guarded_repeat.get_child_count() == 2 and guarded_repeat.get_child(0).get_instance_id() == guarded_row_id)
+	await _dispose_document(invalidation_document, invalidation_paths)
+
+	var self_trap_model := ArrayItemModel.new([{"id": "one", "name": "One", "disabled": false}], func(item: Dictionary): return item["id"])
+	var self_trap_paths := _write_pair("repeat_owned_trap", "<Page><Repeat id=\"self-trapped-rows\" focus-trap=\"true\" items=\"{model}\" key=\"id\"><Button text=\"{item.name}\" disabled=\"{item.disabled}\" /></Repeat></Page>", "Page { gap: 0px; }")
+	var self_trap_document := await _load_document(self_trap_paths, self_trap_model)
+	_expect("Repeat-owned focus trap loads", self_trap_document.generated_root() != null)
+	if self_trap_document.generated_root() != null:
+		var self_trapped_repeat: Control = self_trap_document.get_element_by_id("self-trapped-rows")
+		var self_trapped_action: Control = self_trapped_repeat.get_child(0)
+		var self_trapped_action_id := self_trapped_action.get_instance_id()
+		_expect("Repeat-owned trap rejects disabling its sole action", self_trap_model.update(0, {"id": "one", "name": "One", "disabled": true}) and not bool(self_trap_document.last_binding_trace().get("success", true)))
+		self_trapped_repeat = self_trap_document.get_element_by_id("self-trapped-rows")
+		_expect("rejected Repeat-owned trap mutation preserves enabled identity", self_trapped_repeat.get_child(0).get_instance_id() == self_trapped_action_id and not self_trapped_repeat.get_child(0).disabled)
+		_expect("Repeat-owned trap recovers through document validation", self_trap_model.update(0, {"id": "one", "name": "One active", "disabled": false}) and bool(self_trap_document.last_binding_trace().get("success", false)) and self_trapped_repeat.get_child(0).get_instance_id() == self_trapped_action_id)
+	await _dispose_document(self_trap_document, self_trap_paths)
+
+
 func _test_virtual_table(model: ArrayItemModel) -> void:
 	var paths := _write_pair("virtual_table", """<Page>
 	<Scroll id="table-scroll">
@@ -141,6 +203,13 @@ func _test_virtual_table(model: ArrayItemModel) -> void:
 		_expect("virtual table midpoint is correct and bounded", middle.size() <= 15 and middle.any(func(row: Control): return int(row.get_meta("cascade_repeat_index", -1)) in range(4998, 5014)))
 		var table: Control = document.get_element_by_id("inventory")
 		_expect("virtual table keeps two explicit stable columns", table.get("column_tracks").size() == 2)
+		var semantics := AccessibilitySemantics.refresh_table_metadata(table)
+		_expect("virtual table accessibility reports header plus complete 10k model", int(semantics["row_count"]) == 10_001 and int(semantics["column_count"]) == 2)
+		var midpoint_row: Control = middle.filter(func(row: Control): return int(row.get_meta("cascade_repeat_index", -1)) in range(4998, 5014))[0]
+		var expected_global_index := int(midpoint_row.get_meta("cascade_repeat_index")) + 1
+		_expect("virtual table accessibility exposes global midpoint row index", int(midpoint_row.get_meta("cascade_accessibility_row_index", -1)) == expected_global_index)
+		var midpoint_cells: Array = midpoint_row.get_children().filter(func(child): return child is Control and str(child.get_meta("cascade_table_role", "")) in ["cell", "columnheader"])
+		_expect("virtual table accessibility exposes global cell position", midpoint_cells.size() == 2 and int(midpoint_cells[1].get_meta("cascade_accessibility_row_index", -1)) == expected_global_index and int(midpoint_cells[1].get_meta("cascade_accessibility_column_index", -1)) == 1)
 	await _dispose_document(document, paths)
 
 
@@ -339,6 +408,32 @@ func _test_bound_virtual_contracts() -> void:
 	await _dispose_document(document, paths)
 
 
+func _test_virtual_descendant_visibility() -> void:
+	var items: Array = []
+	for index in 100:
+		items.append({"id": "visible-%s" % index, "name": "Row %s" % index, "shown": true})
+	var model := ArrayItemModel.new(items, func(item: Dictionary): return item["id"])
+	var paths := _write_pair("virtual_descendant_visibility", "<Page><Scroll id=\"viewport\"><Repeat id=\"rows\" items=\"{model}\" key=\"id\" virtual=\"true\" item-height=\"44\" overscan=\"1\"><Row visible=\"true\"><Label text=\"{item.name}\" visible=\"{item.shown}\" /></Row></Repeat></Scroll></Page>", "Page { height: 180px; } #viewport { height: 180px; } #rows { gap: 0px; }")
+	var document := await _load_document(paths, model)
+	_expect("literal true item-root visibility and descendant binding load", document.generated_root() != null)
+	if document.generated_root() != null:
+		var repeat: Control = document.get_element_by_id("rows")
+		var scroll: ScrollContainer = document.get_element_by_id("viewport")
+		scroll.set_v_scroll(1_760)
+		await _frames(3)
+		var rows := _realized_rows(repeat)
+		var target: Control = rows[rows.size() / 2]
+		var target_index := int(target.get_meta("cascade_repeat_index", -1))
+		var target_id := target.get_instance_id()
+		var updated: Dictionary = model.item_at(target_index).duplicate(true)
+		updated["shown"] = false
+		_expect("descendant visibility model update succeeds", model.update(target_index, updated))
+		await _frames(3)
+		var matches := _realized_rows(repeat).filter(func(row: Control): return int(row.get_meta("cascade_repeat_index", -1)) == target_index)
+		_expect("descendant visibility update keeps the fixed virtual row and full model extent", matches.size() == 1 and matches[0].get_instance_id() == target_id and matches[0].visible and not matches[0].get_child(0).visible and matches[0].custom_minimum_size.y >= 44.0 and int(repeat.get_meta("cascade_virtual_model_count", 0)) == 100 and scroll.get_v_scroll_bar().max_value > 4_000.0)
+	await _dispose_document(document, paths)
+
+
 func _test_invalid_model_transition() -> void:
 	var model_a := ArrayItemModel.new([{"id": "a", "name": "A"}], func(item: Dictionary): return item["id"])
 	var model_b := ArrayItemModel.new([{"id": "b", "name": "B"}, {"id": "b", "name": "Duplicate"}], func(item: Dictionary): return item["id"])
@@ -480,6 +575,13 @@ func _test_invalid_virtual_contract(model: ArrayItemModel) -> void:
 		"Page { height: 240px; } Scroll { height: 240px; }",
 		small_model,
 		"item roots cannot use 'if'"
+	)
+	await _expect_invalid_virtual(
+		"conditionally_visible_item",
+		"<Page><Scroll><Repeat items=\"{model}\" key=\"id\" virtual=\"true\" item-height=\"44\"><Row visible=\"{item.visible}\"><Label text=\"{item.name}\" /></Row></Repeat></Scroll></Page>",
+		"Page { height: 240px; } Scroll { height: 240px; }",
+		small_model,
+		"item roots cannot use conditional 'visible'"
 	)
 	await _expect_invalid_virtual(
 		"repeat_autofocus",

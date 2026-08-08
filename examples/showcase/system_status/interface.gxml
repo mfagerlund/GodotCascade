@@ -18,7 +18,7 @@
                 <Label id="reserve-value" class="metric" text="{telemetry.reserve_label}" />
                 <Label class="delta" text="{telemetry.reserve_delta}" />
             </Row>
-            <Progress id="reserve" class="primary-progress" value="{telemetry.reserve}" max="100" />
+            <Progress id="reserve" class="primary-progress" value="{telemetry.reserve}" max="100" accessible-label="Reserve capacity" />
             <Label class="detail">18h 42m estimated endurance at current draw</Label>
         </Panel>
 
@@ -28,21 +28,21 @@
                     <Label class="system-name">Reactor output</Label>
                     <Label class="system-value">84%</Label>
                 </Row>
-                <Progress class="system-progress" value="{telemetry.reactor}" max="100" />
+                <Progress class="system-progress" value="{telemetry.reactor}" max="100" accessible-label="Reactor status" />
             </Panel>
             <Panel class="system-card life-support">
                 <Row class="system-heading">
                     <Label class="system-name">Life support</Label>
                     <Label class="system-value">96%</Label>
                 </Row>
-                <Progress class="system-progress" value="{telemetry.life_support}" max="100" />
+                <Progress class="system-progress" value="{telemetry.life_support}" max="100" accessible-label="Life support status" />
             </Panel>
             <Panel class="system-card navigation">
                 <Row class="system-heading">
                     <Label class="system-name">Navigation array</Label>
                     <Label class="system-value">63%</Label>
                 </Row>
-                <Progress class="system-progress" value="{telemetry.navigation}" max="100" />
+                <Progress class="system-progress" value="{telemetry.navigation}" max="100" accessible-label="Navigation status" />
             </Panel>
         </Column>
     </Row>

@@ -4,6 +4,7 @@ extends Container
 ## Table cell with owned box/text rendering and optional authored child content.
 
 const BoxPainter := preload("res://addons/godot_cascade/components/box_painter.gd")
+const AccessibilitySemantics := preload("res://addons/godot_cascade/runtime/accessibility_semantics.gd")
 
 @export_group("Content")
 @export_multiline var text := "":
@@ -15,6 +16,7 @@ const BoxPainter := preload("res://addons/godot_cascade/components/box_painter.g
 	set(value):
 		header = value
 		set_meta("cascade_table_role", "columnheader" if value else "cell")
+		queue_accessibility_update()
 @export var font: Font:
 	set(value):
 		font = value
@@ -69,6 +71,8 @@ func _ready() -> void:
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_SORT_CHILDREN:
 		_arrange_content()
+	elif what == NOTIFICATION_ACCESSIBILITY_UPDATE:
+		AccessibilitySemantics.set_table_cell(self, header)
 
 
 func _get_minimum_size() -> Vector2:

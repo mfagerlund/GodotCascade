@@ -81,6 +81,7 @@ The initial contract is intentionally narrow and is validated both on full load 
 - one `Scroll` ancestor;
 - no nested virtual Repeat;
 - no `if` on the virtual item root—filter the model before binding it;
+- no conditional or bound `visible` on the virtual item root—filter the model before binding it; literal `visible="true"` is harmless and descendants may still bind visibility;
 - no authored `autofocus` or `focus-trap` anywhere inside a Repeat template;
 - no vertical margin on the repeated item root—put spacing in `item-height` or the Repeat `gap`;
 - no vertical padding or border on the Repeat itself—put those on `Scroll`;

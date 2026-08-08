@@ -2,7 +2,7 @@
     <Label class="eyebrow">README QUICKSTART</Label>
     <Label class="title" text="{player.name}" />
     <Label class="status" text="{player.status}" />
-    <Progress value="{player.health}" max="100" />
+    <Progress value="{player.health}" max="100" accessible-label="Player health" />
     <Row class="actions">
         <Label text="{player.health}" />
         <Button id="repair" on-pressed="_on_repair">Repair armor</Button>

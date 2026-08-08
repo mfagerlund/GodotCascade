@@ -80,22 +80,28 @@ namespace CascadeShowcase
         public void RefreshGeneratedBindings()
         {
             _applyingGeneratedBindings = true;
-            var bound0 = FindGeneratedControl("profile");
-            if (bound0 != null)
-                bound0.Set("text", Convert.ToString(GetProfile(), CultureInfo.InvariantCulture) ?? string.Empty);
-            var bound1 = FindGeneratedControl("profile-output");
-            if (bound1 != null)
-                bound1.Set("text", Convert.ToString(GetProfile(), CultureInfo.InvariantCulture) ?? string.Empty);
-            var bound2 = FindGeneratedControl("ui-scale");
-            if (bound2 != null)
-                bound2.Set("value", GetUiScale());
-            var bound3 = FindGeneratedControl("ui-scale-output");
-            if (bound3 != null)
-                bound3.Set("text", Percent(GetUiScale()));
-            var bound4 = FindGeneratedControl("ui-scale-entry");
-            if (bound4 != null)
-                bound4.Set("text", Convert.ToString(GetUiScale(), CultureInfo.InvariantCulture) ?? string.Empty);
-            _applyingGeneratedBindings = false;
+            try
+            {
+                var bound0 = FindGeneratedControl("profile");
+                if (bound0 != null)
+                    bound0.Set("text", Convert.ToString(GetProfile(), CultureInfo.InvariantCulture) ?? string.Empty);
+                var bound1 = FindGeneratedControl("profile-output");
+                if (bound1 != null)
+                    bound1.Set("text", Convert.ToString(GetProfile(), CultureInfo.InvariantCulture) ?? string.Empty);
+                var bound2 = FindGeneratedControl("ui-scale");
+                if (bound2 != null)
+                    bound2.Set("value", GetUiScale());
+                var bound3 = FindGeneratedControl("ui-scale-output");
+                if (bound3 != null)
+                    bound3.Set("text", Percent(GetUiScale()));
+                var bound4 = FindGeneratedControl("ui-scale-entry");
+                if (bound4 != null)
+                    bound4.Set("text", Convert.ToString(GetUiScale(), CultureInfo.InvariantCulture) ?? string.Empty);
+            }
+            finally
+            {
+                _applyingGeneratedBindings = false;
+            }
         }
 
         private void OnGeneratedProfileText0Changed(string value)

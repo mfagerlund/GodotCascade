@@ -75,6 +75,8 @@ var _suppress_focus_contract_refresh := false
 var _item_model_connections: Array[Dictionary] = []
 var _pending_item_models: Array[CascadeItemModel] = []
 var _collection_transaction_blocked := false
+var _last_collection_strategy := "collection_patch"
+var _last_collection_reason := "collection"
 var _virtual_scroll_connections: Array[Dictionary] = []
 var _binding_targets_by_path: Dictionary = {}
 var _dependency_targets_by_path: Dictionary = {}
@@ -82,11 +84,30 @@ var _dependency_index_order := 0
 var _traced_controls: Array[Control] = []
 
 
+func _enter_tree() -> void:
+	if not get_viewport().gui_focus_changed.is_connected(_on_viewport_focus_changed):
+		get_viewport().gui_focus_changed.connect(_on_viewport_focus_changed)
+	if _generated_root == null:
+		return
+	_rebuild_binding_target_index()
+	_refresh_item_model_connections(true)
+	_refresh_virtual_scroll_connections.call_deferred()
+	_finish_tree_reentry.call_deferred()
+
+
+func _finish_tree_reentry() -> void:
+	if not is_inside_tree() or _generated_root == null or not _generated_root.is_inside_tree():
+		return
+	# Parent _enter_tree runs before its generated children enter. Lifecycle
+	# callbacks must never observe a nominally mounted control outside the tree.
+	_refresh_writable_bindings(true)
+	ComponentRegistry.mount_tree(_generated_root)
+	_refresh_focus_contracts(false)
+
+
 func _ready() -> void:
 	set_process(watch_sources)
 	resized.connect(_on_document_resized)
-	if not get_viewport().gui_focus_changed.is_connected(_on_viewport_focus_changed):
-		get_viewport().gui_focus_changed.connect(_on_viewport_focus_changed)
 	if load_on_ready:
 		reload_document()
 	else:
@@ -94,6 +115,8 @@ func _ready() -> void:
 
 
 func _exit_tree() -> void:
+	if get_viewport().gui_focus_changed.is_connected(_on_viewport_focus_changed):
+		get_viewport().gui_focus_changed.disconnect(_on_viewport_focus_changed)
 	_disconnect_virtual_scrolls()
 	_disconnect_item_models()
 	_binding_targets_by_path.clear()
@@ -141,16 +164,21 @@ func reload_document() -> bool:
 	_append_diagnostics(build_result["diagnostics"], "builder")
 	if _has_errors() or build_result["root"] == null:
 		if build_result["root"] != null:
+			last_reconcile_stats = {"reused": 0, "created": 0, "replaced": 0, "removed": 0, "full_document_candidates": 1}
 			build_result["root"].free()
 		_publish_diagnostics()
 		return false
 
 	var desired_root: Control = build_result["root"]
 	_apply_bindings(desired_root)
+	for diagnostic in FocusManager.validate(desired_root):
+		diagnostic["path"] = markup_path
+		diagnostics.append(diagnostic)
 	for diagnostic in _validate_virtual_contracts(desired_root):
 		diagnostic["path"] = markup_path
 		diagnostics.append(diagnostic)
 	if _has_errors():
+		last_reconcile_stats = {"reused": 0, "created": 0, "replaced": 0, "removed": 0, "full_document_candidates": 1}
 		desired_root.free()
 		_publish_diagnostics()
 		return false
@@ -174,6 +202,7 @@ func reload_document() -> bool:
 			add_child(_generated_root)
 			_generated_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 			ComponentRegistry.mount_tree(_generated_root)
+	last_reconcile_stats["full_document_candidates"] = 1
 	BindingTrace.clear(_generated_root)
 	_last_binding_trace = {}
 	_traced_controls.clear()
@@ -286,11 +315,16 @@ func _redirect_focus_to_trap() -> void:
 
 
 func _restore_focus_before_trap() -> void:
-	if _focus_before_trap == null:
-		return
-	var target = _focus_before_trap.get_ref()
+	var target = _focus_before_trap.get_ref() if _focus_before_trap != null else null
 	_focus_before_trap = null
-	if target is Control and is_instance_valid(target) and target.is_inside_tree() and target.visible and target.focus_mode != Control.FOCUS_NONE:
+	var target_is_eligible := false
+	if target is Control and target.is_inside_tree():
+		target_is_eligible = FocusManager.is_focusable_in_scope(target, _generated_root) if FocusManager.contains(_generated_root, target) else FocusManager.is_focusable_in_viewport(target)
+	if not target_is_eligible:
+		target = FocusManager.autofocus_target(_generated_root)
+		if target == null:
+			target = FocusManager.first_focusable(_generated_root)
+	if target != null:
 		target.call_deferred("grab_focus")
 
 
@@ -312,14 +346,27 @@ func _refresh_all_bindings(trigger: String, publish: bool = true) -> bool:
 	var strategy := "targeted"
 	var reason := "property"
 	var success: bool
-	if _generated_root != null and _tree_has_rebuild_binding_outside_repeat(_generated_root):
+	if _generated_root != null and _tree_has_authored_focus_trap(_generated_root) and _indexed_tree_has_focus_binding():
+		strategy = "reconcile"
+		reason = "focus_contract"
+		success = reload_document()
+	elif _generated_root != null and _tree_has_rebuild_binding_outside_repeat(_generated_root):
 		strategy = "reconcile"
 		reason = "rebuild_dependency"
 		success = reload_document()
 	elif _generated_root != null and _contains_element(_generated_root, "repeat"):
-		strategy = "collection_patch"
-		reason = "collection"
-		success = _refresh_collections(publish)
+		var repeats: Array[Control] = []
+		_collect_outer_repeats(_generated_root, repeats)
+		if _repeats_have_authored_focus_trap_ancestor(repeats):
+			strategy = "reconcile"
+			reason = "focus_contract"
+			success = reload_document()
+		else:
+			strategy = "collection_patch"
+			reason = "collection"
+			success = _refresh_collections(publish, repeats)
+			strategy = _last_collection_strategy
+			reason = _last_collection_reason
 	else:
 		success = _refresh_bindings(publish)
 	_record_binding_trace(PackedStringArray(["*"]), trigger, strategy, reason, success)
@@ -344,8 +391,18 @@ func _refresh_named_bindings(paths: PackedStringArray, trigger: String, publish:
 		reason = "collection"
 		var matching_repeats: Array[Control] = []
 		_collect_matching_outer_repeats(_generated_root, normalized, matching_repeats)
-		var retained_reorder := _try_retained_array_reorder(matching_repeats, normalized, publish)
-		success = bool(retained_reorder["success"]) if bool(retained_reorder["handled"]) else _refresh_collections(publish, matching_repeats)
+		if _repeats_have_authored_focus_trap_ancestor(matching_repeats):
+			strategy = "reconcile"
+			reason = "focus_contract"
+			success = reload_document()
+		else:
+			var retained_reorder := _try_retained_array_reorder(matching_repeats, normalized, publish)
+			if bool(retained_reorder["handled"]):
+				success = bool(retained_reorder["success"])
+			else:
+				success = _refresh_collections(publish, matching_repeats)
+				strategy = _last_collection_strategy
+				reason = _last_collection_reason
 	else:
 		success = _refresh_binding_paths(normalized, publish)
 	_record_binding_trace(normalized, trigger, strategy, reason, success)
@@ -482,6 +539,8 @@ func _update_retained_repeat_scope(node: Node, item: Variant, index: int) -> voi
 
 
 func _refresh_collections(publish: bool, requested_repeats: Array[Control] = [], preserve_anchor: bool = true) -> bool:
+	_last_collection_strategy = "collection_patch"
+	_last_collection_reason = "collection"
 	if not preserve_anchor and _collection_transaction_blocked:
 		last_reconcile_stats = _failed_collection_delta_stats(requested_repeats, 0)
 		last_collection_stats = last_reconcile_stats.duplicate(true)
@@ -497,6 +556,13 @@ func _refresh_collections(publish: bool, requested_repeats: Array[Control] = [],
 		_collect_outer_repeats(_generated_root, repeats)
 	if repeats.is_empty():
 		return _refresh_bindings(publish)
+	# A localized Repeat candidate cannot validate the focusability of an
+	# authored ancestor trap. Use the normal full candidate transaction so a
+	# collection update cannot remove that trap's final focusable descendant.
+	if preserve_anchor and _repeats_have_authored_focus_trap_ancestor(repeats):
+		_last_collection_strategy = "reconcile"
+		_last_collection_reason = "focus_contract"
+		return reload_document()
 	var candidates: Array[Dictionary] = []
 	var anchors := {}
 	var candidate_button_groups: Dictionary = {}
@@ -587,6 +653,17 @@ func _refresh_collections(publish: bool, requested_repeats: Array[Control] = [],
 		if publish:
 			_publish_diagnostics()
 		return false
+
+	# A Repeat candidate is not enough context to prove document-level focus
+	# invariants. Native registered components can introduce traps even though
+	# authored Repeat templates reject focus-trap, so validate the assembled
+	# document atomically through the normal full candidate path.
+	if preserve_anchor and candidates.any(func(candidate): return _tree_has_authored_focus_trap(candidate["desired"])):
+		for candidate in candidates:
+			candidate["desired"].free()
+		_last_collection_strategy = "reconcile"
+		_last_collection_reason = "focus_contract"
+		return reload_document()
 
 	var candidate_native_controls := 0
 	for candidate in candidates:
@@ -803,6 +880,8 @@ func _index_binding_targets(node: Node, inside_repeat: bool = false, inside_virt
 
 
 func _indexed_requires_full_reconcile(paths: PackedStringArray) -> bool:
+	if _indexed_paths_affect_focus(paths) and _tree_has_authored_focus_trap(_generated_root):
+		return true
 	for dependency_path_value in _dependency_targets_by_path:
 		var dependency_path := str(dependency_path_value)
 		if not _binding_path_matches(dependency_path, paths):
@@ -812,6 +891,30 @@ func _indexed_requires_full_reconcile(paths: PackedStringArray) -> bool:
 			if str(dependency.get("mode", "")) == "reconcile" and not bool(entry.get("inside_repeat", false)):
 				return true
 	return false
+
+
+func _tree_has_authored_focus_trap(node: Node) -> bool:
+	if node is Control and bool(node.get_meta("cascade_focus_trap", false)):
+		return true
+	for child in node.get_children():
+		if _tree_has_authored_focus_trap(child):
+			return true
+	return false
+
+
+func _has_authored_focus_trap_ancestor(control: Control) -> bool:
+	# The Repeat can own the scope itself; collection candidates replace its
+	# children and therefore cannot validate that live scope in isolation.
+	var ancestor: Node = control
+	while ancestor is Control:
+		if bool(ancestor.get_meta("cascade_focus_trap", false)):
+			return true
+		ancestor = ancestor.get_parent()
+	return false
+
+
+func _repeats_have_authored_focus_trap_ancestor(repeats: Array[Control]) -> bool:
+	return repeats.any(func(repeat): return _has_authored_focus_trap_ancestor(repeat))
 
 
 func _indexed_requires_collection_patch(paths: PackedStringArray) -> bool:
@@ -861,6 +964,14 @@ func _indexed_paths_affect_focus(paths: PackedStringArray) -> bool:
 		if not _binding_path_matches(binding_path, paths):
 			continue
 		for entry in _binding_targets_by_path[binding_path]:
+			if str(entry.get("property", "")) in ["visible", "disabled"]:
+				return true
+	return false
+
+
+func _indexed_tree_has_focus_binding() -> bool:
+	for entries in _binding_targets_by_path.values():
+		for entry in entries:
 			if str(entry.get("property", "")) in ["visible", "disabled"]:
 				return true
 	return false
@@ -1171,7 +1282,7 @@ func _tree_has_rebuild_binding_outside_repeat(node: Node, inside_repeat: bool = 
 func _tree_has_matching_rebuild_binding(node: Node, paths: PackedStringArray) -> bool:
 	if node is Control:
 		var control := node as Control
-		var rebuild_paths: PackedStringArray = control.get_meta("cascade_rebuild_bindings", PackedStringArray())
+		var rebuild_paths: PackedStringArray = control.get_meta("cascade_rebuild_bindings", PackedStringArray()).duplicate()
 		rebuild_paths.append_array(control.get_meta("cascade_document_rebuild_bindings", PackedStringArray()))
 		for binding_path in rebuild_paths:
 			if _binding_path_matches(str(binding_path), paths):
@@ -1358,11 +1469,17 @@ func _on_item_model_changed(change: CascadeCollectionChange, model: CascadeItemM
 		_collect_outer_repeats_for_resolved_model(_generated_root, model, matching_repeats)
 	if matching_repeats.is_empty() and _collection_transaction_blocked and model in _pending_item_models:
 		_collect_outer_repeats(_generated_root, matching_repeats)
+	if _repeats_have_authored_focus_trap_ancestor(matching_repeats):
+		var focus_success := reload_document()
+		_record_binding_trace(PackedStringArray(["*"]), "item_model", "reconcile", "focus_contract", focus_success)
+		return
+	_last_collection_strategy = "collection_patch"
+	_last_collection_reason = "collection"
 	if _collection_transaction_blocked:
 		var recovery_success := false
 		if not matching_repeats.is_empty():
 			recovery_success = _refresh_collections(true, matching_repeats)
-		_record_binding_trace(PackedStringArray(["*"]), "item_model", "collection_patch", "collection", recovery_success)
+		_record_binding_trace(PackedStringArray(["*"]), "item_model", _last_collection_strategy, _last_collection_reason, recovery_success)
 		return
 	var delta_diagnostics: Array[Dictionary] = []
 	var keys_scanned := 0
@@ -1399,7 +1516,7 @@ func _on_item_model_changed(change: CascadeCollectionChange, model: CascadeItemM
 	var success := false
 	if not matching_repeats.is_empty():
 		success = _refresh_collections(true, matching_repeats)
-	_record_binding_trace(PackedStringArray(["*"]), "item_model", "collection_patch", "collection", success)
+	_record_binding_trace(PackedStringArray(["*"]), "item_model", _last_collection_strategy, _last_collection_reason, success)
 
 
 func _initialize_virtual_model_key_caches(force: bool) -> void:

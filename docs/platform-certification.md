@@ -20,6 +20,10 @@ Create an evidence record before testing. The command records the host, commit, 
 python tools/platform/certification.py create --platform windows --godot path/to/godot
 ```
 
+Creation requires a clean Git worktree. This makes the recorded commit an
+unambiguous description of the executable and source under test; commit or
+stash every local change before capturing evidence.
+
 ## Required checks
 
 | Area | Procedure | Passing evidence |
@@ -49,6 +53,7 @@ Store completed evidence under `docs/artifacts/platform-certification-YYYY-MM-DD
 ```markdown
 # Platform certification — <platform>
 
+- Platform: windows/linux/macos/android/ios
 - OS/device:
 - Godot build:
 - GodotCascade commit:
@@ -78,3 +83,14 @@ Validate completed records and the global closure without converting missing evi
 ```powershell
 python tools/platform/certification.py validate --all --closure
 ```
+
+Use this canonical commit sequence so the clean-tree provenance and closure target agree:
+
+1. Commit the exact executable/source state to certify as commit `X`, and leave the worktree clean.
+2. Run `create` at `X`, perform the manual checks, and complete every record without changing executable/source files.
+3. Commit only the completed `docs/artifacts/platform-certification-YYYY-MM-DD-<platform>.md` records as evidence commit `Y` (or as a short chain of record-only commits).
+4. From `Y`, run `validate --all --closure`. The default resolver recognizes certification-record-only commits and targets their nearest non-evidence parent, `X`, which is the commit named by the records.
+
+The automatic parent resolution is deliberately conservative: every peeled commit must have one parent and contain only added or modified canonical certification record files. A mixed commit, merge, deletion, rename, uninspectable history, or ordinary source/documentation commit remains the default target itself. Do not combine support-matrix or protocol edits with the evidence commit.
+
+Pass `--target-commit <sha>` when certifying a release tag or intentionally validating another commit. An explicit target is authoritative and is never rewritten by the record-only detection. When several records target the same commit and platform, the lexically latest dated filename supersedes the earlier result; historical failures remain checked in without blocking evidence recorded after a fix.

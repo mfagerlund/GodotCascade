@@ -1,6 +1,6 @@
 # GodotCascade documentation
 
-GodotCascade 0.8.0 is the current experimental preview. It adds indexed fine-grained invalidation, retained pure keyed Array reorders, pinned alternative-framework evidence, and reproducible platform/evaluator protocols to the retained collections, virtualization, source tooling, native controls, C# generation, and semantic layout surface. Documentation distinguishes the supported focused surface from intentionally unsupported browser features.
+GodotCascade 0.8.1 is the current experimental preview. It hardens parsing, validation, retained state, focus/collection atomicity, accessibility semantics, C# generation, source tooling, packaging, and certification after independent review. Documentation distinguishes the supported focused surface from intentionally unsupported browser features.
 
 ## Start here
 
@@ -22,8 +22,8 @@ GodotCascade 0.8.0 is the current experimental preview. It adds indexed fine-gra
 - [Language tooling](language-tooling.md) — Godot CodeEdit and VS Code completion, hover, format, definition, rename, and diagnostics
 - [Production readiness](production-readiness.md) — transitions, responsive rules, navigation, accessibility, and release gates
 - [Release process](release-process.md) — reproducible packaging, clean-install smoke testing, and tag publishing
-- [0.8.0 release notes](releases/0.8.0.md) — retained invalidation/reorder work, pinned evidence, certification tooling, and limits
-- [Asset Library submission](asset-library-submission.md) — copy-ready 0.8.0 metadata, direct assets, and verified preflight
+- [0.8.1 release notes](releases/0.8.1.md) — review-driven correctness, tooling, accessibility, and release hardening
+- [Asset Library submission](asset-library-submission.md) — copy-ready 0.8.1 metadata, direct assets, and verified preflight
 - [Changelog](../CHANGELOG.md) — versioned user-visible changes
 - [Performance budgets](performance.md) — executable synthetic and representative workload gates, native comparisons, and regression ceilings
 - [Representative workload benchmark](artifacts/representative-workload-benchmark-2026-08-07.md) — verified Godot 4.7/4.7.1 settings, dashboard, leaderboard, and 10k-inventory totals and limitations

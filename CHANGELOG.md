@@ -4,6 +4,14 @@ All notable changes to GodotCascade are documented here. Versions follow semanti
 
 ## [Unreleased]
 
+## [0.8.1] — 2026-08-08
+
+- Hardened GXML/GCSS parsing and schema validation with quote-aware recovery, exact source locations, nested-media intersection checks, strict binding paths, root/Repeat/virtual/table/focus contracts, and matching Godot/VS Code diagnostics.
+- Made retained updates atomic around focus traps, collection transactions, component re-entry, and writable diagnostics; preserved compatible checkbox, radio, switch, select, slider, editing, and focus state unless the authored declaration changes.
+- Added native accessibility roles and table semantics, bounded property/style caches, safer generated C# contracts and source mappings, and explicit runtime-versus-compiler binding guarantees.
+- Expanded the editor and VS Code regression surface for lowercase built-ins, reserved attributes, reusable/slotted components, instance-scoped IDs, safe component rename, and documented workspace-textual rename limits.
+- Strengthened CI, packaging, certification, and performance evidence with pinned actions, dependency tracking, clean-install checks, deterministic tracked-file archives, complete-operation benchmark wording, and independent Codex/Claude review passes.
+
 ## [0.8.0] — 2026-08-07
 
 - Added retained binding/dependency indexes so named scalar and repeated-item invalidations update only matching native controls while preserving exact debugger traces.
@@ -91,7 +99,8 @@ The first public preview provides:
 
 See the [0.1.0 release notes](docs/releases/0.1.0.md) for installation and known boundaries.
 
-[Unreleased]: https://github.com/mfagerlund/GodotCascade/compare/v0.8.0...HEAD
+[Unreleased]: https://github.com/mfagerlund/GodotCascade/compare/v0.8.1...HEAD
+[0.8.1]: https://github.com/mfagerlund/GodotCascade/compare/v0.8.0...v0.8.1
 [0.8.0]: https://github.com/mfagerlund/GodotCascade/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/mfagerlund/GodotCascade/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/mfagerlund/GodotCascade/compare/v0.5.0...v0.6.0

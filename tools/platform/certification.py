@@ -38,9 +38,12 @@ DESKTOP_REQUIRED = (
 )
 FINAL_RESULTS = {"Pass", "Fail", "Unavailable"}
 PLACEHOLDERS = {"", "todo", "not recorded", "not run", "unknown"}
+CERTIFICATION_RECORD_PATH = re.compile(
+    r"^docs/artifacts/platform-certification-\d{4}-\d{2}-\d{2}-(?:windows|linux|macos|android|ios)\.md$"
+)
 
 
-def command_output(command: list[str]) -> str:
+def run_command(command: list[str]) -> tuple[bool, str]:
     try:
         completed = subprocess.run(
             command,
@@ -53,11 +56,81 @@ def command_output(command: list[str]) -> str:
             check=True,
         )
     except (OSError, subprocess.SubprocessError):
+        return False, ""
+    # Successful command diagnostics are not command data. In particular, Git
+    # may emit advisory text on stderr while a clean porcelain status has an
+    # intentionally empty stdout stream.
+    return True, completed.stdout.strip()
+
+
+def command_output(command: list[str]) -> str:
+    succeeded, output = run_command(command)
+    return output if succeeded and output else "TODO"
+
+
+def resolve_closure_target_commit(explicit_target: str = "") -> str:
+    """Resolve the closure target without making an evidence commit self-certify.
+
+    Manual records must name the clean source commit that was actually tested.
+    The completed records are necessarily committed afterward, so a default of
+    literal HEAD would otherwise look for records certifying their own evidence
+    commit. Peel a conservative chain of record-only commits; any mixed,
+    deleted, renamed, merge, or uninspectable commit remains the target itself.
+    An explicit target is always authoritative.
+    """
+    explicit_target = explicit_target.strip()
+    if explicit_target:
+        return explicit_target
+    succeeded, head = run_command(["git", "rev-parse", "HEAD"])
+    if not succeeded or not head:
         return "TODO"
-    return completed.stdout.strip() or completed.stderr.strip() or "TODO"
+    candidate = head
+    peeled = 0
+    while True:
+        parents_succeeded, parents_output = run_command(
+            ["git", "rev-list", "--parents", "-n", "1", candidate]
+        )
+        if not parents_succeeded:
+            break
+        commit_and_parents = parents_output.split()
+        if len(commit_and_parents) != 2:
+            break
+        changes_succeeded, changes_output = run_command(
+            ["git", "diff-tree", "--no-commit-id", "--name-status", "-r", candidate]
+        )
+        if not changes_succeeded or not _is_certification_record_only_change(changes_output):
+            break
+        candidate = commit_and_parents[1]
+        peeled += 1
+    if peeled:
+        print(
+            f"Default closure target: {candidate} "
+            f"(peeled {peeled} certification-record-only HEAD commit{'s' if peeled != 1 else ''})."
+        )
+    return candidate
+
+
+def _is_certification_record_only_change(name_status: str) -> bool:
+    lines = [line for line in name_status.splitlines() if line.strip()]
+    if not lines:
+        return False
+    for line in lines:
+        parts = line.split("\t")
+        if len(parts) != 2 or parts[0] not in {"A", "M"}:
+            return False
+        if CERTIFICATION_RECORD_PATH.fullmatch(parts[1].replace("\\", "/")) is None:
+            return False
+    return True
 
 
 def create_record(args: argparse.Namespace) -> int:
+    status_succeeded, status = run_command(
+        ["git", "status", "--porcelain", "--untracked-files=normal"]
+    )
+    if not status_succeeded:
+        raise SystemExit("Unable to verify a clean Git worktree; certification provenance would be ambiguous")
+    if status:
+        raise SystemExit("Refusing to create certification evidence from a dirty Git worktree; commit or stash changes first")
     output = args.output or ARTIFACT_ROOT / f"platform-certification-{dt.date.today().isoformat()}-{args.platform}.md"
     output = output.resolve()
     if output.exists() and not args.force:
@@ -134,13 +207,17 @@ def parse_record(path: Path) -> tuple[dict[str, str], dict[str, tuple[str, str]]
     return metadata, rows, errors
 
 
-def validate_records(paths: list[Path], closure: bool) -> int:
+def validate_records(paths: list[Path], closure: bool, target_commit: str = "") -> int:
     if not paths:
         print("No certification records found.", file=sys.stderr)
         return 1
     parsed: list[tuple[Path, dict[str, str], dict[str, tuple[str, str]]]] = []
     failed = False
     for path in paths:
+        if not path.is_file():
+            failed = True
+            print(f"{path}: record does not exist")
+            continue
         metadata, rows, errors = parse_record(path)
         parsed.append((path, metadata, rows))
         if errors:
@@ -151,7 +228,8 @@ def validate_records(paths: list[Path], closure: bool) -> int:
         else:
             print(f"Validated record: {path}")
     if closure:
-        closure_errors = certification_closure_errors(parsed)
+        target_commit = resolve_closure_target_commit(target_commit)
+        closure_errors = certification_closure_errors(parsed, target_commit)
         if closure_errors:
             failed = True
             print("Certification closure remains open:")
@@ -163,26 +241,41 @@ def validate_records(paths: list[Path], closure: bool) -> int:
 
 
 def certification_closure_errors(
-    records: list[tuple[Path, dict[str, str], dict[str, tuple[str, str]]]]
+    records: list[tuple[Path, dict[str, str], dict[str, tuple[str, str]]]],
+    target_commit: str,
 ) -> list[str]:
     errors: list[str] = []
-    by_platform: dict[str, list[dict[str, tuple[str, str]]]] = {}
-    for _path, metadata, rows in records:
-        by_platform.setdefault(metadata.get("Platform", "").lower(), []).append(rows)
+    matching = [record for record in records if commits_match(record[1].get("GodotCascade commit", ""), target_commit)]
+    if not matching:
+        return [f"no records match target commit {target_commit}"]
+    # Preserve historical records, but let the lexically latest dated artifact
+    # supersede earlier evidence for the same platform and target commit.
+    by_platform: dict[str, tuple[Path, dict[str, tuple[str, str]]]] = {}
+    for path, metadata, rows in sorted(matching, key=lambda record: record[0].name):
+        by_platform[metadata.get("Platform", "").lower()] = (path, rows)
     for platform_name in ("windows", "linux", "macos"):
-        platform_records = by_platform.get(platform_name, [])
-        if not platform_records:
+        platform_record = by_platform.get(platform_name)
+        if platform_record is None:
             errors.append(f"no {platform_name} record")
             continue
+        rows = platform_record[1]
         for check in DESKTOP_REQUIRED:
-            if not any(record.get(check, ("", ""))[0] == "Pass" for record in platform_records):
+            if rows.get(check, ("", ""))[0] != "Pass":
                 errors.append(f"{platform_name}: '{check}' has no passing evidence")
     for check in ("Touch selection", "Virtual keyboard"):
-        if not any(rows.get(check, ("", ""))[0] == "Pass" for _path, _metadata, rows in records):
+        if not any(rows.get(check, ("", ""))[0] == "Pass" for _path, rows in by_platform.values()):
             errors.append(f"'{check}' has no passing evidence on any applicable device")
-    if any(result == "Fail" for _path, _metadata, rows in records for result, _evidence in rows.values()):
-        errors.append("one or more recorded checks fail")
+    if any(result == "Fail" for _path, rows in by_platform.values() for result, _evidence in rows.values()):
+        errors.append("one or more current target-commit checks fail")
     return errors
+
+
+def commits_match(recorded: str, target: str) -> bool:
+    recorded = recorded.strip().lower()
+    target = target.strip().lower()
+    if len(recorded) < 7 or len(target) < 7:
+        return False
+    return recorded == target or recorded.startswith(target) or target.startswith(recorded)
 
 
 def launch(args: argparse.Namespace) -> int:
@@ -221,9 +314,14 @@ def main() -> int:
     validate_parser.add_argument("paths", nargs="*", type=Path)
     validate_parser.add_argument("--all", action="store_true", help="validate every checked-in record")
     validate_parser.add_argument("--closure", action="store_true", help="also enforce the cross-platform closure gate")
+    validate_parser.add_argument(
+        "--target-commit",
+        help="commit the closure records must certify (defaults to HEAD, after peeling record-only evidence commits)",
+    )
     validate_parser.set_defaults(handler=lambda args: validate_records(
         sorted(ARTIFACT_ROOT.glob("platform-certification-*.md")) if args.all else [path.resolve() for path in args.paths],
         args.closure,
+        args.target_commit or "",
     ))
 
     args = parser.parse_args()

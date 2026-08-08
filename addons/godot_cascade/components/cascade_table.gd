@@ -5,6 +5,7 @@ extends Container
 
 const BoxPainter := preload("res://addons/godot_cascade/components/box_painter.gd")
 const GridLayoutEngine := preload("res://addons/godot_cascade/layout/grid_layout_engine.gd")
+const AccessibilitySemantics := preload("res://addons/godot_cascade/runtime/accessibility_semantics.gd")
 
 @export var column_tracks: Array[Dictionary] = []:
 	set(value):
@@ -35,6 +36,8 @@ const GridLayoutEngine := preload("res://addons/godot_cascade/layout/grid_layout
 		request_table_layout()
 		queue_redraw()
 
+var _accessibility_structure_update_pending := false
+
 
 func _ready() -> void:
 	set_meta("cascade_table_role", "table")
@@ -43,11 +46,16 @@ func _ready() -> void:
 	child_entered_tree.connect(_on_children_changed)
 	child_exiting_tree.connect(_on_children_changed)
 	queue_sort()
+	request_accessibility_structure_update()
 
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_SORT_CHILDREN:
 		_arrange_table()
+	elif what == NOTIFICATION_ACCESSIBILITY_UPDATE:
+		AccessibilitySemantics.set_table(self)
+	elif what == NOTIFICATION_CHILD_ORDER_CHANGED:
+		request_accessibility_structure_update()
 
 
 func _draw() -> void:
@@ -81,6 +89,13 @@ func request_table_layout() -> void:
 	var parent := get_parent()
 	if parent is Container:
 		parent.queue_sort()
+
+
+func request_accessibility_structure_update() -> void:
+	if not is_inside_tree() or _accessibility_structure_update_pending:
+		return
+	_accessibility_structure_update_pending = true
+	_flush_accessibility_structure_update.call_deferred()
 
 
 func _arrange_table() -> void:
@@ -243,7 +258,23 @@ func _on_style_invalidated(_flags: int) -> void:
 
 
 func _on_children_changed(_child: Node) -> void:
+	request_accessibility_structure_update()
 	request_table_layout.call_deferred()
+
+
+func _flush_accessibility_structure_update() -> void:
+	_accessibility_structure_update_pending = false
+	if not is_inside_tree():
+		return
+	AccessibilitySemantics.refresh_table_metadata(self)
+	_queue_semantic_accessibility_update(self)
+
+
+func _queue_semantic_accessibility_update(node: Node) -> void:
+	if node is Control and (node == self or not str(node.get_meta("cascade_table_role", "")).is_empty()):
+		node.queue_accessibility_update()
+	for child in node.get_children():
+		_queue_semantic_accessibility_update(child)
 
 
 func _sum(values: PackedFloat32Array) -> float:

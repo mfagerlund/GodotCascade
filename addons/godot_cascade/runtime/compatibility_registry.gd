@@ -15,6 +15,9 @@ const CascadeLabel := preload("res://addons/godot_cascade/components/cascade_lab
 const CascadePanel := preload("res://addons/godot_cascade/components/cascade_panel.gd")
 const CascadeProgress := preload("res://addons/godot_cascade/components/cascade_progress.gd")
 const CascadeImage := preload("res://addons/godot_cascade/components/cascade_image.gd")
+const CascadeTable := preload("res://addons/godot_cascade/components/cascade_table.gd")
+const CascadeTablePart := preload("res://addons/godot_cascade/components/cascade_table_part.gd")
+const CascadeTableCell := preload("res://addons/godot_cascade/components/cascade_table_cell.gd")
 
 enum Tier { EXACT, ADAPTED, LAYOUT_ONLY }
 
@@ -59,6 +62,7 @@ static func _is_exact(control: Control) -> bool:
 		or control is CascadeButton or control is CascadeCheckbox or control is CascadeRadioButton
 		or control is CascadeSwitch or control is CascadeSelect or control is CascadeSlider
 		or control is CascadeProgress
+		or control is CascadeTable or control is CascadeTablePart or control is CascadeTableCell
 	)
 
 

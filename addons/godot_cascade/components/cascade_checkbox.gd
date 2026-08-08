@@ -1,6 +1,8 @@
 @tool
 extends "res://addons/godot_cascade/components/cascade_button.gd"
 
+const AccessibilitySemantics := preload("res://addons/godot_cascade/runtime/accessibility_semantics.gd")
+
 ## GodotCascade-owned checkbox using native BaseButton toggle behavior.
 
 @export_group("Indicator")
@@ -139,3 +141,8 @@ func _draw_checkbox_text(content: Rect2) -> void:
 		font_size,
 		_current_text_color()
 	)
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_ACCESSIBILITY_UPDATE:
+		AccessibilitySemantics.set_role(self, AccessibilityServer.ROLE_CHECK_BOX)
