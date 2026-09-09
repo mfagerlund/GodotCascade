@@ -163,3 +163,9 @@ New test scripts follow the existing shape: `extends SceneTree`, a `_failures: A
 that defers `_run()`, `_expect_*` helpers appending failure strings, then `quit(0)` or push each failure and
 `quit(1)`. Scene-tree tests must `await process_frame` (usually 2–3 times) before asserting geometry, since
 layout runs on sort notifications.
+
+## Project card
+
+`project-card/` holds this project's one-liner, tags and image for the cross-project index.
+When the purpose or the look of the project changes materially, regenerate it with
+`/project-index GodotCascade`.
